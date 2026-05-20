@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import confetti from "canvas-confetti";
 import { Button } from "@/components/ui/button";
+import { createCourseAction, deleteCourseAction, toggleLessonProgressAction } from "./actions";
 
 interface Lesson {
   id: string;
@@ -29,6 +30,9 @@ interface Course {
 interface CoursesClientProps {
   role: string;
   facultySlug: string;
+  facultyId: string;
+  initialCourses: Course[];
+  initialProgress: { [key: string]: string[] };
 }
 
 // Curated beautiful pre-populated courses
@@ -121,48 +125,32 @@ Trust is the fuel of voluntary organizations. In a student ministry, peer-to-pee
   },
 ];
 
-export function CoursesClient({ role, facultySlug }: CoursesClientProps) {
+export function CoursesClient({ 
+  role, 
+  facultySlug, 
+  facultyId, 
+  initialCourses, 
+  initialProgress 
+}: CoursesClientProps) {
   const isAdmin = role === "ADMIN";
   
-  // State for Courses
-  const [courses, setCourses] = useState<Course[]>([]);
+  // State for Courses and Progress from Server
+  const [courses, setCourses] = useState<Course[]>(initialCourses);
+  const [progress, setProgress] = useState<{ [key: string]: string[] }>(initialProgress);
   
-  // Load courses from LocalStorage or fallback to pre-populated
+  // Interaction Loading States
+  const [isCreating, setIsCreating] = useState(false);
+  const [isDeleting, setIsDeleting] = useState<string | null>(null);
+  const [isCompleting, setIsCompleting] = useState<string | null>(null);
+
+  // Sync props to state when server revalidates
   useEffect(() => {
-    const saved = localStorage.getItem(`eden_courses_${facultySlug}`);
-    if (saved) {
-      try {
-        setCourses(JSON.parse(saved));
-      } catch (e) {
-        setCourses(initialCourses);
-      }
-    } else {
-      setCourses(initialCourses);
-    }
-  }, [facultySlug]);
+    setCourses(initialCourses);
+  }, [initialCourses]);
 
-  const saveCoursesList = (updated: Course[]) => {
-    setCourses(updated);
-    localStorage.setItem(`eden_courses_${facultySlug}`, JSON.stringify(updated));
-  };
-
-  // State for Course Progress (Tracks completed lessons map: { [courseId]: string[] })
-  const [progress, setProgress] = useState<{ [key: string]: string[] }>({});
-  
   useEffect(() => {
-    const savedProgress = localStorage.getItem(`eden_course_progress_${facultySlug}`);
-    if (savedProgress) {
-      try {
-        setProgress(JSON.parse(savedProgress));
-      } catch (e) {}
-    }
-  }, [facultySlug]);
-
-  const saveProgress = (courseId: string, completedLessonIds: string[]) => {
-    const updated = { ...progress, [courseId]: completedLessonIds };
-    setProgress(updated);
-    localStorage.setItem(`eden_course_progress_${facultySlug}`, JSON.stringify(updated));
-  };
+    setProgress(initialProgress);
+  }, [initialProgress]);
 
   // State for Admin Modal
   const [showAddModal, setShowAddModal] = useState(false);
@@ -184,7 +172,14 @@ export function CoursesClient({ role, facultySlug }: CoursesClientProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
 
   const addLessonField = () => {
-    setNewLessons([...newLessons, { title: `Lesson ${newLessons.length + 1}: `, content: "", duration: newType === "text" ? "10 mins read" : "5 mins" }]);
+    setNewLessons([
+      ...newLessons, 
+      { 
+        title: `Lesson ${newLessons.length + 1}: `, 
+        content: "", 
+        duration: newType === "text" ? "10 mins read" : "5 mins" 
+      }
+    ]);
   };
 
   const updateLessonField = (index: number, field: string, value: string) => {
@@ -193,9 +188,12 @@ export function CoursesClient({ role, facultySlug }: CoursesClientProps) {
     setNewLessons(updated);
   };
 
-  const handleCreateCourse = (e: React.FormEvent) => {
+  const handleCreateCourse = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTitle.trim() || !newDesc.trim()) return;
+    if (isCreating) return;
+
+    setIsCreating(true);
 
     // Pick random neon gradient
     const gradients = [
@@ -207,51 +205,79 @@ export function CoursesClient({ role, facultySlug }: CoursesClientProps) {
     ];
     const randGradient = gradients[Math.floor(Math.random() * gradients.length)];
 
-    const created: Course = {
-      id: `course-${Date.now()}`,
-      title: newTitle,
-      description: newDesc,
-      type: newType,
-      coverGradient: randGradient,
-      lessons: newLessons.map((l, i) => ({
-        id: `l-${Date.now()}-${i}`,
-        title: l.title || `Lesson ${i + 1}`,
+    try {
+      const result = await createCourseAction(facultyId, {
+        title: newTitle,
+        description: newDesc,
         type: newType,
-        content: l.content || (newType === "text" ? "Lesson text coming soon..." : "https://www.w3schools.com/html/mov_bbb.mp4"),
-        duration: l.duration || (newType === "text" ? "10 mins read" : "5 mins"),
-      }))
-    };
+        coverGradient: randGradient,
+        lessons: newLessons.map((l, i) => ({
+          title: l.title || `Lesson ${i + 1}`,
+          type: newType,
+          content: l.content || (newType === "text" ? "Lesson text coming soon..." : "https://www.w3schools.com/html/mov_bbb.mp4"),
+          duration: l.duration || (newType === "text" ? "10 mins read" : "5 mins"),
+        }))
+      });
 
-    const updatedList = [created, ...courses];
-    saveCoursesList(updatedList);
-
-    // Reset Form
-    setNewTitle("");
-    setNewDesc("");
-    setNewType("text");
-    setNewLessons([{ title: "Lesson 1: Getting Started", content: "", duration: "5 mins" }]);
-    setShowAddModal(false);
+      if (result.success) {
+        // Reset Form
+        setNewTitle("");
+        setNewDesc("");
+        setNewType("text");
+        setNewLessons([{ title: "Lesson 1: Getting Started", content: "", duration: "5 mins" }]);
+        setShowAddModal(false);
+      }
+    } catch (error: any) {
+      alert(error.message || "Failed to create course");
+    } finally {
+      setIsCreating(false);
+    }
   };
 
-  const handleDeleteCourse = (courseId: string, e: React.MouseEvent) => {
+  const handleDeleteCourse = async (courseId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     if (!window.confirm("Are you sure you want to delete this course permanently?")) return;
-    const filtered = courses.filter(c => c.id !== courseId);
-    saveCoursesList(filtered);
+    if (isDeleting) return;
+
+    setIsDeleting(courseId);
+    try {
+      await deleteCourseAction(courseId, facultyId);
+      // Close learning player if the active course is deleted
+      if (activeCourse?.id === courseId) {
+        setActiveCourse(null);
+      }
+    } catch (error: any) {
+      alert(error.message || "Failed to delete course");
+    } finally {
+      setIsDeleting(null);
+    }
   };
 
-  const completeLesson = (courseId: string, lessonId: string) => {
+  const completeLesson = async (courseId: string, lessonId: string) => {
     const currentCompleted = progress[courseId] || [];
     if (currentCompleted.includes(lessonId)) return;
+    if (isCompleting === lessonId) return;
 
+    // Optimistic UI update
     const updated = [...currentCompleted, lessonId];
-    saveProgress(courseId, updated);
+    setProgress({ ...progress, [courseId]: updated });
+    setIsCompleting(lessonId);
 
-    // Check if entire course is completed!
-    const course = courses.find(c => c.id === courseId);
-    if (course && updated.length === course.lessons.length) {
-      triggerConfetti();
-      setShowCongrats(true);
+    try {
+      await toggleLessonProgressAction(lessonId, true);
+
+      // Check if entire course is completed!
+      const course = courses.find(c => c.id === courseId);
+      if (course && updated.length === course.lessons.length) {
+        triggerConfetti();
+        setShowCongrats(true);
+      }
+    } catch (error: any) {
+      // Rollback progress on failure
+      setProgress({ ...progress, [courseId]: currentCompleted });
+      alert(error.message || "Failed to save lesson progress");
+    } finally {
+      setIsCompleting(null);
     }
   };
 
@@ -633,11 +659,16 @@ export function CoursesClient({ role, facultySlug }: CoursesClientProps) {
                       {/* Trash action button for Admin */}
                       {isAdmin && (
                         <button
+                          disabled={isDeleting === course.id}
                           onClick={(e) => handleDeleteCourse(course.id, e)}
-                          className="absolute top-4 right-4 w-7 h-7 flex items-center justify-center rounded-full bg-black/20 hover:bg-rose-600 text-white transition-colors"
+                          className="absolute top-4 right-4 w-7 h-7 flex items-center justify-center rounded-full bg-black/20 hover:bg-rose-600 text-white transition-colors disabled:opacity-50"
                           title="Delete Course"
                         >
-                          <Trash2 size={12} />
+                          {isDeleting === course.id ? (
+                            <span className="w-2.5 h-2.5 border border-white border-t-transparent rounded-full animate-spin" />
+                          ) : (
+                            <Trash2 size={12} />
+                          )}
                         </button>
                       )}
 
@@ -833,9 +864,10 @@ export function CoursesClient({ role, facultySlug }: CoursesClientProps) {
                     </button>
                     <Button
                       type="submit"
-                      className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-lg transition"
+                      disabled={isCreating}
+                      className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-lg transition disabled:opacity-50"
                     >
-                      Publish Course
+                      {isCreating ? "Publishing..." : "Publish Course"}
                     </Button>
                   </div>
 

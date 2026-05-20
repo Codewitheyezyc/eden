@@ -1,0 +1,46 @@
+# Marketing Homepage Implementation Plan
+
+This plan details the construction of the public-facing marketing website for the Eden App, focusing strictly on a premium, nature-inspired SaaS aesthetic without touching the dashboard yet.
+
+## User Review Required
+
+> [!IMPORTANT]  
+> Please review the structure and sections proposed for the landing page. Since I cannot automatically install packages without your interaction, I will rely on raw SVGs for icons (like the dark/light mode toggle) to save you from running another `npm install`.
+
+## Open Questions
+
+- Do you have specific text copy you want me to use for the Hero headline, or should I write placeholder copy inspired by the "digital garden / arts academy" theme?
+
+## Proposed Changes
+
+### 1. Navigation & Footer
+#### [NEW] components/layout/marketing-navbar.tsx
+- A glassmorphism-styled top navigation bar.
+- Includes the Eden brand logo (text/SVG based).
+- Includes the Light/Dark mode toggle.
+- Includes "Log in" (ghost button) and "Get Started" (primary button) CTAs.
+#### [NEW] components/layout/marketing-footer.tsx
+- A clean, minimal footer with standard SaaS links (About, Faculties, Privacy, Terms) and copyright.
+
+### 2. UI Components
+#### [NEW] components/ui/theme-toggle.tsx
+- A reusable button that reads the current theme from `next-themes` and toggles between Light and Dark mode using custom SVG icons (Sun/Moon).
+
+### 3. The Landing Page
+#### [MODIFY] app/page.tsx
+I will overwrite the default Next.js boilerplate with a custom layout incorporating the Marketing Navbar and Footer. The page will include:
+
+- **Hero Section**: A spacious, centralized section with a calm, subtle gradient background (using the Forest Green/Emerald palette), a strong value proposition, and prominent CTAs pointing to `/register` and `/login`.
+- **Features Section**: A minimalist CSS Grid layout highlighting the core benefits (e.g., "Isolated Faculty Environments", "Role-Based Access").
+- **Bottom CTA**: A final, elegant section encouraging users to join the academy.
+
+## Styling Rules Applied
+- **Inter Font**: Already configured globally in `layout.tsx`.
+- **Minimalist SaaS**: High white-space, subtle borders, translucent backgrounds.
+- **Soft Animations**: We will use Tailwind's `transition-all duration-300` for smooth hover states and a simple CSS fade-in keyframe for the initial page load.
+
+## Verification Plan
+### Manual Verification
+- You will be able to visit `http://localhost:3000/` and see the fully responsive landing page.
+- The Theme Toggle will switch the entire site smoothly between dark and light themes.
+- The "Get Started" buttons will successfully route to the `/register` page we built previously.

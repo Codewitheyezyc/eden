@@ -15,6 +15,7 @@ interface ProfileData {
   campus_zone: string | null;
   date_of_birth: string | null;
   bio: string | null;
+  is_verified: boolean | null;
 }
 
 interface ProfileContainerProps {
@@ -45,7 +46,7 @@ export function ProfileContainer({ userId, userEmail, initialProfile, initialFul
   });
 
   const [avatarUrl, setAvatarUrl] = useState<string | null>(initialAvatar);
-  const [hasCelebrated, setHasCelebrated] = useState(false);
+  const [hasCelebrated, setHasCelebrated] = useState(initialProfile?.is_verified || false);
   const [selectedCampuses, setSelectedCampuses] = useState<string[]>(() => {
     return parseCampuses(initialProfile?.campus_zone);
   });

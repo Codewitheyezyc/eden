@@ -140,7 +140,7 @@ export function DashboardShell({ children, facultyName, facultySlug, role, userE
         <div className="absolute bottom-[-10%] right-[-10%] w-[30%] h-[30%] bg-blue-400/5 dark:bg-blue-500/5 rounded-full blur-[80px] pointer-events-none mix-blend-multiply dark:mix-blend-lighten" />
 
         {/* Top Navbar (Glassmorphism) */}
-        <header className="h-16 flex items-center justify-between px-4 sm:px-8 border-b border-gray-200/50 dark:border-white/5 bg-white/90 dark:bg-[#030303]/80 backdrop-blur-xl shrink-0 sticky top-0 z-10 transition-all shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
+        <header className="h-16 flex items-center justify-between px-4 sm:px-8 border-b border-gray-200/50 dark:border-white/5 bg-white/90 dark:bg-[#030303]/80 backdrop-blur-xl shrink-0 relative z-10 transition-all shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
           <div className="flex items-center">
             <button 
               onClick={() => setSidebarOpen(true)}

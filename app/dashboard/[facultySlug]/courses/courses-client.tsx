@@ -6,7 +6,6 @@ import {
   Award, Trophy, Clock, FileText, ChevronRight, Sparkles, 
   Volume2, Trash2, Book, Monitor, Send, HelpCircle 
 } from "lucide-react";
-import confetti from "canvas-confetti";
 import { Button } from "@/components/ui/button";
 import { createCourseAction, deleteCourseAction, toggleLessonProgressAction } from "./actions";
 
@@ -269,7 +268,6 @@ export function CoursesClient({
       // Check if entire course is completed!
       const course = courses.find(c => c.id === courseId);
       if (course && updated.length === course.lessons.length) {
-        triggerConfetti();
         setShowCongrats(true);
       }
     } catch (error: any) {
@@ -281,31 +279,7 @@ export function CoursesClient({
     }
   };
 
-  const triggerConfetti = () => {
-    const duration = 3 * 1000;
-    const end = Date.now() + duration;
 
-    (function frame() {
-      confetti({
-        particleCount: 3,
-        angle: 60,
-        spread: 55,
-        origin: { x: 0 },
-        colors: ["#10b981", "#3b82f6", "#f59e0b"]
-      });
-      confetti({
-        particleCount: 3,
-        angle: 120,
-        spread: 55,
-        origin: { x: 1 },
-        colors: ["#10b981", "#3b82f6", "#f59e0b"]
-      });
-
-      if (Date.now() < end) {
-        requestAnimationFrame(frame);
-      }
-    }());
-  };
 
   // Video finished playing trigger
   const handleVideoEnded = () => {

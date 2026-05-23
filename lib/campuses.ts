@@ -7,7 +7,20 @@ export const CAMPUSES = [
   "Lagos Zone 5",
   "Lagos Zone 6",
   "Lagos Sub-zone C",
-  "Lagos Sub-zone D"
+  "Lagos Sub-zone D",
+  "Port Harcourt Zone 1",
+  "Port Harcourt Zone 2",
+  "Port Harcourt Zone 3",
+  "Benin Mid-West Zone",
+  "BLW Zone L",
+  "Warri Ministry Center",
+  "Owerri Zone",
+  "Campus Ministry Zone G",
+  "Ibadan Zone",
+  "Cameroon Zone",
+  "UK Zone",
+  "Ghana Zone",
+  "Abuja Zone"
 ] as const;
 
 export type Campus = typeof CAMPUSES[number];

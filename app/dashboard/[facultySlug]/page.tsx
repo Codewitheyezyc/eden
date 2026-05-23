@@ -49,6 +49,11 @@ export default async function FacultyDashboardPage({
     .select("*", { count: "exact", head: true })
     .eq("faculty_id", faculty.id);
 
+  const { count: coursesCount } = await supabase
+    .from("courses")
+    .select("*", { count: "exact", head: true })
+    .eq("faculty_id", faculty.id);
+
   // Fetch user profile for campus checks
   const { data: profile } = await supabase
     .from("profiles")
@@ -283,7 +288,7 @@ export default async function FacultyDashboardPage({
              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg>
           </div>
           <h3 className="font-medium text-gray-500 dark:text-gray-400 text-xs tracking-widest uppercase mb-1">Active Courses</h3>
-          <p className="text-3xl font-bold text-gray-900 dark:text-white">4</p>
+          <p className="text-3xl font-bold text-gray-900 dark:text-white">{coursesCount || 0}</p>
         </div>
 
         {/* Announcements Widget (Visible to Everyone) */}

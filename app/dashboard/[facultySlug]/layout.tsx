@@ -2,6 +2,7 @@ import { createClient } from "@/services/supabase/server";
 import { redirect } from "next/navigation";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { RealtimeDashboardListener } from "@/components/dashboard/realtime-listener";
+import { ResourceNotFound } from "@/components/ui/resource-not-found";
 
 export default async function DashboardLayout({
   children,
@@ -26,12 +27,11 @@ export default async function DashboardLayout({
 
   if (facultyError || !faculty) {
     return (
-      <div className="p-10 font-mono text-sm">
-        <h2 className="text-red-500 font-bold mb-4">Error finding faculty!</h2>
-        <p className="text-gray-700 dark:text-gray-300 mb-2">The system tried to search the database for a faculty with the exact slug: <span className="font-bold bg-red-100 text-red-800 px-2 rounded">"{params.facultySlug}"</span></p>
-        <p className="text-gray-700 dark:text-gray-300 mb-4">But it returned 0 rows (it doesn't exist in the database).</p>
-        <div className="bg-gray-100 dark:bg-gray-900 p-4 rounded text-gray-500">{JSON.stringify(facultyError || "Not found")}</div>
-      </div>
+      <ResourceNotFound 
+        mode="faculty" 
+        customSlug={params.facultySlug} 
+        customErrorDetail={facultyError ? JSON.stringify(facultyError, null, 2) : "Query returned 0 rows. The faculty workspace slug is invalid."}
+      />
     );
   }
 
@@ -44,7 +44,12 @@ export default async function DashboardLayout({
     .single();
 
   if (accessError || !facultyAccess) {
-    return <div className="p-10 text-red-500 font-mono text-sm">Error finding access: {JSON.stringify(accessError || "No access")}</div>;
+    return (
+      <ResourceNotFound 
+        mode="access" 
+        customErrorDetail={accessError ? JSON.stringify(accessError, null, 2) : "User does not have an assigned membership role for this faculty workspace."}
+      />
+    );
   }
 
   // Fetch verified status

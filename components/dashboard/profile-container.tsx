@@ -187,7 +187,7 @@ export function ProfileContainer({ userId, userEmail, initialProfile, initialFul
           ></div>
         </div>
         {progress < 100 && (
-          <p className="text-xs text-gray-500 mt-3">Complete all fields to unlock the full Eden experience.</p>
+          <p className="text-xs text-gray-700 dark:text-gray-400 mt-3 font-normal">Complete all fields to unlock the full Eden experience.</p>
         )}
       </div>
 
@@ -202,7 +202,7 @@ export function ProfileContainer({ userId, userEmail, initialProfile, initialFul
               <h4 className="text-sm font-extrabold text-gray-900 dark:text-white">
                 {completedTour ? "Welcome from Onboarding! Let's complete your profile 🚀" : "Onboarding Checklist"}
               </h4>
-              <p className="text-xs text-gray-500 dark:text-gray-400 font-light mt-0.5">
+              <p className="text-xs text-gray-700 dark:text-gray-300 font-normal mt-0.5">
                 Complete these quick tasks to verify your account and customize your campus experience.
               </p>
             </div>
@@ -218,8 +218,8 @@ export function ProfileContainer({ userId, userEmail, initialProfile, initialFul
                 key={idx}
                 className={`flex items-center space-x-2 p-3 rounded-2xl border transition-all ${
                   item.checked 
-                    ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-800 dark:text-emerald-300" 
-                    : "bg-white/40 dark:bg-black/20 border-gray-200 dark:border-white/5 text-gray-500"
+                    ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-800 dark:text-emerald-300 font-bold" 
+                    : "bg-white/40 dark:bg-black/25 border-gray-200 dark:border-white/5 text-gray-700 dark:text-gray-400 font-semibold"
                 }`}
               >
                 <div className={`w-4 h-4 rounded-full flex items-center justify-center ${

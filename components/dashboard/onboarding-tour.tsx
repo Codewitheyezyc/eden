@@ -306,7 +306,7 @@ export function OnboardingTour({ role, facultySlug, initialCompletedTour }: Onbo
           <h4 className="text-base font-extrabold text-gray-900 dark:text-white leading-tight">
             {currentStepData.title}
           </h4>
-          <p className="text-xs text-gray-500 dark:text-gray-400 font-light leading-relaxed">
+          <p className="text-xs text-gray-700 dark:text-gray-350 font-normal leading-relaxed">
             {currentStepData.content}
           </p>
         </div>
@@ -315,7 +315,7 @@ export function OnboardingTour({ role, facultySlug, initialCompletedTour }: Onbo
         <div className="flex items-center justify-between pt-4 border-t border-gray-150 dark:border-white/5">
           {/* Progress Indicator */}
           <div className="flex flex-col space-y-1">
-            <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">
+            <span className="text-[9px] font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
               Step {currentStep + 1} of {steps.length}
             </span>
             <div className="w-16 bg-gray-100 dark:bg-white/5 rounded-full h-1 overflow-hidden">

@@ -47,7 +47,7 @@ export function FacultySelector({ faculties }: { faculties: FacultyOption[] }) {
           <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-gray-900 dark:text-white mb-4">
             Select Your Role
           </h1>
-          <p className="text-lg text-gray-500 dark:text-gray-400 max-w-xl mx-auto">
+          <p className="text-lg text-gray-700 dark:text-gray-300 max-w-xl mx-auto font-normal">
             You are joining the <span className="font-bold text-emerald-600 dark:text-emerald-400">{selectedFaculty?.name}</span>. Please select your role below.
           </p>
         </div>
@@ -77,7 +77,7 @@ export function FacultySelector({ faculties }: { faculties: FacultyOption[] }) {
                 </h3>
                 
                 <p className={`text-sm transition-colors duration-300
-                  ${isSelected ? "text-emerald-700 dark:text-emerald-300" : "text-gray-500 dark:text-gray-400"}
+                  ${isSelected ? "text-emerald-800 dark:text-emerald-300 font-medium" : "text-gray-600 dark:text-gray-400"}
                 `}>
                   {role.desc}
                 </p>
@@ -127,7 +127,7 @@ export function FacultySelector({ faculties }: { faculties: FacultyOption[] }) {
         <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-gray-900 dark:text-white mb-4">
           Choose Your Path
         </h1>
-        <p className="text-lg text-gray-500 dark:text-gray-400 max-w-xl mx-auto">
+        <p className="text-lg text-gray-700 dark:text-gray-300 max-w-xl mx-auto font-normal">
           Welcome to Eden Academy! To personalize your experience, please select the faculty you are enrolling in.
         </p>
       </div>
@@ -167,7 +167,7 @@ export function FacultySelector({ faculties }: { faculties: FacultyOption[] }) {
               </h3>
               
               <p className={`text-sm transition-colors duration-300
-                ${isSelected ? "text-emerald-700 dark:text-emerald-300" : "text-gray-500 dark:text-gray-400"}
+                ${isSelected ? "text-emerald-800 dark:text-emerald-300 font-medium" : "text-gray-600 dark:text-gray-400"}
               `}>
                 Join the {faculty.name} community and access specialized curriculum and resources.
               </p>

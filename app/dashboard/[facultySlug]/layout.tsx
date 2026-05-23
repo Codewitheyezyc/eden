@@ -50,7 +50,7 @@ export default async function DashboardLayout({
   // Fetch verified status
   const { data: profile } = await supabase
     .from("profiles")
-    .select("is_verified")
+    .select("is_verified, completed_tour")
     .eq("id", user.id)
     .single();
 
@@ -63,6 +63,7 @@ export default async function DashboardLayout({
       userName={user.user_metadata?.full_name}
       avatarUrl={user.user_metadata?.avatar_url}
       isVerified={profile?.is_verified || false}
+      completedTour={profile?.completed_tour || false}
     >
       <RealtimeDashboardListener facultyId={faculty.id} />
       {children}

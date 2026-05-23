@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { X, ChevronRight, ChevronLeft, Sparkles, CheckCircle2 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { createClient } from "@/services/supabase/client";
 
 interface TourStep {
   targetId: string | null; // null means centered modal
@@ -14,9 +15,10 @@ interface TourStep {
 interface OnboardingTourProps {
   role: string;
   facultySlug: string;
+  initialCompletedTour?: boolean;
 }
 
-export function OnboardingTour({ role, facultySlug }: OnboardingTourProps) {
+export function OnboardingTour({ role, facultySlug, initialCompletedTour }: OnboardingTourProps) {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
@@ -134,17 +136,19 @@ export function OnboardingTour({ role, facultySlug }: OnboardingTourProps) {
   })();
 
   useEffect(() => {
-    // Check if tour was already completed or skipped
-    const isCompleted = localStorage.getItem(`eden_tour_completed_${role.toLowerCase()}`);
-    if (!isCompleted) {
-      // Small delay to let page mount smoothly
-      const timer = setTimeout(() => {
-        setIsOpen(true);
-        setCurrentStep(0);
-      }, 1000);
-      return () => clearTimeout(timer);
+    // Check if tour was already completed or skipped (checking database and localStorage for robustness)
+    const isLocalCompleted = localStorage.getItem(`eden_tour_completed_${role.toLowerCase()}`);
+    if (initialCompletedTour || isLocalCompleted === "true") {
+      return;
     }
-  }, [role]);
+
+    // Small delay to let page mount smoothly
+    const timer = setTimeout(() => {
+      setIsOpen(true);
+      setCurrentStep(0);
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [role, initialCompletedTour]);
 
   // Recalculate tooltip position on step change
   useEffect(() => {
@@ -216,9 +220,22 @@ export function OnboardingTour({ role, facultySlug }: OnboardingTourProps) {
     handleComplete();
   };
 
-  const handleComplete = () => {
+  const handleComplete = async () => {
     localStorage.setItem(`eden_tour_completed_${role.toLowerCase()}`, "true");
     setIsOpen(false);
+
+    try {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await supabase
+          .from("profiles")
+          .update({ completed_tour: true })
+          .eq("id", user.id);
+      }
+    } catch (e) {
+      console.error("Error saving onboarding completion status:", e);
+    }
     
     // Redirect to profile setup with completed_tour query parameter
     router.push(`/dashboard/${facultySlug}/profile?completed_tour=true`);

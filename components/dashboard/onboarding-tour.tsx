@@ -136,7 +136,10 @@ export function OnboardingTour({ role, facultySlug, initialCompletedTour }: Onbo
   })();
 
   useEffect(() => {
-    // Check if tour was already completed or skipped (checking database and localStorage for robustness)
+    // If the database states the tour is not completed, enforce local storage reset
+    if (!initialCompletedTour && typeof window !== "undefined") {
+      localStorage.removeItem(`eden_tour_completed_${role.toLowerCase()}`);
+    }
     const isLocalCompleted = localStorage.getItem(`eden_tour_completed_${role.toLowerCase()}`);
     if (initialCompletedTour || isLocalCompleted === "true") {
       return;

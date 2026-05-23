@@ -8,22 +8,22 @@ const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: {
-    default: "Eden Academy — Premium Creative Governance Platform",
-    template: "%s | Eden Academy",
+    default: "Loveworld Arts Academy — Premium Creative Governance Platform",
+    template: "%s | Loveworld Arts Academy",
   },
-  description: "Discover Eden Academy, the ultra-premium multi-tenant digital workspace for student learning and focused coordinator administration.",
+  description: "Discover Loveworld Arts Academy, the ultra-premium multi-tenant digital workspace for student learning and focused coordinator administration.",
   metadataBase: new URL("https://eden-academy.org"),
   openGraph: {
-    title: "Eden Academy — Premium Creative Governance Platform",
-    description: "Discover Eden Academy, the ultra-premium multi-tenant digital workspace for student learning and focused coordinator administration.",
+    title: "Loveworld Arts Academy — Premium Creative Governance Platform",
+    description: "Discover Loveworld Arts Academy, the ultra-premium multi-tenant digital workspace for student learning and focused coordinator administration.",
     url: "https://eden-academy.org",
-    siteName: "Eden Academy",
+    siteName: "Loveworld Arts Academy",
     images: [
       {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "Eden Academy Portal Workspace Preview",
+        alt: "Loveworld Arts Academy Portal Workspace Preview",
       },
     ],
     locale: "en_US",
@@ -31,8 +31,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Eden Academy — Premium Creative Governance Platform",
-    description: "Discover Eden Academy, the ultra-premium multi-tenant digital workspace for student learning and focused coordinator administration.",
+    title: "Loveworld Arts Academy — Premium Creative Governance Platform",
+    description: "Discover Loveworld Arts Academy, the ultra-premium multi-tenant digital workspace for student learning and focused coordinator administration.",
     images: ["/og-image.png"],
     creator: "@CreedTech",
   },

@@ -161,7 +161,7 @@ export default function LandingPage() {
                     <div className="flex items-center space-x-2.5 mb-2 pb-3 border-b border-gray-200/50 dark:border-white/5">
                       <div className="w-7 h-7 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 text-white flex items-center justify-center font-black text-xs shadow-md">E</div>
                       <div>
-                        <span className="font-extrabold text-gray-955 dark:text-white text-xs block leading-none">Eden Academy</span>
+                        <span className="font-extrabold text-gray-955 dark:text-white text-xs block leading-none">Loveworld Arts Academy</span>
                         <span className="text-[8px] text-gray-400 mt-0.5 block leading-none">Dance Faculty</span>
                       </div>
                     </div>

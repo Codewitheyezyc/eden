@@ -1,18 +1,24 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Logo } from "@/components/ui/logo";
-import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { createClient } from "@/services/supabase/client";
 import { Mail, ArrowRight, RefreshCw, CheckCircle, HelpCircle } from "lucide-react";
 
 export default function VerifyEmailPage() {
+  const [email, setEmail] = useState("");
   const [isResending, setIsResending] = useState(false);
   const [resendStatus, setResendStatus] = useState<"idle" | "success" | "error">("idle");
   const [countdown, setCountdown] = useState(0);
   const supabase = createClient();
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("pending_verification_email") || "";
+      setEmail(stored);
+    }
+  }, []);
 
   const handleResend = async () => {
     if (countdown > 0) return;
@@ -20,9 +26,7 @@ export default function VerifyEmailPage() {
     setResendStatus("idle");
 
     try {
-      // In a real application, you'd get the email from state or local storage
-      const storedEmail = localStorage.getItem("pending_verification_email") || "";
-      if (!storedEmail) {
+      if (!email || !email.includes("@")) {
         setResendStatus("error");
         setIsResending(false);
         return;
@@ -30,10 +34,13 @@ export default function VerifyEmailPage() {
 
       const { error } = await supabase.auth.resend({
         type: "signup",
-        email: storedEmail,
+        email: email.trim(),
       });
 
       if (error) throw error;
+
+      // Keep it stored for subsequent sessions/resends
+      localStorage.setItem("pending_verification_email", email.trim());
 
       setResendStatus("success");
       setCountdown(60);
@@ -82,6 +89,20 @@ export default function VerifyEmailPage() {
       <p className="text-xs text-gray-500 dark:text-gray-400 text-center mb-6 max-w-xs leading-relaxed font-normal">
         We sent a secure, one-click verification link to your inbox. Tap the link inside the email to instantly activate your account.
       </p>
+
+      {/* Dynamic Email Input for Resending */}
+      <div className="w-full space-y-1.5 mb-6 text-left">
+        <label className="block text-[9px] font-extrabold text-gray-400 dark:text-gray-500 uppercase tracking-widest">
+          Verification Email Address:
+        </label>
+        <input
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="name@example.com"
+          className="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-2.5 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500 text-gray-900 dark:text-white"
+        />
+      </div>
 
       {/* Instruction Checklist */}
       <div className="w-full bg-gray-50/50 dark:bg-white/5 border border-gray-200/50 dark:border-white/5 rounded-2xl p-4 mb-6 text-left space-y-3">
@@ -141,7 +162,7 @@ export default function VerifyEmailPage() {
       )}
       {resendStatus === "error" && (
         <div className="w-full p-3 bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 rounded-xl text-center text-[11px] font-semibold animate-in fade-in duration-300">
-          Failed to resend. Please check your credentials or register again.
+          Failed to resend. Please check the email address or register again.
         </div>
       )}
     </div>

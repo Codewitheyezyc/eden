@@ -25,7 +25,7 @@ import {
   getInputClass,
   getBadgeClass,
   getTypographyClass
-} from "@/lib/design-system";
+} from "../../lib/design-system";
 
 export default function DesignSystemPage() {
   const [copiedToken, setCopiedToken] = useState<string | null>(null);

@@ -527,7 +527,7 @@ export default async function FacultyDashboardPage({
                           <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{userObj?.full_name || 'Anonymous Student'}</p>
                           {profile?.is_verified && <VerifiedBadge className="w-3.5 h-3.5 shrink-0" />}
                         </div>
-                        <p className="text-xs text-gray-500 truncate">{profile?.campus_zone || userObj?.email}</p>
+                        <p className="text-xs text-gray-500 truncate">{profile?.campus_zone ? parseCampuses(profile.campus_zone).join(", ") : userObj?.email}</p>
                       </div>
                       <div className="text-xs text-gray-400 whitespace-nowrap ml-2">
                         Joined {timeAgo(s.created_at)}

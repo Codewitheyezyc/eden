@@ -10,6 +10,7 @@ import {
   removeUsersFromFaculty,
   clearAllUsersFromFaculty
 } from "@/app/dashboard/[facultySlug]/directory-actions";
+import { parseCampuses } from "@/lib/campuses";
 
 export interface DirectoryUser {
   id: string;
@@ -233,7 +234,7 @@ export function DirectoryGrid({ title, users, currentUserRole, facultyId, facult
                 <h3 className="font-bold text-gray-900 dark:text-white truncate">{user.full_name || "Anonymous User"}</h3>
                 {user.profile?.is_verified && <VerifiedBadge className="w-4 h-4 shrink-0" />}
               </div>
-              <p className="text-sm text-gray-500 dark:text-gray-400 truncate w-full">{user.profile?.campus_zone || user.email}</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400 truncate w-full">{user.profile?.campus_zone ? parseCampuses(user.profile.campus_zone).join(", ") : user.email}</p>
             </div>
             
             <div className="mt-4 pt-4 border-t border-gray-100 dark:border-white/5 w-full flex justify-between items-center px-2">
@@ -351,7 +352,7 @@ export function DirectoryGrid({ title, users, currentUserRole, facultyId, facult
               <div className="grid sm:grid-cols-2 gap-6 mb-8">
                 <div className="space-y-1">
                   <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Campus / Zone</span>
-                  <p className="font-medium text-gray-900 dark:text-white">{selectedUser.profile?.campus_zone || "Not provided"}</p>
+                  <p className="font-medium text-gray-900 dark:text-white">{selectedUser.profile?.campus_zone ? parseCampuses(selectedUser.profile.campus_zone).join(", ") : "Not provided"}</p>
                 </div>
                 <div className="space-y-1">
                   <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Kingschat Handle</span>

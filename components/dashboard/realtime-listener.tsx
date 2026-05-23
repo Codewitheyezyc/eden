@@ -52,6 +52,32 @@ export function RealtimeDashboardListener({ facultyId }: { facultyId: string }) 
           router.refresh();
         }
       )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "announcements",
+          filter: `faculty_id=eq.${facultyId}`
+        },
+        (payload) => {
+          console.log("Realtime update (announcements):", payload);
+          router.refresh();
+        }
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "courses",
+          filter: `faculty_id=eq.${facultyId}`
+        },
+        (payload) => {
+          console.log("Realtime update (courses):", payload);
+          router.refresh();
+        }
+      )
       .subscribe((status) => {
         console.log("Realtime subscription status:", status);
       });

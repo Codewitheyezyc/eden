@@ -54,7 +54,7 @@ export function AnnouncementsClient({ initialAnnouncements, facultyId, facultySl
   const [selectedTargetCampuses, setSelectedTargetCampuses] = useState<string[]>([]);
   const [targetDropdownOpen, setTargetDropdownOpen] = useState(false);
 
-  const canManage = role === "ADMIN" || role === "COORDINATOR";
+  const canManage = role === "ADMIN";
 
   const startEdit = (msg: Announcement) => {
     setEditingAnnouncement(msg);

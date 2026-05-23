@@ -15,6 +15,7 @@ import {
   removeUsersFromFaculty, 
   clearAllUsersFromFaculty 
 } from "@/app/dashboard/[facultySlug]/directory-actions";
+import { parseCampuses } from "@/lib/campuses";
 
 interface UsersManagementClientProps {
   initialUsers: DirectoryUser[];
@@ -289,7 +290,7 @@ export function UsersManagementClient({ initialUsers, facultyId, facultySlug, cu
                     {/* Campus Mapping */}
                     <td className="p-4">
                       <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                        {user.profile?.campus_zone || <span className="text-gray-400 italic">Not set</span>}
+                        {user.profile?.campus_zone ? parseCampuses(user.profile.campus_zone).join(", ") : <span className="text-gray-400 italic">Not set</span>}
                       </span>
                     </td>
 
@@ -469,7 +470,7 @@ export function UsersManagementClient({ initialUsers, facultyId, facultySlug, cu
                 <div className="grid sm:grid-cols-2 gap-6 mb-8">
                   <div className="space-y-1">
                     <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Campus / Zone</span>
-                    <p className="font-medium text-gray-900 dark:text-white">{selectedUser.profile?.campus_zone || "Not provided"}</p>
+                    <p className="font-medium text-gray-900 dark:text-white">{selectedUser.profile?.campus_zone ? parseCampuses(selectedUser.profile.campus_zone).join(", ") : "Not provided"}</p>
                   </div>
                   <div className="space-y-1">
                     <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Kingschat Handle</span>

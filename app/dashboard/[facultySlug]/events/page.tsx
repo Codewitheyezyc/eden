@@ -46,8 +46,8 @@ export default async function EventsPage({ params }: { params: { facultySlug: st
           <p className="text-gray-500 dark:text-gray-400 mt-1.5">View and mark your attendance for faculty events.</p>
         </div>
 
-        {/* Admin or Coordinator Create Button */}
-        {(role === "ADMIN" || role === "COORDINATOR") && (
+        {/* Admin Only Create Button */}
+        {role === "ADMIN" && (
           <CreateEventButton facultyId={faculty.id} />
         )}
       </div>

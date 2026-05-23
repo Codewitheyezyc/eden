@@ -2,6 +2,8 @@
 
 import { createClient } from "@/services/supabase/server";
 import { revalidatePath } from "next/cache";
+import { formatCampusesForDb } from "@/lib/campuses";
+
 
 export async function updateProfile(data: {
   fullName: string;
@@ -25,6 +27,12 @@ export async function updateProfile(data: {
 
   if (userError) throw new Error(userError.message);
 
+  // Convert comma-separated string back to array and serialize as JSON
+  const campusArray = data.campusZone
+    ? data.campusZone.split(",").map(c => c.trim()).filter(Boolean)
+    : [];
+  const dbCampusZone = formatCampusesForDb(campusArray);
+
   // Update public.profiles
   const { error: profileError } = await supabase
     .from("profiles")
@@ -32,7 +40,7 @@ export async function updateProfile(data: {
       phone: data.phone || null,
       gender: data.gender || null,
       kingschat_handle: data.kingschatHandle || null,
-      campus_zone: data.campusZone || null,
+      campus_zone: dbCampusZone || null,
       date_of_birth: data.dateOfBirth || null,
       bio: data.bio || null,
       updated_at: new Date().toISOString(),

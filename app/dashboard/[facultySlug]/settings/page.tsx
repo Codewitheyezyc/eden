@@ -1,6 +1,7 @@
 import { createClient } from "@/services/supabase/server";
 import { redirect } from "next/navigation";
 import { SettingsClient } from "./settings-client";
+import { parseCampuses } from "@/lib/campuses";
 
 export default async function SettingsPage({
   params,
@@ -50,7 +51,7 @@ export default async function SettingsPage({
     phone: profile?.phone || "",
     gender: profile?.gender || "",
     kingschatHandle: profile?.kingschat_handle || "",
-    campusZone: profile?.campus_zone || "",
+    campusZone: parseCampuses(profile?.campus_zone).join(", "),
     dateOfBirth: profile?.date_of_birth || "",
     bio: profile?.bio || "",
   };

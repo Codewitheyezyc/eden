@@ -25,7 +25,7 @@ export async function createAnnouncement(
     .eq("faculty_id", facultyId)
     .single();
 
-  if (!access || (access.role !== "ADMIN" && access.role !== "COORDINATOR")) {
+  if (!access || access.role !== "ADMIN") {
     throw new Error("Unauthorized access level");
   }
 
@@ -127,7 +127,7 @@ export async function deleteAnnouncement(announcementId: string) {
     .eq("faculty_id", ann.faculty_id)
     .single();
 
-  if (!access || (access.role !== "ADMIN" && access.role !== "COORDINATOR")) {
+  if (!access || access.role !== "ADMIN") {
     throw new Error("Unauthorized access level");
   }
 
@@ -171,7 +171,7 @@ export async function updateAnnouncement(
     .eq("faculty_id", ann.faculty_id)
     .single();
 
-  if (!access || (access.role !== "ADMIN" && access.role !== "COORDINATOR")) {
+  if (!access || access.role !== "ADMIN") {
     throw new Error("Unauthorized access level");
   }
 

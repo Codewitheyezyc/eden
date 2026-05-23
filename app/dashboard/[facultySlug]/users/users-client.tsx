@@ -11,9 +11,9 @@ import { cn } from "@/lib/utils";
 import { DirectoryUser } from "@/components/dashboard/directory-grid";
 import { 
   updateUserRole, 
-  removeUserFromFaculty, 
-  removeUsersFromFaculty, 
-  clearAllUsersFromFaculty 
+  deleteUserAccount, 
+  deleteUserAccounts, 
+  deleteAllUsersByRole 
 } from "@/app/dashboard/[facultySlug]/directory-actions";
 import { parseCampuses } from "@/lib/campuses";
 
@@ -83,11 +83,11 @@ export function UsersManagementClient({ initialUsers, facultyId, facultySlug, cu
     setIsUpdating(false);
   };
 
-  const handleRemoveSingleUser = async () => {
+  const handleDeleteSingleUser = async () => {
     if (!deleteConfirmUser) return;
     setIsRemoving(true);
     setError(null);
-    const result = await removeUserFromFaculty(deleteConfirmUser.id, facultyId, facultySlug);
+    const result = await deleteUserAccount(deleteConfirmUser.id, facultyId, facultySlug);
     if (result.error) {
       setError(result.error);
       alert(result.error);
@@ -96,16 +96,16 @@ export function UsersManagementClient({ initialUsers, facultyId, facultySlug, cu
       setSelectedUserIds(prev => prev.filter(id => id !== deleteConfirmUser.id));
       setDeleteConfirmUser(null);
       setSelectedUser(null);
-      alert("User removed from faculty successfully!");
+      alert("User account and profile deleted completely from the system!");
     }
     setIsRemoving(false);
   };
 
-  const handleRemoveBulkUsers = async () => {
+  const handleDeleteBulkUsers = async () => {
     if (selectedUserIds.length === 0) return;
     setIsRemoving(true);
     setError(null);
-    const result = await removeUsersFromFaculty(selectedUserIds, facultyId, facultySlug);
+    const result = await deleteUserAccounts(selectedUserIds, facultyId, facultySlug);
     if (result.error) {
       setError(result.error);
       alert(result.error);
@@ -113,12 +113,12 @@ export function UsersManagementClient({ initialUsers, facultyId, facultySlug, cu
       setUsers(prev => prev.filter(u => !selectedUserIds.includes(u.id)));
       setSelectedUserIds([]);
       setDeleteConfirmBulk(false);
-      alert("Selected users removed from faculty successfully!");
+      alert("Selected user accounts deleted completely from the system!");
     }
     setIsRemoving(false);
   };
 
-  const handleClearDirectory = async () => {
+  const handleDeleteAllUsersByRole = async () => {
     if (confirmText !== "DELETE ALL") {
       alert("Please type 'DELETE ALL' to confirm!");
       return;
@@ -129,7 +129,7 @@ export function UsersManagementClient({ initialUsers, facultyId, facultySlug, cu
     // We clear students or coordinators based on current tab selection
     const roleFilter = selectedRoleTab === "COORDINATOR" ? "COORDINATOR" : "STUDENT";
 
-    const result = await clearAllUsersFromFaculty(roleFilter, facultyId, facultySlug);
+    const result = await deleteAllUsersByRole(roleFilter, facultyId, facultySlug);
     if (result.error) {
       setError(result.error);
       alert(result.error);
@@ -138,7 +138,7 @@ export function UsersManagementClient({ initialUsers, facultyId, facultySlug, cu
       setSelectedUserIds([]);
       setConfirmText("");
       setDeleteConfirmClear(false);
-      alert(`All registered ${roleFilter.toLowerCase()}s cleared successfully!`);
+      alert(`All registered ${roleFilter.toLowerCase()} accounts deleted completely from the system!`);
     }
     setIsRemoving(false);
   };
@@ -205,7 +205,7 @@ export function UsersManagementClient({ initialUsers, facultyId, facultySlug, cu
             className="inline-flex items-center space-x-1.5 px-4 py-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 text-xs font-bold rounded-xl transition-all border border-rose-500/20"
           >
             <Trash2 className="w-3.5 h-3.5" />
-            <span>Remove Selected ({selectedUserIds.length})</span>
+            <span>Delete Selected Accounts ({selectedUserIds.length})</span>
           </button>
         </div>
       )}
@@ -342,7 +342,7 @@ export function UsersManagementClient({ initialUsers, facultyId, facultySlug, cu
                           <button
                             onClick={() => setDeleteConfirmUser(user)}
                             className="inline-flex items-center justify-center p-1.5 text-gray-400 hover:text-rose-500 bg-gray-50 dark:bg-white/5 rounded-xl border border-gray-200/50 dark:border-white/5 hover:border-rose-500/20 transition-all shadow-sm"
-                            title="Remove User"
+                            title="Delete User Account"
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
@@ -384,7 +384,7 @@ export function UsersManagementClient({ initialUsers, facultyId, facultySlug, cu
             className="inline-flex items-center space-x-1.5 px-4 py-2.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 text-xs font-bold rounded-2xl border border-amber-500/20 transition-all shadow-sm"
           >
             <UserMinus className="w-4 h-4" />
-            <span>Clear Roster: All {selectedRoleTab.toLowerCase()}s</span>
+            <span>Delete All {selectedRoleTab.toLowerCase()}s</span>
           </button>
         </div>
       )}
@@ -453,7 +453,7 @@ export function UsersManagementClient({ initialUsers, facultyId, facultySlug, cu
                             className="inline-flex items-center space-x-1.5 px-3 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 text-xs font-bold rounded-lg border border-rose-500/20 transition-all shadow-sm"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
-                            <span>Remove User</span>
+                            <span>Delete Account</span>
                           </button>
                         </div>
                       ) : (
@@ -511,10 +511,10 @@ export function UsersManagementClient({ initialUsers, facultyId, facultySlug, cu
           <div className="relative w-full max-w-md bg-white dark:bg-[#0b0b0d] border border-gray-200/50 dark:border-white/10 shadow-2xl rounded-3xl p-6 overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="flex items-center space-x-3 text-rose-500 mb-4">
               <ShieldAlert className="w-8 h-8 animate-pulse" />
-              <h3 className="text-lg font-extrabold tracking-tight">Confirm User Removal</h3>
+              <h3 className="text-lg font-extrabold tracking-tight">Confirm Account Deletion</h3>
             </div>
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-6 leading-relaxed">
-              Are you sure you want to remove <span className="font-bold text-gray-900 dark:text-white">{deleteConfirmUser.full_name || "this user"}</span> from the faculty? This action will revoke all their workspace access privileges.
+              Are you sure you want to permanently delete the account of <span className="font-bold text-gray-900 dark:text-white">{deleteConfirmUser.full_name || "this user"}</span>? This action is <span className="text-rose-500 font-bold">irreversible</span> and will permanently erase their login credentials, profile, and database records from the system.
             </p>
             <div className="flex justify-end space-x-3">
               <button
@@ -525,12 +525,12 @@ export function UsersManagementClient({ initialUsers, facultyId, facultySlug, cu
                 Cancel
               </button>
               <button
-                onClick={handleRemoveSingleUser}
+                onClick={handleDeleteSingleUser}
                 disabled={isRemoving}
                 className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl transition-all flex items-center space-x-1.5"
               >
                 {isRemoving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                <span>Confirm Removal</span>
+                <span>Delete Account</span>
               </button>
             </div>
           </div>
@@ -545,26 +545,26 @@ export function UsersManagementClient({ initialUsers, facultyId, facultySlug, cu
           <div className="relative w-full max-w-md bg-white dark:bg-[#0b0b0d] border border-gray-200/50 dark:border-white/10 shadow-2xl rounded-3xl p-6 overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="flex items-center space-x-3 text-rose-500 mb-4">
               <ShieldAlert className="w-8 h-8 animate-pulse" />
-              <h3 className="text-lg font-extrabold tracking-tight">Confirm Bulk Removal</h3>
+              <h3 className="text-lg font-extrabold tracking-tight">Confirm Bulk Account Deletion</h3>
             </div>
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-6 leading-relaxed">
-              Are you sure you want to remove the <span className="font-bold text-rose-600 dark:text-rose-400">{selectedUserIds.length} selected users</span> from this faculty? This will revoke workspace access for all selected members simultaneously.
+              Are you sure you want to permanently delete the <span className="font-bold text-rose-600 dark:text-rose-400">{selectedUserIds.length} selected user accounts</span>? This action is <span className="text-rose-500 font-bold">irreversible</span> and will wipe out all corresponding logins and details from the system.
             </p>
             <div className="flex justify-end space-x-3">
               <button
                 onClick={() => setDeleteConfirmBulk(false)}
                 disabled={isRemoving}
-                className="px-4 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-white/5 dark:hover:bg-white/10 text-gray-700 dark:text-gray-300 text-xs font-bold rounded-xl transition-all"
+                className="px-4 py-2 bg-gray-150 hover:bg-gray-250 dark:bg-white/5 dark:hover:bg-white/10 text-gray-700 dark:text-gray-300 text-xs font-bold rounded-xl transition-all"
               >
                 Cancel
               </button>
               <button
-                onClick={handleRemoveBulkUsers}
+                onClick={handleDeleteBulkUsers}
                 disabled={isRemoving}
                 className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl transition-all flex items-center space-x-1.5"
               >
                 {isRemoving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                <span>Confirm Bulk Removal</span>
+                <span>Delete Selected</span>
               </button>
             </div>
           </div>
@@ -582,7 +582,7 @@ export function UsersManagementClient({ initialUsers, facultyId, facultySlug, cu
               <h3 className="text-lg font-extrabold tracking-tight">HIGHLY DESTRUCTIVE ACTION</h3>
             </div>
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-4 leading-relaxed">
-              You are about to remove <span className="font-bold text-red-500 font-mono">ALL registered {selectedRoleTab.toLowerCase()}s</span> from this faculty. This action is irreversible and will wipe out all corresponding membership mappings.
+              You are about to permanently delete <span className="font-bold text-red-500 font-mono">ALL registered {selectedRoleTab.toLowerCase()} accounts</span>. This action is irreversible and will permanently wipe out all profiles and credentials from the system database.
             </p>
             
             <div className="space-y-2 mb-6">
@@ -607,12 +607,12 @@ export function UsersManagementClient({ initialUsers, facultyId, facultySlug, cu
                 Cancel
               </button>
               <button
-                onClick={handleClearDirectory}
+                onClick={handleDeleteAllUsersByRole}
                 disabled={isRemoving || confirmText !== "DELETE ALL"}
                 className="px-4 py-2 bg-amber-600 hover:bg-amber-700 disabled:opacity-30 text-white text-xs font-bold rounded-xl transition-all flex items-center space-x-1.5"
               >
                 {isRemoving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                <span>Clear All Members</span>
+                <span>Delete All Members</span>
               </button>
             </div>
           </div>

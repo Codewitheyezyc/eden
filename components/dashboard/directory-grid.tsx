@@ -6,11 +6,12 @@ import { createPortal } from "react-dom";
 import { Loader2, Trash2, UserMinus, ShieldAlert, CheckSquare, Square } from "lucide-react";
 import { 
   updateUserRole,
-  removeUserFromFaculty,
-  removeUsersFromFaculty,
-  clearAllUsersFromFaculty
+  deleteUserAccount,
+  deleteUserAccounts,
+  deleteAllUsersByRole
 } from "@/app/dashboard/[facultySlug]/directory-actions";
 import { parseCampuses } from "@/lib/campuses";
+
 
 export interface DirectoryUser {
   id: string;
@@ -50,11 +51,11 @@ export function DirectoryGrid({ title, users, currentUserRole, facultyId, facult
   const [confirmText, setConfirmText] = useState("");
   const [isRemoving, setIsRemoving] = useState(false);
 
-  const handleRemoveSingleUser = async () => {
+  const handleDeleteSingleUser = async () => {
     if (!deleteConfirmUser || !facultyId || !facultySlug) return;
     setIsRemoving(true);
     setError(null);
-    const result = await removeUserFromFaculty(deleteConfirmUser.id, facultyId, facultySlug);
+    const result = await deleteUserAccount(deleteConfirmUser.id, facultyId, facultySlug);
     if (result.error) {
       setError(result.error);
       alert(result.error);
@@ -62,28 +63,30 @@ export function DirectoryGrid({ title, users, currentUserRole, facultyId, facult
       setSelectedUser(null);
       setDeleteConfirmUser(null);
       setSelectedUserIds(selectedUserIds.filter(id => id !== deleteConfirmUser.id));
-      alert("User removed from faculty successfully!");
+      alert("User account and profile deleted completely from the system!");
+      window.location.reload();
     }
     setIsRemoving(false);
   };
 
-  const handleRemoveBulkUsers = async () => {
+  const handleDeleteBulkUsers = async () => {
     if (selectedUserIds.length === 0 || !facultyId || !facultySlug) return;
     setIsRemoving(true);
     setError(null);
-    const result = await removeUsersFromFaculty(selectedUserIds, facultyId, facultySlug);
+    const result = await deleteUserAccounts(selectedUserIds, facultyId, facultySlug);
     if (result.error) {
       setError(result.error);
       alert(result.error);
     } else {
       setSelectedUserIds([]);
       setDeleteConfirmBulk(false);
-      alert(`${selectedUserIds.length} users removed from faculty successfully!`);
+      alert("Selected user accounts deleted completely from the system!");
+      window.location.reload();
     }
     setIsRemoving(false);
   };
 
-  const handleClearDirectory = async () => {
+  const handleDeleteAllUsersByRole = async () => {
     if (!facultyId || !facultySlug) return;
     if (confirmText !== "DELETE ALL") {
       alert("Please type 'DELETE ALL' to confirm!");
@@ -94,7 +97,7 @@ export function DirectoryGrid({ title, users, currentUserRole, facultyId, facult
 
     const roleFilter = title.toLowerCase().includes("student") ? "STUDENT" : "COORDINATOR";
 
-    const result = await clearAllUsersFromFaculty(roleFilter, facultyId, facultySlug);
+    const result = await deleteAllUsersByRole(roleFilter, facultyId, facultySlug);
     if (result.error) {
       setError(result.error);
       alert(result.error);
@@ -102,10 +105,12 @@ export function DirectoryGrid({ title, users, currentUserRole, facultyId, facult
       setSelectedUserIds([]);
       setConfirmText("");
       setDeleteConfirmClear(false);
-      alert(`Directory cleared successfully!`);
+      alert(`All registered ${roleFilter.toLowerCase()} accounts deleted completely from the system!`);
+      window.location.reload();
     }
     setIsRemoving(false);
   };
+
 
   const handleRoleChange = async (newRole: "STUDENT" | "COORDINATOR" | "ADMIN") => {
     if (!selectedUser || !facultyId || !facultySlug) return;
@@ -175,7 +180,7 @@ export function DirectoryGrid({ title, users, currentUserRole, facultyId, facult
                 className="w-full sm:w-auto inline-flex items-center justify-center space-x-1.5 px-4 py-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 text-xs font-bold rounded-xl transition-all border border-rose-500/20"
               >
                 <Trash2 className="w-3.5 h-3.5" />
-                <span>Remove Selected</span>
+                <span>Delete Selected Accounts</span>
               </button>
             )}
             <button
@@ -187,7 +192,7 @@ export function DirectoryGrid({ title, users, currentUserRole, facultyId, facult
               className="w-full sm:w-auto inline-flex items-center justify-center space-x-1.5 px-4 py-2 bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 text-xs font-bold rounded-xl transition-all border border-amber-500/20"
             >
               <UserMinus className="w-3.5 h-3.5" />
-              <span>Clear Directory</span>
+              <span>Delete All {title.toLowerCase().includes("student") ? "Students" : "Coordinators"}</span>
             </button>
           </div>
         </div>
@@ -332,7 +337,7 @@ export function DirectoryGrid({ title, users, currentUserRole, facultyId, facult
                           className="inline-flex items-center space-x-1.5 px-3 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 text-xs font-bold rounded-lg border border-rose-500/20 transition-all shadow-sm"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
-                          <span>Remove User</span>
+                          <span>Delete Account</span>
                         </button>
                       </div>
                     ) : (
@@ -474,10 +479,10 @@ export function DirectoryGrid({ title, users, currentUserRole, facultyId, facult
           <div className="relative w-full max-w-md bg-white dark:bg-[#0b0b0d] border border-gray-200/50 dark:border-white/10 shadow-2xl rounded-3xl p-6 overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="flex items-center space-x-3 text-rose-500 mb-4">
               <ShieldAlert className="w-8 h-8 animate-pulse" />
-              <h3 className="text-lg font-extrabold tracking-tight">Confirm User Removal</h3>
+              <h3 className="text-lg font-extrabold tracking-tight">Confirm Account Deletion</h3>
             </div>
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-6 leading-relaxed">
-              Are you sure you want to remove <span className="font-bold text-gray-900 dark:text-white">{deleteConfirmUser.full_name || "this user"}</span> from the faculty? This action will revoke all their workspace access privileges.
+              Are you sure you want to permanently delete the account of <span className="font-bold text-gray-900 dark:text-white">{deleteConfirmUser.full_name || "this user"}</span>? This action is <span className="text-rose-500 font-bold">irreversible</span> and will permanently erase their login credentials, profile, and database records from the system.
             </p>
             <div className="flex justify-end space-x-3">
               <button
@@ -488,12 +493,12 @@ export function DirectoryGrid({ title, users, currentUserRole, facultyId, facult
                 Cancel
               </button>
               <button
-                onClick={handleRemoveSingleUser}
+                onClick={handleDeleteSingleUser}
                 disabled={isRemoving}
                 className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl transition-all flex items-center space-x-1.5"
               >
                 {isRemoving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                <span>Confirm Removal</span>
+                <span>Delete Account</span>
               </button>
             </div>
           </div>
@@ -508,10 +513,10 @@ export function DirectoryGrid({ title, users, currentUserRole, facultyId, facult
           <div className="relative w-full max-w-md bg-white dark:bg-[#0b0b0d] border border-gray-200/50 dark:border-white/10 shadow-2xl rounded-3xl p-6 overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="flex items-center space-x-3 text-rose-500 mb-4">
               <ShieldAlert className="w-8 h-8 animate-pulse" />
-              <h3 className="text-lg font-extrabold tracking-tight">Confirm Bulk Removal</h3>
+              <h3 className="text-lg font-extrabold tracking-tight">Confirm Bulk Account Deletion</h3>
             </div>
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-6 leading-relaxed">
-              Are you sure you want to remove the <span className="font-bold text-rose-600 dark:text-rose-400">{selectedUserIds.length} selected users</span> from this faculty? This will revoke workspace access for all selected members simultaneously.
+              Are you sure you want to permanently delete the <span className="font-bold text-rose-600 dark:text-rose-400">{selectedUserIds.length} selected user accounts</span>? This action is <span className="text-rose-500 font-bold">irreversible</span> and will wipe out all corresponding logins and details from the system.
             </p>
             <div className="flex justify-end space-x-3">
               <button
@@ -522,12 +527,12 @@ export function DirectoryGrid({ title, users, currentUserRole, facultyId, facult
                 Cancel
               </button>
               <button
-                onClick={handleRemoveBulkUsers}
+                onClick={handleDeleteBulkUsers}
                 disabled={isRemoving}
                 className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl transition-all flex items-center space-x-1.5"
               >
                 {isRemoving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                <span>Confirm Bulk Removal</span>
+                <span>Delete Selected</span>
               </button>
             </div>
           </div>
@@ -545,7 +550,7 @@ export function DirectoryGrid({ title, users, currentUserRole, facultyId, facult
               <h3 className="text-lg font-extrabold tracking-tight">HIGHLY DESTRUCTIVE ACTION</h3>
             </div>
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-4 leading-relaxed">
-              You are about to remove <span className="font-bold text-red-500 font-mono">ALL registered {title.toLowerCase()}</span> from this faculty. This action is irreversible and will wipe out all corresponding membership mappings.
+              You are about to permanently delete <span className="font-bold text-red-500 font-mono">ALL registered {title.toLowerCase()} accounts</span>. This action is irreversible and will permanently wipe out all profiles and credentials from the system database.
             </p>
             
             <div className="space-y-2 mb-6">
@@ -570,12 +575,12 @@ export function DirectoryGrid({ title, users, currentUserRole, facultyId, facult
                 Cancel
               </button>
               <button
-                onClick={handleClearDirectory}
+                onClick={handleDeleteAllUsersByRole}
                 disabled={isRemoving || confirmText !== "DELETE ALL"}
                 className="px-4 py-2 bg-amber-600 hover:bg-amber-700 disabled:opacity-30 text-white text-xs font-bold rounded-xl transition-all flex items-center space-x-1.5"
               >
                 {isRemoving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                <span>Clear All Members</span>
+                <span>Delete All Members</span>
               </button>
             </div>
           </div>

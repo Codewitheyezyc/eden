@@ -42,7 +42,7 @@ export async function updateUserRole(userId: string, facultyId: string, newRole:
   return { success: true };
 }
 
-export async function removeUserFromFaculty(userId: string, facultyId: string, facultySlug: string) {
+export async function deleteUserAccount(userId: string, facultyId: string, facultySlug: string) {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -59,19 +59,15 @@ export async function removeUserFromFaculty(userId: string, facultyId: string, f
     .single();
 
   if (currentUserAccess?.role !== "ADMIN") {
-    return { error: "Only admins can remove users." };
+    return { error: "Only admins can delete user accounts." };
   }
 
   // Don't allow removing yourself
   if (userId === user.id) {
-    return { error: "You cannot remove yourself from this faculty." };
+    return { error: "You cannot delete your own account." };
   }
 
-  const { error } = await supabase
-    .from("user_faculties")
-    .delete()
-    .eq("user_id", userId)
-    .eq("faculty_id", facultyId);
+  const { error } = await supabase.rpc("delete_user_account", { target_user_id: userId });
 
   if (error) {
     return { error: error.message };
@@ -81,7 +77,7 @@ export async function removeUserFromFaculty(userId: string, facultyId: string, f
   return { success: true };
 }
 
-export async function removeUsersFromFaculty(userIds: string[], facultyId: string, facultySlug: string) {
+export async function deleteUserAccounts(userIds: string[], facultyId: string, facultySlug: string) {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -98,21 +94,17 @@ export async function removeUsersFromFaculty(userIds: string[], facultyId: strin
     .single();
 
   if (currentUserAccess?.role !== "ADMIN") {
-    return { error: "Only admins can remove users." };
+    return { error: "Only admins can delete user accounts." };
   }
 
   // Filter out the active admin user's ID
   const targetIds = userIds.filter(id => id !== user.id);
 
   if (targetIds.length === 0) {
-    return { error: "No valid users selected to remove." };
+    return { error: "No valid users selected to delete." };
   }
 
-  const { error } = await supabase
-    .from("user_faculties")
-    .delete()
-    .eq("faculty_id", facultyId)
-    .in("user_id", targetIds);
+  const { error } = await supabase.rpc("delete_user_accounts", { target_user_ids: targetIds });
 
   if (error) {
     return { error: error.message };
@@ -122,7 +114,7 @@ export async function removeUsersFromFaculty(userIds: string[], facultyId: strin
   return { success: true };
 }
 
-export async function clearAllUsersFromFaculty(roleFilter: "STUDENT" | "COORDINATOR", facultyId: string, facultySlug: string) {
+export async function deleteAllUsersByRole(roleFilter: "STUDENT" | "COORDINATOR", facultyId: string, facultySlug: string) {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -139,14 +131,13 @@ export async function clearAllUsersFromFaculty(roleFilter: "STUDENT" | "COORDINA
     .single();
 
   if (currentUserAccess?.role !== "ADMIN") {
-    return { error: "Only admins can clear users." };
+    return { error: "Only admins can delete user accounts." };
   }
 
-  const { error } = await supabase
-    .from("user_faculties")
-    .delete()
-    .eq("faculty_id", facultyId)
-    .eq("role", roleFilter);
+  const { error } = await supabase.rpc("delete_all_users_by_role", { 
+    role_filter: roleFilter, 
+    f_id: facultyId 
+  });
 
   if (error) {
     return { error: error.message };

@@ -180,7 +180,7 @@ export function LeaderProfileClient({ leader, viewerRole, facultySlug, facultyId
       <div className="flex items-center justify-between gap-4">
         <a 
           href={`/dashboard/${facultySlug}/hq-leaders`}
-          className="inline-flex items-center gap-1.5 px-4 py-2 bg-white dark:bg-[#0a0a0a] hover:bg-gray-50 dark:hover:bg-white/5 border border-gray-200/50 dark:border-white/5 rounded-2xl text-xs font-bold text-gray-600 dark:text-gray-400 transition-colors shadow-sm"
+          className="inline-flex items-center gap-1.5 px-4 py-2 bg-white dark:bg-[#0a0a0a] hover:bg-gray-100 dark:hover:bg-white/5 border border-gray-300 dark:border-white/10 rounded-2xl text-xs font-extrabold text-gray-900 hover:text-emerald-600 dark:text-gray-200 dark:hover:text-emerald-400 transition-colors shadow-sm"
         >
           &larr; Back to Directory
         </a>
@@ -212,12 +212,12 @@ export function LeaderProfileClient({ leader, viewerRole, facultySlug, facultyId
         <div className="space-y-8">
           
           {/* SECTION A: PREMIUM HERO HEADER */}
-          <div className="relative bg-white/60 dark:bg-[#0a0a0a]/60 backdrop-blur-xl border border-gray-200/50 dark:border-white/5 rounded-3xl p-6 md:p-10 shadow-sm flex flex-col md:flex-row items-center md:items-start gap-8 overflow-hidden">
+          <div className="relative bg-white/60 dark:bg-[#0a0a0a]/60 backdrop-blur-xl border border-gray-200 dark:border-white/5 rounded-3xl p-6 md:p-10 shadow-sm flex flex-col md:flex-row items-center md:items-start gap-8 overflow-hidden">
             {/* Glowing Accent */}
             <div className="absolute -left-20 -bottom-20 w-80 h-80 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none" />
 
             {/* Leader Portrait */}
-            <div className="w-36 h-36 rounded-3xl bg-gray-100 dark:bg-black overflow-hidden border border-gray-200/60 dark:border-white/10 shrink-0 shadow-lg relative flex items-center justify-center text-4xl font-extrabold text-emerald-600 dark:text-emerald-400">
+            <div className="w-36 h-36 rounded-3xl bg-gray-100 dark:bg-black overflow-hidden border border-gray-200 dark:border-white/10 shrink-0 shadow-lg relative flex items-center justify-center text-4xl font-extrabold text-emerald-600 dark:text-emerald-400">
               {leader.avatarUrl ? (
                 <img src={leader.avatarUrl} alt="" className="w-full h-full object-cover" />
               ) : (
@@ -229,22 +229,22 @@ export function LeaderProfileClient({ leader, viewerRole, facultySlug, facultyId
             <div className="flex-1 space-y-4 text-center md:text-left min-w-0">
               <div className="space-y-2">
                 <div className="flex flex-col md:flex-row items-center gap-3">
-                  <h2 className="text-2xl md:text-4xl font-extrabold text-gray-900 dark:text-white tracking-tight leading-none">
+                  <h2 className="text-2xl md:text-4xl font-extrabold text-gray-950 dark:text-white tracking-tight leading-none">
                     {leader.fullName}
                   </h2>
-                  <span className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded-md text-[9px] font-extrabold uppercase tracking-widest leading-none mt-1">
+                  <span className="bg-emerald-500/10 text-emerald-800 dark:text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded-md text-[9px] font-extrabold uppercase tracking-widest leading-none mt-1">
                     HQ LEADER
                   </span>
                 </div>
 
                 <div className="flex flex-wrap items-center justify-center md:justify-start gap-3">
                   {/* Dynamic Gold glowing title */}
-                  <span className="inline-flex bg-gradient-to-tr from-amber-500/10 to-amber-600/5 border border-amber-500/20 dark:border-amber-500/10 px-3 py-1 rounded-xl text-xs font-bold text-amber-600 dark:text-amber-400 tracking-wider shadow-inner uppercase">
+                  <span className="inline-flex bg-gradient-to-tr from-amber-500/15 to-amber-600/10 border border-amber-500/30 dark:border-amber-500/10 px-3 py-1 rounded-xl text-xs font-bold text-amber-900 dark:text-amber-400 tracking-wider shadow-inner uppercase">
                     👑 {leader.profile.leadershipRole}
                   </span>
                   
                   {leader.profile.campusZone && (
-                    <span className="inline-flex bg-gray-100 dark:bg-white/5 border border-gray-200/50 dark:border-white/5 px-3 py-1 rounded-xl text-xs font-semibold text-gray-600 dark:text-gray-300">
+                    <span className="inline-flex bg-gray-100 dark:bg-white/5 border border-gray-300 dark:border-white/10 px-3 py-1 rounded-xl text-xs font-bold text-gray-900 dark:text-gray-200 shadow-sm">
                       📍 {parseCampuses(leader.profile.campusZone).join(", ")}
                     </span>
                   )}
@@ -252,7 +252,7 @@ export function LeaderProfileClient({ leader, viewerRole, facultySlug, facultyId
               </div>
 
               {/* Bio Block */}
-              <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed font-light max-w-3xl">
+              <p className="text-sm text-gray-700 dark:text-gray-400 leading-relaxed font-semibold max-w-3xl">
                 {leader.profile.bio || "This leader guides departments and students of Eden with absolute visual excellence, spiritual devotion, and deep creative mandate."}
               </p>
             </div>
@@ -262,42 +262,38 @@ export function LeaderProfileClient({ leader, viewerRole, facultySlug, facultyId
           <div className="grid md:grid-cols-3 gap-6">
             
             {/* Leadership Vision */}
-            <div className="md:col-span-2 bg-gradient-to-tr from-emerald-500/[0.03] to-teal-500/[0.03] backdrop-blur-xl border border-emerald-500/10 rounded-3xl p-6 md:p-8 flex flex-col justify-between space-y-6 relative overflow-hidden shadow-sm">
+            <div className="md:col-span-2 bg-gradient-to-tr from-emerald-500/[0.06] to-teal-500/[0.06] dark:from-emerald-500/[0.03] dark:to-teal-500/[0.03] backdrop-blur-xl border border-emerald-500/20 dark:border-emerald-500/15 rounded-3xl p-6 md:p-8 flex flex-col justify-between space-y-6 relative overflow-hidden shadow-sm">
               <div className="absolute right-0 top-0 w-24 h-24 bg-emerald-500/5 rounded-full blur-2xl pointer-events-none" />
               <div className="space-y-3">
-                <span className="text-3xl select-none opacity-50 block leading-none font-serif">“</span>
-                <h4 className="text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-widest">Leadership Vision & Mandate</h4>
-                <p className="text-base font-light text-gray-800 dark:text-gray-300 italic leading-relaxed pt-2">
+                <span className="text-5xl text-emerald-600 dark:text-emerald-400 select-none block leading-none font-serif font-black opacity-80">“</span>
+                <h4 className="text-xs font-extrabold text-emerald-800 dark:text-emerald-400 uppercase tracking-widest">Leadership Vision & Mandate</h4>
+                <p className="text-base font-bold text-gray-950 dark:text-gray-200 italic leading-relaxed pt-2">
                   {responsibilities || "To pioneer artistic structures, establish technical mastery within learning cadres, and mentor creative stars inside the Loveworld Arts Academy."}
                 </p>
               </div>
-              <div className="pt-4 border-t border-emerald-500/10 flex items-center justify-between text-[11px] font-bold text-emerald-700 dark:text-emerald-400">
+              <div className="pt-4 border-t border-emerald-500/25 flex items-center justify-between text-[11px] font-bold text-emerald-850 dark:text-emerald-400">
                 <span>Faculty: {facultyName}</span>
                 <span>Active Oversight</span>
               </div>
             </div>
 
             {/* General Oversight Details */}
-            <div className="bg-white/60 dark:bg-[#0a0a0a]/60 backdrop-blur-xl border border-gray-200/50 dark:border-white/5 rounded-3xl p-6 shadow-sm flex flex-col justify-between">
+            <div className="bg-white/60 dark:bg-[#0a0a0a]/60 backdrop-blur-xl border border-gray-200 dark:border-white/5 rounded-3xl p-6 shadow-sm flex flex-col justify-between">
               <div className="space-y-4">
-                <h4 className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest block pb-2 border-b border-gray-200/20 dark:border-white/5">Details of Service</h4>
+                <h4 className="text-xs font-extrabold text-gray-700 dark:text-gray-400 uppercase tracking-widest block pb-2 border-b border-gray-200/80 dark:border-white/5">Details of Service</h4>
                 
                 <div className="space-y-3 text-xs">
-                  <div className="flex justify-between py-1.5 border-b border-gray-200/10 dark:border-white/5">
-                    <span className="text-gray-500 dark:text-gray-400">Department/Unit</span>
-                    <span className="font-semibold text-gray-900 dark:text-white">{unit || "Choreography & Dance Team"}</span>
+                  <div className="flex justify-between py-1.5 border-b border-gray-200/60 dark:border-white/5">
+                    <span className="text-gray-700 dark:text-gray-400 font-bold">Department/Unit</span>
+                    <span className="font-extrabold text-gray-950 dark:text-white">{unit || "Choreography & Dance Team"}</span>
                   </div>
-                  <div className="flex justify-between py-1.5 border-b border-gray-200/10 dark:border-white/5">
-                    <span className="text-gray-500 dark:text-gray-400">Area of Oversight</span>
-                    <span className="font-semibold text-gray-900 dark:text-white">{oversight || "National Dance Faculty"}</span>
+                  <div className="flex justify-between py-1.5 border-b border-gray-200/60 dark:border-white/5">
+                    <span className="text-gray-700 dark:text-gray-400 font-bold">Area of Oversight</span>
+                    <span className="font-extrabold text-gray-950 dark:text-white">{oversight || "National Dance Faculty"}</span>
                   </div>
-                  <div className="flex justify-between py-1.5 border-b border-gray-200/10 dark:border-white/5">
-                    <span className="text-gray-500 dark:text-gray-400">Area of Oversight</span>
-                    <span className="font-semibold text-gray-900 dark:text-white">{oversight || "National Dance Faculty"}</span>
-                  </div>
-                  <div className="flex justify-between py-1.5 border-b border-gray-200/10 dark:border-white/5">
-                    <span className="text-gray-500 dark:text-gray-400">Years of Service</span>
-                    <span className="font-semibold text-gray-900 dark:text-white">{yearsOfService} Years</span>
+                  <div className="flex justify-between py-1.5 border-b border-gray-200/60 dark:border-white/5">
+                    <span className="text-gray-700 dark:text-gray-400 font-bold">Years of Service</span>
+                    <span className="font-extrabold text-gray-950 dark:text-white">{yearsOfService} Years</span>
                   </div>
                 </div>
               </div>
@@ -305,7 +301,7 @@ export function LeaderProfileClient({ leader, viewerRole, facultySlug, facultyId
               {/* Social contact tags */}
               <div className="pt-6">
                 <div className="flex gap-2">
-                  <span className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/15 px-2.5 py-1.5 rounded-xl font-bold text-[10px] uppercase tracking-wider block text-center flex-1">
+                  <span className="bg-emerald-50/80 dark:bg-emerald-500/10 text-emerald-900 dark:text-emerald-450 border border-emerald-200 dark:border-emerald-500/20 px-2.5 py-1.5 rounded-xl font-bold text-[10px] uppercase tracking-wider block text-center flex-1">
                     💬 KingsChat: @{leader.profile.kingschat || "handle"}
                   </span>
                 </div>
@@ -318,18 +314,18 @@ export function LeaderProfileClient({ leader, viewerRole, facultySlug, facultyId
           <div className="grid md:grid-cols-2 gap-6">
             
             {/* Skills & Specialties */}
-            <div className="bg-white/60 dark:bg-[#0a0a0a]/60 backdrop-blur-xl border border-gray-200/50 dark:border-white/5 rounded-3xl p-6 md:p-8 shadow-sm space-y-6">
-              <h4 className="text-xs font-bold text-gray-500 dark:text-gray-500 uppercase tracking-widest block pb-2 border-b border-gray-250/20 dark:border-white/5">Skills & Area Focus</h4>
+            <div className="bg-white/60 dark:bg-[#0a0a0a]/60 backdrop-blur-xl border border-gray-200 dark:border-white/5 rounded-3xl p-6 md:p-8 shadow-sm space-y-6">
+              <h4 className="text-xs font-extrabold text-gray-700 dark:text-gray-400 uppercase tracking-widest block pb-2 border-b border-gray-200/80 dark:border-white/5">Skills & Area Focus</h4>
               
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Specialties</span>
+                  <span className="text-[10px] font-extrabold text-gray-500 dark:text-gray-400 uppercase tracking-wider block">Specialties</span>
                   <div className="flex flex-wrap gap-2">
                     {skills.length === 0 ? (
-                      <span className="text-xs text-gray-500 dark:text-gray-400 italic">None logged</span>
+                      <span className="text-xs text-gray-600 dark:text-gray-400 italic font-bold">None logged</span>
                     ) : (
                       skills.map((s, idx) => (
-                        <span key={idx} className="bg-emerald-500/5 text-emerald-700 dark:text-emerald-400 border border-emerald-500/15 px-2.5 py-1 rounded-xl text-xs font-semibold">
+                        <span key={idx} className="bg-emerald-50/80 dark:bg-emerald-500/5 text-emerald-900 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/15 px-2.5 py-1 rounded-xl text-xs font-bold">
                           {s}
                         </span>
                       ))
@@ -338,13 +334,13 @@ export function LeaderProfileClient({ leader, viewerRole, facultySlug, facultyId
                 </div>
 
                 <div className="space-y-2 pt-2">
-                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Leadership Focus Areas</span>
+                  <span className="text-[10px] font-extrabold text-gray-500 dark:text-gray-400 uppercase tracking-wider block">Leadership Focus Areas</span>
                   <div className="flex flex-wrap gap-2">
                     {focusAreas.length === 0 ? (
-                      <span className="text-xs text-gray-500 dark:text-gray-400 italic">None logged</span>
+                      <span className="text-xs text-gray-600 dark:text-gray-400 italic font-bold">None logged</span>
                     ) : (
                       focusAreas.map((f, idx) => (
-                        <span key={idx} className="bg-blue-500/5 text-blue-700 dark:text-blue-400 border border-blue-500/15 px-2.5 py-1 rounded-xl text-xs font-semibold">
+                        <span key={idx} className="bg-blue-50/80 dark:bg-blue-500/5 text-blue-900 dark:text-blue-400 border border-blue-200 dark:border-blue-500/15 px-2.5 py-1 rounded-xl text-xs font-bold">
                           {f}
                         </span>
                       ))
@@ -355,18 +351,18 @@ export function LeaderProfileClient({ leader, viewerRole, facultySlug, facultyId
             </div>
 
             {/* Achievements & Assignments */}
-            <div className="bg-white/60 dark:bg-[#0a0a0a]/60 backdrop-blur-xl border border-gray-200/50 dark:border-white/5 rounded-3xl p-6 md:p-8 shadow-sm space-y-6">
-              <h4 className="text-xs font-bold text-gray-500 dark:text-gray-500 uppercase tracking-widest block pb-2 border-b border-gray-250/20 dark:border-white/5">Achievements & Projects</h4>
+            <div className="bg-white/60 dark:bg-[#0a0a0a]/60 backdrop-blur-xl border border-gray-200 dark:border-white/5 rounded-3xl p-6 md:p-8 shadow-sm space-y-6">
+              <h4 className="text-xs font-extrabold text-gray-700 dark:text-gray-400 uppercase tracking-widest block pb-2 border-b border-gray-200/80 dark:border-white/5">Achievements & Projects</h4>
               
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Certifications & Milestones</span>
+                  <span className="text-[10px] font-extrabold text-gray-500 dark:text-gray-400 uppercase tracking-wider block">Certifications & Milestones</span>
                   <div className="space-y-2">
                     {achievements.length === 0 ? (
-                      <span className="text-xs text-gray-500 dark:text-gray-400 italic">None logged</span>
+                      <span className="text-xs text-gray-600 dark:text-gray-400 italic font-bold">None logged</span>
                     ) : (
                       achievements.map((a, idx) => (
-                        <div key={idx} className="flex items-center text-xs text-gray-700 dark:text-gray-300 font-medium">
+                        <div key={idx} className="flex items-center text-xs text-gray-800 dark:text-gray-300 font-bold">
                           <span className="mr-2">🏆</span> {a}
                         </div>
                       ))
@@ -375,14 +371,14 @@ export function LeaderProfileClient({ leader, viewerRole, facultySlug, facultyId
                 </div>
 
                 <div className="space-y-2 pt-2">
-                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Current Faculty Assignments</span>
+                  <span className="text-[10px] font-extrabold text-gray-550 dark:text-gray-400 uppercase tracking-wider block">Current Faculty Assignments</span>
                   <div className="space-y-2">
                     {assignments.length === 0 ? (
-                      <span className="text-xs text-gray-500 dark:text-gray-400 italic">None logged</span>
+                      <span className="text-xs text-gray-600 dark:text-gray-400 italic font-bold">None logged</span>
                     ) : (
                       assignments.map((as, idx) => (
-                        <div key={idx} className="flex items-center text-xs text-gray-700 dark:text-gray-300 font-medium">
-                          <span className="mr-2 text-emerald-500">✓</span> {as}
+                        <div key={idx} className="flex items-center text-xs text-gray-800 dark:text-gray-300 font-bold">
+                          <span className="mr-2 text-emerald-600 dark:text-emerald-500">✓</span> {as}
                         </div>
                       ))
                     )}

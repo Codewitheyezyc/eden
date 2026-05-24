@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { parseCampuses } from "@/lib/campuses";
 import { LEADERSHIP_ROLES } from "@/lib/leadership-roles";
 import { createClient } from "@/services/supabase/client";
@@ -124,15 +124,6 @@ export function HQLeadersClient({ leaders, potentialLeaders, viewerRole, faculty
       setLoading(false);
     }
   };
-
-  // Helper Memo for useMemo dependencies (standard next.js compilation requirement)
-  function useMemo<T>(factory: () => T, deps: any[]): T {
-    return useMemoReal(factory, deps);
-  }
-  function useMemoReal<T>(factory: () => T, deps: any[]): T {
-    return useMemoInternal(factory, deps);
-  }
-  const useMemoInternal = require("react").useMemo;
 
   return (
     <div className="space-y-8 animate-in fade-in duration-700 slide-in-from-bottom-4">

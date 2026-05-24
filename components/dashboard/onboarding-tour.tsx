@@ -242,8 +242,7 @@ export function OnboardingTour({ role, facultySlug, initialCompletedTour, isVeri
       if (user) {
         await supabase
           .from("profiles")
-          .update({ completed_tour: true })
-          .eq("id", user.id);
+          .upsert({ id: user.id, completed_tour: true });
       }
     } catch (e) {
       console.error("Error saving onboarding completion status:", e);

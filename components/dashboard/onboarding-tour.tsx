@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { X, ChevronRight, ChevronLeft, Sparkles, CheckCircle2 } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { createClient } from "@/services/supabase/client";
 
 interface TourStep {
@@ -20,6 +20,7 @@ interface OnboardingTourProps {
 
 export function OnboardingTour({ role, facultySlug, initialCompletedTour }: OnboardingTourProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [tooltipPos, setTooltipPos] = useState({ top: 0, left: 0 });
@@ -136,6 +137,13 @@ export function OnboardingTour({ role, facultySlug, initialCompletedTour }: Onbo
   })();
 
   useEffect(() => {
+    // Only run tour guide if user is on the main dashboard overview home page
+    const targetPath = `/dashboard/${facultySlug}`;
+    if (pathname !== targetPath) {
+      setIsOpen(false);
+      return;
+    }
+
     // If the database states the tour is not completed, enforce local storage reset
     if (!initialCompletedTour && typeof window !== "undefined") {
       localStorage.removeItem(`eden_tour_completed_${role.toLowerCase()}`);
@@ -151,7 +159,7 @@ export function OnboardingTour({ role, facultySlug, initialCompletedTour }: Onbo
       setCurrentStep(0);
     }, 1000);
     return () => clearTimeout(timer);
-  }, [role, initialCompletedTour]);
+  }, [role, initialCompletedTour, pathname, facultySlug]);
 
   // Recalculate tooltip position on step change
   useEffect(() => {

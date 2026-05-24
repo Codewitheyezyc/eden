@@ -54,10 +54,10 @@ export default async function FacultyDashboardPage({
     .select("*", { count: "exact", head: true })
     .eq("faculty_id", faculty.id);
 
-  // Fetch user profile for campus checks
+  // Fetch user profile for campus checks and verification status
   const { data: profile } = await supabase
     .from("profiles")
-    .select("campus_zone")
+    .select("campus_zone, is_verified")
     .eq("id", user.id)
     .single();
 
@@ -286,6 +286,38 @@ export default async function FacultyDashboardPage({
           </p>
         </div>
       </div>
+
+      {/* Profile Verification Prompt Banner */}
+      {!profile?.is_verified && (
+        <div className="relative rounded-3xl p-6 md:p-8 overflow-hidden shadow-lg border border-amber-500/20 dark:border-amber-500/10 bg-gradient-to-tr from-amber-500/[0.04] to-orange-500/[0.04] backdrop-blur-xl animate-in slide-in-from-top duration-500">
+          {/* Ambient Glow */}
+          <div className="absolute -right-20 -bottom-20 w-64 h-64 bg-amber-500/5 rounded-full blur-3xl pointer-events-none" />
+          
+          <div className="relative z-10 flex flex-col md:flex-row items-center md:items-start justify-between gap-6">
+            <div className="space-y-3 max-w-2xl text-center md:text-left min-w-0">
+              <div className="flex flex-col md:flex-row items-center gap-2 justify-center md:justify-start">
+                <span className="text-2xl animate-bounce">⚠️</span>
+                <h3 className="text-base font-extrabold text-amber-750 dark:text-amber-500 tracking-tight">
+                  Action Required: Complete Your Profile Setup
+                </h3>
+                <span className="bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20 px-2 py-0.5 rounded-md text-[8px] font-extrabold uppercase tracking-widest shrink-0">
+                  Profile Incomplete
+                </span>
+              </div>
+              <p className="text-xs text-gray-700 dark:text-gray-300 leading-relaxed font-normal">
+                To automatically appear in the general attendance system, register for sessions, and fully access Eden's creative learning curriculum, you must complete your profile to 100%. Please update your details (Campus, Gender, Phone, and Biography) now.
+              </p>
+            </div>
+            
+            <Link 
+              href={`/dashboard/${params.facultySlug}/profile`}
+              className="px-5 py-3 bg-amber-600 hover:bg-amber-700 text-white rounded-2xl text-xs font-bold transition-all shadow-md shadow-amber-600/10 shrink-0 inline-flex items-center gap-1.5 animate-pulse"
+            >
+              Complete Profile Setup &rarr;
+            </Link>
+          </div>
+        </div>
+      )}
 
       {/* Coordinator & Admin Command Center */}
       {(role === "ADMIN" || role === "COORDINATOR") && (

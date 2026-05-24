@@ -19,6 +19,9 @@ interface OnboardingTourProps {
   isVerified?: boolean;
 }
 
+// Session lifetime tracking to prevent repeating the tour on client-side navigations
+let sessionTourCompleted = false;
+
 export function OnboardingTour({ role, facultySlug, initialCompletedTour, isVerified }: OnboardingTourProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -145,12 +148,13 @@ export function OnboardingTour({ role, facultySlug, initialCompletedTour, isVeri
       return;
     }
 
-    // If the database states the tour is not completed, enforce local storage reset
-    if (!initialCompletedTour && typeof window !== "undefined") {
+    // If database and session both state the tour is not completed, clear local storage for this mount
+    if (!initialCompletedTour && !sessionTourCompleted && typeof window !== "undefined") {
       localStorage.removeItem(`eden_tour_completed_${role.toLowerCase()}`);
     }
+
     const isLocalCompleted = localStorage.getItem(`eden_tour_completed_${role.toLowerCase()}`);
-    if (initialCompletedTour || isLocalCompleted === "true") {
+    if (initialCompletedTour || isLocalCompleted === "true" || sessionTourCompleted) {
       return;
     }
 
@@ -234,6 +238,7 @@ export function OnboardingTour({ role, facultySlug, initialCompletedTour, isVeri
 
   const handleComplete = async () => {
     localStorage.setItem(`eden_tour_completed_${role.toLowerCase()}`, "true");
+    sessionTourCompleted = true;
     setIsOpen(false);
 
     try {

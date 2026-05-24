@@ -8,6 +8,15 @@ export default async function ProfilePage({ params }: { params: { facultySlug: s
 
   if (!user) redirect("/login");
 
+  // Get Faculty
+  const { data: faculty } = await supabase
+    .from("faculties")
+    .select("id")
+    .eq("slug", params.facultySlug)
+    .single();
+
+  if (!faculty) redirect("/dashboard");
+
   // Fetch basic user record
   const { data: userRecord } = await supabase
     .from("users")
@@ -20,6 +29,14 @@ export default async function ProfilePage({ params }: { params: { facultySlug: s
     .from("profiles")
     .select("*")
     .eq("id", user.id)
+    .single();
+
+  // Get user's role in this faculty
+  const { data: facultyAccess } = await supabase
+    .from("user_faculties")
+    .select("role")
+    .eq("user_id", user.id)
+    .eq("faculty_id", faculty.id)
     .single();
 
   return (
@@ -35,6 +52,7 @@ export default async function ProfilePage({ params }: { params: { facultySlug: s
         initialProfile={profile} 
         initialFullName={userRecord?.full_name} 
         initialAvatar={userRecord?.avatar_url}
+        role={facultyAccess?.role || "STUDENT"}
       />
     </div>
   );

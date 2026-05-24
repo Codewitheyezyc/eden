@@ -14,9 +14,11 @@ interface EventCardProps {
   };
   userId: string;
   attendanceRecord: any | null;
+  viewerRole?: string;
+  facultySlug?: string;
 }
 
-export function EventCard({ event, userId, attendanceRecord }: EventCardProps) {
+export function EventCard({ event, userId, attendanceRecord, viewerRole = "STUDENT", facultySlug }: EventCardProps) {
   const supabase = createClient();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isPresent, setIsPresent] = useState(!!attendanceRecord);
@@ -116,34 +118,45 @@ export function EventCard({ event, userId, attendanceRecord }: EventCardProps) {
           </p>
 
           {/* Action Area */}
-          <div className="mt-auto pt-4 border-t border-gray-100 dark:border-white/5 flex items-center justify-between">
-            {isPresent ? (
-              <div className="flex items-center">
-                <div className="w-8 h-8 rounded-full border-2 border-emerald-500 overflow-hidden shrink-0">
-                  {proofImage ? (
-                    <img src={proofImage} alt="Proof" className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="w-full h-full bg-emerald-100 flex items-center justify-center">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-600"><polyline points="20 6 9 17 4 12"/></svg>
-                    </div>
-                  )}
+          <div className="mt-auto pt-4 border-t border-gray-100 dark:border-white/5 flex flex-col gap-3">
+            <div className="flex items-center justify-between">
+              {isPresent ? (
+                <div className="flex items-center">
+                  <div className="w-8 h-8 rounded-full border-2 border-emerald-500 overflow-hidden shrink-0">
+                    {proofImage ? (
+                      <img src={proofImage} alt="Proof" className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full bg-emerald-100 flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-600"><polyline points="20 6 9 17 4 12"/></svg>
+                      </div>
+                    )}
+                  </div>
+                  <span className="ml-2 text-sm font-bold text-emerald-600 dark:text-emerald-400">Present</span>
                 </div>
-                <span className="ml-2 text-sm font-bold text-emerald-600 dark:text-emerald-400">Present</span>
-              </div>
-            ) : (
-              <span className="text-sm font-medium text-gray-400 dark:text-gray-500">Not Attended</span>
-            )}
+              ) : (
+                <span className="text-sm font-medium text-gray-400 dark:text-gray-500">Not Attended</span>
+              )}
 
-            <button 
-              onClick={handleToggleAttendance}
-              className={`px-4 py-2 rounded-xl text-sm font-bold transition-colors ${
-                isPresent 
-                ? "bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700" 
-                : "bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm shadow-emerald-600/20"
-              }`}
-            >
-              {isPresent ? "Cancel" : "Mark Present"}
-            </button>
+              <button 
+                onClick={handleToggleAttendance}
+                className={`px-4 py-2 rounded-xl text-sm font-bold transition-colors ${
+                  isPresent 
+                  ? "bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700" 
+                  : "bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm shadow-emerald-600/20"
+                }`}
+              >
+                {isPresent ? "Cancel" : "Mark Present"}
+              </button>
+            </div>
+
+            {(viewerRole === "ADMIN" || viewerRole === "COORDINATOR") && facultySlug && (
+              <a 
+                href={`/dashboard/${facultySlug}/events/${event.id}/attendance`}
+                className="w-full text-center py-2 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-xs font-bold rounded-xl transition-all border border-emerald-500/15"
+              >
+                View Attendance Tracker &rarr;
+              </a>
+            )}
           </div>
         </div>
       </div>

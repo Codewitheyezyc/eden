@@ -186,6 +186,81 @@ export default async function FacultyDashboardPage({
     .order("created_at", { ascending: false })
     .limit(3);
 
+  // Fetch General Attendance verified members for widget
+  const { data: verifiedMembersData } = await supabase
+    .from("user_faculties")
+    .select(`
+      user_id,
+      role,
+      users:user_id (
+        full_name,
+        avatar_url,
+        email,
+        profiles (
+          campus_zone,
+          is_verified
+        )
+      )
+    `)
+    .eq("faculty_id", faculty.id);
+
+  // Map, filter, and sort: Admins first, then Coordinators, then Students
+  const eligibleWidgetUsers = (verifiedMembersData || []).map((m: any) => {
+    const userObj = Array.isArray(m.users) ? m.users[0] : m.users;
+    const profile = userObj?.profiles ? (Array.isArray(userObj.profiles) ? userObj.profiles[0] : userObj.profiles) : null;
+    return {
+      id: m.user_id,
+      fullName: userObj?.full_name || "Unknown Member",
+      avatarUrl: userObj?.avatar_url || null,
+      email: userObj?.email || "",
+      role: m.role || "STUDENT",
+      profile: profile ? {
+        campusZone: profile.campus_zone,
+        isVerified: !!profile.is_verified
+      } : null
+    };
+  })
+  .filter(m => m.profile && m.profile.isVerified);
+
+  const roleWeights: { [key: string]: number } = { ADMIN: 1, COORDINATOR: 2, STUDENT: 3 };
+  const widgetUsersList = eligibleWidgetUsers
+    .sort((a, b) => roleWeights[a.role] - roleWeights[b.role])
+    .slice(0, 10);
+
+  // Fetch HQ Leaders for overview widget
+  const { data: hqLeadersData } = await supabase
+    .from("user_faculties")
+    .select(`
+      user_id,
+      role,
+      users:user_id (
+        id,
+        full_name,
+        avatar_url,
+        email,
+        profiles (
+          campus_zone,
+          leadership_role
+        )
+      )
+    `)
+    .eq("faculty_id", faculty.id)
+    .eq("role", "ADMIN");
+
+  const hqLeadersWidgetList = (hqLeadersData || []).map((m: any) => {
+    const userObj = Array.isArray(m.users) ? m.users[0] : m.users;
+    const profile = userObj?.profiles ? (Array.isArray(userObj.profiles) ? userObj.profiles[0] : userObj.profiles) : null;
+    return {
+      id: m.user_id,
+      fullName: userObj?.full_name || "HQ Leader",
+      avatarUrl: userObj?.avatar_url || null,
+      role: m.role || "ADMIN",
+      leadershipRole: profile?.leadership_role || ""
+    };
+  })
+  .filter(m => m.leadershipRole) // Only show promoted leaders with actual HQ roles
+  .slice(0, 6);
+
   return (
     <div className="space-y-8 animate-in fade-in duration-700 slide-in-from-bottom-4">
       
@@ -378,6 +453,102 @@ export default async function FacultyDashboardPage({
                       <span className="text-[10px] font-medium text-gray-700 dark:text-gray-300">
                         {ann.sender?.full_name || "Faculty Member"}
                       </span>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          {/* HQ Leaders Overview Widget */}
+          <div className="bg-white/60 dark:bg-[#0a0a0a]/60 backdrop-blur-xl border border-gray-200/50 dark:border-white/5 rounded-3xl p-6 md:p-8 shadow-sm relative overflow-hidden">
+            {/* Ambient Background Glow */}
+            <div className="absolute right-0 top-0 w-36 h-36 bg-emerald-500/[0.03] rounded-full blur-2xl pointer-events-none" />
+            
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center space-x-2.5">
+                <div className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold">
+                  👑
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white leading-tight">HQ Leaders</h3>
+                  <p className="text-[10px] text-gray-400 dark:text-gray-500 font-bold uppercase tracking-wider mt-0.5">Faculty Guidance & Instructors</p>
+                </div>
+              </div>
+              <Link href={`/dashboard/${params.facultySlug}/hq-leaders`} className="text-xs font-bold text-emerald-600 hover:text-emerald-700 dark:text-emerald-400">
+                View Directory &rarr;
+              </Link>
+            </div>
+
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {hqLeadersWidgetList.length === 0 ? (
+                <p className="col-span-full text-xs text-gray-500 py-6 text-center italic">No HQ leaders promoted in this faculty yet.</p>
+              ) : (
+                hqLeadersWidgetList.map((leader: any) => (
+                  <Link 
+                    key={leader.id} 
+                    href={`/dashboard/${params.facultySlug}/hq-leaders/${leader.id}`}
+                    className="flex items-center p-3 bg-gray-50/40 dark:bg-white/5 border border-gray-100 dark:border-white/5 hover:border-emerald-500/30 rounded-2xl group transition-all hover:scale-[1.02] shadow-sm hover:shadow-md"
+                  >
+                    <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold text-sm shrink-0 border border-emerald-500/10 overflow-hidden shadow-inner mr-3 group-hover:scale-105 transition-transform duration-300">
+                      {leader.avatarUrl ? (
+                        <img src={leader.avatarUrl} className="w-full h-full object-cover" alt="" />
+                      ) : (
+                        leader.fullName.charAt(0).toUpperCase()
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-bold text-gray-900 dark:text-white truncate group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">{leader.fullName}</p>
+                      <p className="text-[10px] text-emerald-650 dark:text-emerald-450 font-bold truncate mt-0.5">{leader.leadershipRole}</p>
+                    </div>
+                  </Link>
+                ))
+              )}
+            </div>
+          </div>
+
+          {/* General Attendance Widget */}
+          <div className="bg-white/60 dark:bg-[#0a0a0a]/60 backdrop-blur-xl border border-gray-200/50 dark:border-white/5 rounded-3xl p-6 md:p-8 shadow-sm">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center space-x-2.5">
+                <div className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold">
+                  👥
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white leading-tight">General Attendance</h3>
+                  <p className="text-[10px] text-gray-400 dark:text-gray-500 font-bold uppercase tracking-wider mt-0.5">Verified Members</p>
+                </div>
+              </div>
+              {(role === "ADMIN" || role === "COORDINATOR") && (
+                <Link href={`/dashboard/${params.facultySlug}/attendance`} className="text-xs font-bold text-emerald-600 hover:text-emerald-700 dark:text-emerald-400">
+                  View Full &rarr;
+                </Link>
+              )}
+            </div>
+
+            <div className="grid sm:grid-cols-2 gap-4">
+              {widgetUsersList.length === 0 ? (
+                <p className="col-span-2 text-sm text-gray-500 py-6 text-center">No verified attendance records yet.</p>
+              ) : (
+                widgetUsersList.map((m: any) => (
+                  <div key={m.id} className="flex items-center p-3 bg-gray-50/40 dark:bg-white/5 border border-gray-100 dark:border-white/5 rounded-2xl group hover:border-emerald-500/30 transition-colors">
+                    <div className="w-8 h-8 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold text-xs shrink-0 border border-emerald-500/10 overflow-hidden shadow-inner mr-3">
+                      {m.avatarUrl ? <img src={m.avatarUrl} className="w-full h-full object-cover" /> : m.fullName.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5 mb-0.5">
+                        <p className="text-xs font-semibold text-gray-900 dark:text-white truncate">{m.fullName}</p>
+                        {m.role === "ADMIN" ? (
+                          <span className="text-[8px] bg-emerald-500/10 text-emerald-750 dark:text-emerald-400 border border-emerald-500/20 px-1 py-0.5 rounded font-bold uppercase tracking-wide">Admin</span>
+                        ) : m.role === "COORDINATOR" ? (
+                          <span className="text-[8px] bg-amber-500/10 text-amber-750 dark:text-amber-400 border border-amber-500/20 px-1 py-0.5 rounded font-bold uppercase tracking-wide">Coord</span>
+                        ) : (
+                          <span className="text-[8px] bg-blue-500/10 text-blue-750 dark:text-blue-400 border border-blue-500/20 px-1 py-0.5 rounded font-bold uppercase tracking-wide">Stud</span>
+                        )}
+                      </div>
+                      <p className="text-[10px] text-gray-500 dark:text-gray-400 truncate">
+                        {m.profile?.campusZone ? parseCampuses(m.profile.campusZone).join(", ") : "No Campus"}
+                      </p>
                     </div>
                   </div>
                 ))

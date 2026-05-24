@@ -6,6 +6,7 @@ import confetti from "canvas-confetti";
 import { useRouter } from "next/navigation";
 import { VerifiedBadge } from "@/components/ui/verified-badge";
 import { CAMPUSES, parseCampuses, formatCampusesForDb } from "@/lib/campuses";
+import { LEADERSHIP_ROLES } from "@/lib/leadership-roles";
 
 interface ProfileData {
   id: string;
@@ -16,6 +17,7 @@ interface ProfileData {
   date_of_birth: string | null;
   bio: string | null;
   is_verified: boolean | null;
+  leadership_role?: string | null;
 }
 
 interface ProfileContainerProps {
@@ -24,9 +26,10 @@ interface ProfileContainerProps {
   initialProfile: ProfileData | null;
   initialFullName: string | null;
   initialAvatar: string | null;
+  role?: string;
 }
 
-export function ProfileContainer({ userId, userEmail, initialProfile, initialFullName, initialAvatar }: ProfileContainerProps) {
+export function ProfileContainer({ userId, userEmail, initialProfile, initialFullName, initialAvatar, role = "STUDENT" }: ProfileContainerProps) {
   const supabase = createClient();
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -43,6 +46,7 @@ export function ProfileContainer({ userId, userEmail, initialProfile, initialFul
     campus: initialProfile?.campus_zone || "",
     dob: initialProfile?.date_of_birth || "",
     bio: initialProfile?.bio || "",
+    leadershipRole: initialProfile?.leadership_role || "",
   });
 
   const [avatarUrl, setAvatarUrl] = useState<string | null>(initialAvatar);
@@ -52,6 +56,16 @@ export function ProfileContainer({ userId, userEmail, initialProfile, initialFul
   });
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [completedTour, setCompletedTour] = useState(false);
+  const [isCustomRole, setIsCustomRole] = useState(() => {
+    const roleVal = initialProfile?.leadership_role || "";
+    if (roleVal === "") return false;
+    return !LEADERSHIP_ROLES.includes(roleVal as any);
+  });
+  const [selectedRoleOption, setSelectedRoleOption] = useState(() => {
+    const roleVal = initialProfile?.leadership_role || "";
+    if (roleVal === "") return "";
+    return LEADERSHIP_ROLES.includes(roleVal as any) ? roleVal : "CUSTOM";
+  });
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -158,6 +172,7 @@ export function ProfileContainer({ userId, userEmail, initialProfile, initialFul
         date_of_birth: formData.dob || null,
         bio: formData.bio,
         is_verified: progress === 100,
+        leadership_role: role === "ADMIN" ? formData.leadershipRole : null,
       });
 
       if (profileError) throw profileError;
@@ -421,6 +436,53 @@ export function ProfileContainer({ userId, userEmail, initialProfile, initialFul
                   className="w-full bg-white dark:bg-[#0a0a0a] border border-gray-200 dark:border-white/10 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500/50 outline-none transition-all text-gray-900 dark:text-white"
                 />
               </div>
+
+              {role === "ADMIN" && (
+                <div className="space-y-4 sm:col-span-2 bg-emerald-500/[0.02] border border-emerald-500/10 p-5 rounded-2xl">
+                  <div className="space-y-2">
+                    <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center justify-between">
+                      <span>HQ Leadership Position</span>
+                      <span className="text-[9px] bg-emerald-500/10 text-emerald-600 dark:text-emerald-450 border border-emerald-500/20 px-1.5 py-0.5 rounded font-extrabold uppercase tracking-widest">Admin Only</span>
+                    </label>
+                    <select
+                      value={selectedRoleOption}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setSelectedRoleOption(val);
+                        if (val === "CUSTOM") {
+                          setIsCustomRole(true);
+                          setFormData({ ...formData, leadershipRole: "" });
+                        } else {
+                          setIsCustomRole(false);
+                          setFormData({ ...formData, leadershipRole: val });
+                        }
+                      }}
+                      className="w-full bg-white dark:bg-[#0a0a0a] border border-gray-200 dark:border-white/10 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500/50 outline-none transition-all text-gray-900 dark:text-white"
+                    >
+                      <option value="">No HQ Leadership Position</option>
+                      {LEADERSHIP_ROLES.map((r) => (
+                        <option key={r} value={r}>
+                          {r}
+                        </option>
+                      ))}
+                      <option value="CUSTOM">Custom Position / Predefined (Scalable)</option>
+                    </select>
+                  </div>
+
+                  {isCustomRole && (
+                    <div className="space-y-2 animate-in slide-in-from-top-2 duration-300">
+                      <label className="text-xs font-semibold text-emerald-650 dark:text-emerald-400">Custom Position Name</label>
+                      <input 
+                        type="text" 
+                        value={formData.leadershipRole}
+                        onChange={(e) => setFormData({...formData, leadershipRole: e.target.value})}
+                        className="w-full bg-white dark:bg-[#0a0a0a] border border-emerald-500/20 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500/50 outline-none transition-all text-gray-900 dark:text-white font-medium"
+                        placeholder="Enter the HQ leadership position name..."
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             <div className="space-y-2">

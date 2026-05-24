@@ -69,6 +69,8 @@ export default async function EventsPage({ params }: { params: { facultySlug: st
               event={event}
               userId={user.id}
               attendanceRecord={attendanceMap[event.id]}
+              viewerRole={role}
+              facultySlug={params.facultySlug}
             />
           ))}
         </div>

@@ -471,7 +471,7 @@ export function ProfileContainer({ userId, userEmail, initialProfile, initialFul
 
                   {isCustomRole && (
                     <div className="space-y-2 animate-in slide-in-from-top-2 duration-300">
-                      <label className="text-xs font-semibold text-emerald-650 dark:text-emerald-400">Custom Position Name</label>
+                      <label className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">Custom Position Name</label>
                       <input 
                         type="text" 
                         value={formData.leadershipRole}

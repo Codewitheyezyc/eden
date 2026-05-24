@@ -321,14 +321,14 @@ export function HQLeadersClient({ leaders, potentialLeaders, viewerRole, faculty
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2.5 border border-gray-200/50 dark:border-white/5 hover:bg-gray-50 dark:hover:bg-white/5 rounded-xl text-xs font-bold text-gray-550 dark:text-gray-400 transition-colors"
+                  className="px-4 py-2.5 border border-gray-200/50 dark:border-white/5 hover:bg-gray-50 dark:hover:bg-white/5 rounded-xl text-xs font-bold text-gray-600 dark:text-gray-400 transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={loading}
-                  className="px-6 py-2.5 bg-emerald-650 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow transition-colors disabled:opacity-40"
+                  className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow transition-colors disabled:opacity-40"
                 >
                   {loading ? "Assigning..." : "Assign Position"}
                 </button>

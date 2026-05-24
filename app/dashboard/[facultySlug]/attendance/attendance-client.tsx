@@ -529,10 +529,10 @@ export function AttendanceClient({ initialMembers, viewerRole, facultySlug }: At
       {/* 3. Flat View Pagination Controls (Only flat view) */}
       {viewMode === "flat" && totalItems > 0 && (
         <div className="flex items-center justify-between px-4 py-1.5 bg-white/40 dark:bg-black/20 backdrop-blur-md rounded-2xl border border-gray-200/30 dark:border-white/5">
-          <div className="text-xs text-gray-550 dark:text-gray-450 font-medium">
+          <div className="text-xs text-gray-600 dark:text-gray-400 font-medium">
             Showing <span className="font-bold text-gray-800 dark:text-gray-200">{Math.min((currentPage - 1) * itemsPerPage + 1, totalItems)}</span> to{" "}
             <span className="font-bold text-gray-800 dark:text-gray-200">{Math.min(currentPage * itemsPerPage, totalItems)}</span> of{" "}
-            <span className="font-bold text-gray-805 dark:text-gray-200">{totalItems}</span> members
+            <span className="font-bold text-gray-800 dark:text-gray-200">{totalItems}</span> members
           </div>
           
           <div className="flex items-center gap-1.5">

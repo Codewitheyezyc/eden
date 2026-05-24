@@ -431,7 +431,7 @@ export function LeaderProfileClient({ leader, viewerRole, facultySlug, facultyId
             {/* Custom role conditional input */}
             {isCustomRole && (
               <div className="space-y-2 sm:col-span-2 animate-in slide-in-from-top-2 duration-300">
-                <label className="text-xs font-bold text-emerald-650 uppercase tracking-wider block">Custom Leadership Role Title</label>
+                <label className="text-xs font-bold text-emerald-600 uppercase tracking-wider block">Custom Leadership Role Title</label>
                 <input 
                   type="text" 
                   value={customRoleText}
@@ -647,14 +647,14 @@ export function LeaderProfileClient({ leader, viewerRole, facultySlug, facultyId
             <button
               type="button"
               onClick={() => setIsEditing(false)}
-              className="px-4 py-2.5 border border-gray-200/50 dark:border-white/5 hover:bg-gray-50 dark:hover:bg-white/5 rounded-xl text-xs font-bold text-gray-550 dark:text-gray-400 transition-colors"
+              className="px-4 py-2.5 border border-gray-200/50 dark:border-white/5 hover:bg-gray-50 dark:hover:bg-white/5 rounded-xl text-xs font-bold text-gray-600 dark:text-gray-400 transition-colors"
             >
               Cancel Changes
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="px-6 py-2.5 bg-emerald-650 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow transition-colors disabled:opacity-40"
+              className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow transition-colors disabled:opacity-40"
             >
               {loading ? "Saving Details..." : "💾 Save Changes"}
             </button>

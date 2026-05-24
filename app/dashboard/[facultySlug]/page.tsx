@@ -297,7 +297,7 @@ export default async function FacultyDashboardPage({
             <div className="space-y-3 max-w-2xl text-center md:text-left min-w-0">
               <div className="flex flex-col md:flex-row items-center gap-2 justify-center md:justify-start">
                 <span className="text-2xl animate-bounce">⚠️</span>
-                <h3 className="text-base font-extrabold text-amber-750 dark:text-amber-500 tracking-tight">
+                <h3 className="text-base font-extrabold text-amber-800 dark:text-amber-500 tracking-tight">
                   Action Required: Complete Your Profile Setup
                 </h3>
                 <span className="bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20 px-2 py-0.5 rounded-md text-[8px] font-extrabold uppercase tracking-widest shrink-0">
@@ -531,7 +531,7 @@ export default async function FacultyDashboardPage({
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-xs font-bold text-gray-900 dark:text-white truncate group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">{leader.fullName}</p>
-                      <p className="text-[10px] text-emerald-650 dark:text-emerald-450 font-bold truncate mt-0.5">{leader.leadershipRole}</p>
+                      <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold truncate mt-0.5">{leader.leadershipRole}</p>
                     </div>
                   </Link>
                 ))
@@ -571,9 +571,9 @@ export default async function FacultyDashboardPage({
                       <div className="flex items-center gap-1.5 mb-0.5">
                         <p className="text-xs font-semibold text-gray-900 dark:text-white truncate">{m.fullName}</p>
                         {m.role === "ADMIN" ? (
-                          <span className="text-[8px] bg-emerald-500/10 text-emerald-750 dark:text-emerald-400 border border-emerald-500/20 px-1 py-0.5 rounded font-bold uppercase tracking-wide">Admin</span>
+                          <span className="text-[8px] bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20 px-1 py-0.5 rounded font-bold uppercase tracking-wide">Admin</span>
                         ) : m.role === "COORDINATOR" ? (
-                          <span className="text-[8px] bg-amber-500/10 text-amber-750 dark:text-amber-400 border border-amber-500/20 px-1 py-0.5 rounded font-bold uppercase tracking-wide">Coord</span>
+                          <span className="text-[8px] bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20 px-1 py-0.5 rounded font-bold uppercase tracking-wide">Coord</span>
                         ) : (
                           <span className="text-[8px] bg-blue-500/10 text-blue-750 dark:text-blue-400 border border-blue-500/20 px-1 py-0.5 rounded font-bold uppercase tracking-wide">Stud</span>
                         )}

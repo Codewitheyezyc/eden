@@ -264,7 +264,7 @@ export function EventAttendanceClient({ event, initialAttendees, viewerRole, fac
         <div className="grid grid-cols-2 gap-3 w-full md:w-auto shrink-0 pt-4 md:pt-0 border-t md:border-t-0 border-gray-200/50 dark:border-white/5">
           <div className="bg-white/50 dark:bg-[#060608]/40 border border-gray-200/30 dark:border-white/5 p-4 rounded-2xl text-center shadow-sm">
             <h4 className="text-[10px] text-gray-400 dark:text-gray-500 font-bold uppercase tracking-widest">Total Present</h4>
-            <p className="text-3xl font-extrabold text-emerald-650 dark:text-emerald-400 mt-1">{metrics.total}</p>
+            <p className="text-3xl font-extrabold text-emerald-600 dark:text-emerald-450 mt-1">{metrics.total}</p>
           </div>
           <div className="bg-white/50 dark:bg-[#060608]/40 border border-gray-200/30 dark:border-white/5 p-4 rounded-2xl text-center shadow-sm">
             <h4 className="text-[10px] text-gray-400 dark:text-gray-500 font-bold uppercase tracking-widest">Active Campuses</h4>

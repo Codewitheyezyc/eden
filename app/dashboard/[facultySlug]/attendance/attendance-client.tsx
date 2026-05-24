@@ -247,7 +247,7 @@ export function AttendanceClient({ initialMembers, viewerRole, facultySlug }: At
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           {/* Search Field */}
           <div className="relative md:col-span-2">
-            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-450 dark:text-gray-500">
+            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500">
               <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
             </span>
             <input
@@ -440,7 +440,7 @@ export function AttendanceClient({ initialMembers, viewerRole, facultySlug }: At
                       <td className="py-3 px-4">{renderRoleBadge(m.role)}</td>
                       {viewerRole === "ADMIN" && (
                         <td className="py-3 px-6 text-emerald-700 dark:text-emerald-300 font-bold whitespace-nowrap">
-                          {m.profile?.leadershipRole || <span className="text-gray-450 dark:text-gray-500 font-normal italic">None</span>}
+                          {m.profile?.leadershipRole || <span className="text-gray-400 dark:text-gray-500 font-normal italic">None</span>}
                         </td>
                       )}
                     </tr>
@@ -643,7 +643,7 @@ export function AttendanceClient({ initialMembers, viewerRole, facultySlug }: At
   function renderEmptyState() {
     return (
       <div className="flex flex-col items-center justify-center py-12 px-6 text-center">
-        <div className="w-16 h-16 bg-gray-100 dark:bg-white/5 border border-gray-200/30 dark:border-white/5 text-gray-450 rounded-2xl flex items-center justify-center mb-4">
+        <div className="w-16 h-16 bg-gray-100 dark:bg-white/5 border border-gray-200/30 dark:border-white/5 text-gray-400 dark:text-gray-550 rounded-2xl flex items-center justify-center mb-4">
           <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
         </div>
         <h4 className="font-bold text-gray-900 dark:text-white text-base">No attendance data found</h4>

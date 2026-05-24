@@ -103,6 +103,7 @@ export default async function HQLeaderProfilePage({
         facultySlug={params.facultySlug}
         facultyId={faculty.id}
         facultyName={faculty.name}
+        currentUserId={user.id}
       />
     </div>
   );

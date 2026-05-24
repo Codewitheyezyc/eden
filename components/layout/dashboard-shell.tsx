@@ -45,7 +45,7 @@ export function DashboardShell({ children, facultyName, facultySlug, role, userE
   return (
     <div className="flex h-screen bg-[#fcfdfd] dark:bg-[#030303] transition-colors relative overflow-hidden">
       {/* Onboarding Tour Interactive Layer */}
-      <OnboardingTour role={role} facultySlug={facultySlug} initialCompletedTour={completedTour} />
+      <OnboardingTour role={role} facultySlug={facultySlug} initialCompletedTour={completedTour} isVerified={isVerified} />
 
       {/* Mobile Sidebar Overlay (Glassmorphism) */}
       {sidebarOpen && (

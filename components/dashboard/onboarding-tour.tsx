@@ -16,9 +16,10 @@ interface OnboardingTourProps {
   role: string;
   facultySlug: string;
   initialCompletedTour?: boolean;
+  isVerified?: boolean;
 }
 
-export function OnboardingTour({ role, facultySlug, initialCompletedTour }: OnboardingTourProps) {
+export function OnboardingTour({ role, facultySlug, initialCompletedTour, isVerified }: OnboardingTourProps) {
   const router = useRouter();
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
@@ -248,8 +249,12 @@ export function OnboardingTour({ role, facultySlug, initialCompletedTour }: Onbo
       console.error("Error saving onboarding completion status:", e);
     }
     
-    // Redirect to profile setup with completed_tour query parameter
-    router.push(`/dashboard/${facultySlug}/profile?completed_tour=true`);
+    // Conditional Redirect: Only route to profile setup if they are not verified yet
+    if (!isVerified) {
+      router.push(`/dashboard/${facultySlug}/profile?completed_tour=true`);
+    } else {
+      router.push(`/dashboard/${facultySlug}`);
+    }
   };
 
   if (!isOpen) return null;

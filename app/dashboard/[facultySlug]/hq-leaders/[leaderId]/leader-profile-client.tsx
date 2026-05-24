@@ -46,9 +46,10 @@ interface LeaderProfileClientProps {
   facultySlug: string;
   facultyId: string;
   facultyName: string;
+  currentUserId: string;
 }
 
-export function LeaderProfileClient({ leader, viewerRole, facultySlug, facultyId, facultyName }: LeaderProfileClientProps) {
+export function LeaderProfileClient({ leader, viewerRole, facultySlug, facultyId, facultyName, currentUserId }: LeaderProfileClientProps) {
   const supabase = createClient();
   const router = useRouter();
 
@@ -116,6 +117,13 @@ export function LeaderProfileClient({ leader, viewerRole, facultySlug, facultyId
       return;
     }
 
+    // Strict Security Guard: Only actual Administrators or the profile owner themselves can perform edits/database updates
+    if (viewerRole !== "ADMIN" && leader.id !== currentUserId) {
+      setMessage({ type: "error", text: "Unauthorized: You are not permitted to modify this profile." });
+      setLoading(false);
+      return;
+    }
+
     try {
       // 1. Update basic user table (full_name)
       await supabase.from("users").update({ full_name: fullName }).eq("id", leader.id);
@@ -162,7 +170,8 @@ export function LeaderProfileClient({ leader, viewerRole, facultySlug, facultyId
     }
   };
 
-  const isUserAdmin = viewerRole === "ADMIN";
+  // Show edit controls if the viewer is an Admin OR if the viewer is the HQ leader themselves
+  const canEditProfile = viewerRole === "ADMIN" || currentUserId === leader.id;
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
@@ -171,13 +180,13 @@ export function LeaderProfileClient({ leader, viewerRole, facultySlug, facultyId
       <div className="flex items-center justify-between gap-4">
         <a 
           href={`/dashboard/${facultySlug}/hq-leaders`}
-          className="inline-flex items-center gap-1.5 px-4 py-2 bg-white dark:bg-[#0a0a0a] hover:bg-gray-50 dark:hover:bg-white/5 border border-gray-200/50 dark:border-white/5 rounded-2xl text-xs font-bold text-gray-650 dark:text-gray-400 transition-colors shadow-sm"
+          className="inline-flex items-center gap-1.5 px-4 py-2 bg-white dark:bg-[#0a0a0a] hover:bg-gray-50 dark:hover:bg-white/5 border border-gray-200/50 dark:border-white/5 rounded-2xl text-xs font-bold text-gray-600 dark:text-gray-400 transition-colors shadow-sm"
         >
           &larr; Back to Directory
         </a>
 
-        {/* Admin Edit Trigger */}
-        {isUserAdmin && (
+        {/* Admin or Profile Owner Edit Trigger */}
+        {canEditProfile && (
           <button
             onClick={() => setIsEditing(!isEditing)}
             className={cn(
@@ -193,7 +202,7 @@ export function LeaderProfileClient({ leader, viewerRole, facultySlug, facultyId
       </div>
 
       {message && (
-        <div className={cn("p-4 rounded-2xl text-xs font-bold", message.type === "success" ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/20 dark:text-emerald-400" : "bg-red-50 text-red-750 dark:bg-red-950/20 dark:text-red-450")}>
+        <div className={cn("p-4 rounded-2xl text-xs font-bold", message.type === "success" ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/20 dark:text-emerald-400" : "bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-400")}>
           {message.text}
         </div>
       )}
@@ -208,7 +217,7 @@ export function LeaderProfileClient({ leader, viewerRole, facultySlug, facultyId
             <div className="absolute -left-20 -bottom-20 w-80 h-80 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none" />
 
             {/* Leader Portrait */}
-            <div className="w-36 h-36 rounded-3xl bg-gray-100 dark:bg-black overflow-hidden border border-gray-200/60 dark:border-white/10 shrink-0 shadow-lg relative flex items-center justify-center text-4xl font-extrabold text-emerald-600 dark:text-emerald-450">
+            <div className="w-36 h-36 rounded-3xl bg-gray-100 dark:bg-black overflow-hidden border border-gray-200/60 dark:border-white/10 shrink-0 shadow-lg relative flex items-center justify-center text-4xl font-extrabold text-emerald-600 dark:text-emerald-400">
               {leader.avatarUrl ? (
                 <img src={leader.avatarUrl} alt="" className="w-full h-full object-cover" />
               ) : (
@@ -230,12 +239,12 @@ export function LeaderProfileClient({ leader, viewerRole, facultySlug, facultyId
 
                 <div className="flex flex-wrap items-center justify-center md:justify-start gap-3">
                   {/* Dynamic Gold glowing title */}
-                  <span className="inline-flex bg-gradient-to-tr from-amber-500/10 to-amber-600/5 border border-amber-500/20 dark:border-amber-500/10 px-3 py-1 rounded-xl text-xs font-bold text-amber-600 dark:text-amber-450 tracking-wider shadow-inner uppercase">
+                  <span className="inline-flex bg-gradient-to-tr from-amber-500/10 to-amber-600/5 border border-amber-500/20 dark:border-amber-500/10 px-3 py-1 rounded-xl text-xs font-bold text-amber-600 dark:text-amber-400 tracking-wider shadow-inner uppercase">
                     👑 {leader.profile.leadershipRole}
                   </span>
                   
                   {leader.profile.campusZone && (
-                    <span className="inline-flex bg-gray-100 dark:bg-white/5 border border-gray-200/50 dark:border-white/5 px-3 py-1 rounded-xl text-xs font-semibold text-gray-550 dark:text-gray-300">
+                    <span className="inline-flex bg-gray-100 dark:bg-white/5 border border-gray-200/50 dark:border-white/5 px-3 py-1 rounded-xl text-xs font-semibold text-gray-600 dark:text-gray-300">
                       📍 {parseCampuses(leader.profile.campusZone).join(", ")}
                     </span>
                   )}
@@ -257,8 +266,8 @@ export function LeaderProfileClient({ leader, viewerRole, facultySlug, facultyId
               <div className="absolute right-0 top-0 w-24 h-24 bg-emerald-500/5 rounded-full blur-2xl pointer-events-none" />
               <div className="space-y-3">
                 <span className="text-3xl select-none opacity-50 block leading-none font-serif">“</span>
-                <h4 className="text-xs font-bold text-emerald-600 dark:text-emerald-450 uppercase tracking-widest">Leadership Vision & Mandate</h4>
-                <p className="text-base font-light text-gray-800 dark:text-gray-250 italic leading-relaxed pt-2">
+                <h4 className="text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-widest">Leadership Vision & Mandate</h4>
+                <p className="text-base font-light text-gray-800 dark:text-gray-300 italic leading-relaxed pt-2">
                   {responsibilities || "To pioneer artistic structures, establish technical mastery within learning cadres, and mentor creative stars inside the Loveworld Arts Academy."}
                 </p>
               </div>
@@ -271,19 +280,23 @@ export function LeaderProfileClient({ leader, viewerRole, facultySlug, facultyId
             {/* General Oversight Details */}
             <div className="bg-white/60 dark:bg-[#0a0a0a]/60 backdrop-blur-xl border border-gray-200/50 dark:border-white/5 rounded-3xl p-6 shadow-sm flex flex-col justify-between">
               <div className="space-y-4">
-                <h4 className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest block pb-2 border-b border-gray-250/20 dark:border-white/5">Details of Service</h4>
+                <h4 className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest block pb-2 border-b border-gray-200/20 dark:border-white/5">Details of Service</h4>
                 
                 <div className="space-y-3 text-xs">
-                  <div className="flex justify-between py-1.5 border-b border-gray-150/15 dark:border-white/5">
-                    <span className="text-gray-450">Department/Unit</span>
+                  <div className="flex justify-between py-1.5 border-b border-gray-200/10 dark:border-white/5">
+                    <span className="text-gray-500 dark:text-gray-400">Department/Unit</span>
                     <span className="font-semibold text-gray-900 dark:text-white">{unit || "Choreography & Dance Team"}</span>
                   </div>
-                  <div className="flex justify-between py-1.5 border-b border-gray-150/15 dark:border-white/5">
-                    <span className="text-gray-450">Area of Oversight</span>
+                  <div className="flex justify-between py-1.5 border-b border-gray-200/10 dark:border-white/5">
+                    <span className="text-gray-500 dark:text-gray-400">Area of Oversight</span>
                     <span className="font-semibold text-gray-900 dark:text-white">{oversight || "National Dance Faculty"}</span>
                   </div>
-                  <div className="flex justify-between py-1.5 border-b border-gray-150/15 dark:border-white/5">
-                    <span className="text-gray-450">Years of Service</span>
+                  <div className="flex justify-between py-1.5 border-b border-gray-200/10 dark:border-white/5">
+                    <span className="text-gray-500 dark:text-gray-400">Area of Oversight</span>
+                    <span className="font-semibold text-gray-900 dark:text-white">{oversight || "National Dance Faculty"}</span>
+                  </div>
+                  <div className="flex justify-between py-1.5 border-b border-gray-200/10 dark:border-white/5">
+                    <span className="text-gray-500 dark:text-gray-400">Years of Service</span>
                     <span className="font-semibold text-gray-900 dark:text-white">{yearsOfService} Years</span>
                   </div>
                 </div>
@@ -306,14 +319,14 @@ export function LeaderProfileClient({ leader, viewerRole, facultySlug, facultyId
             
             {/* Skills & Specialties */}
             <div className="bg-white/60 dark:bg-[#0a0a0a]/60 backdrop-blur-xl border border-gray-200/50 dark:border-white/5 rounded-3xl p-6 md:p-8 shadow-sm space-y-6">
-              <h4 className="text-xs font-bold text-gray-450 dark:text-gray-500 uppercase tracking-widest block pb-2 border-b border-gray-250/20 dark:border-white/5">Skills & Area Focus</h4>
+              <h4 className="text-xs font-bold text-gray-500 dark:text-gray-500 uppercase tracking-widest block pb-2 border-b border-gray-250/20 dark:border-white/5">Skills & Area Focus</h4>
               
               <div className="space-y-4">
                 <div className="space-y-2">
                   <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Specialties</span>
                   <div className="flex flex-wrap gap-2">
                     {skills.length === 0 ? (
-                      <span className="text-xs text-gray-450 italic">None logged</span>
+                      <span className="text-xs text-gray-500 dark:text-gray-400 italic">None logged</span>
                     ) : (
                       skills.map((s, idx) => (
                         <span key={idx} className="bg-emerald-500/5 text-emerald-700 dark:text-emerald-400 border border-emerald-500/15 px-2.5 py-1 rounded-xl text-xs font-semibold">
@@ -328,7 +341,7 @@ export function LeaderProfileClient({ leader, viewerRole, facultySlug, facultyId
                   <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Leadership Focus Areas</span>
                   <div className="flex flex-wrap gap-2">
                     {focusAreas.length === 0 ? (
-                      <span className="text-xs text-gray-450 italic">None logged</span>
+                      <span className="text-xs text-gray-500 dark:text-gray-400 italic">None logged</span>
                     ) : (
                       focusAreas.map((f, idx) => (
                         <span key={idx} className="bg-blue-500/5 text-blue-700 dark:text-blue-400 border border-blue-500/15 px-2.5 py-1 rounded-xl text-xs font-semibold">
@@ -343,14 +356,14 @@ export function LeaderProfileClient({ leader, viewerRole, facultySlug, facultyId
 
             {/* Achievements & Assignments */}
             <div className="bg-white/60 dark:bg-[#0a0a0a]/60 backdrop-blur-xl border border-gray-200/50 dark:border-white/5 rounded-3xl p-6 md:p-8 shadow-sm space-y-6">
-              <h4 className="text-xs font-bold text-gray-450 dark:text-gray-500 uppercase tracking-widest block pb-2 border-b border-gray-250/20 dark:border-white/5">Achievements & Projects</h4>
+              <h4 className="text-xs font-bold text-gray-500 dark:text-gray-500 uppercase tracking-widest block pb-2 border-b border-gray-250/20 dark:border-white/5">Achievements & Projects</h4>
               
               <div className="space-y-4">
                 <div className="space-y-2">
                   <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Certifications & Milestones</span>
                   <div className="space-y-2">
                     {achievements.length === 0 ? (
-                      <span className="text-xs text-gray-450 italic">None logged</span>
+                      <span className="text-xs text-gray-500 dark:text-gray-400 italic">None logged</span>
                     ) : (
                       achievements.map((a, idx) => (
                         <div key={idx} className="flex items-center text-xs text-gray-700 dark:text-gray-300 font-medium">
@@ -365,7 +378,7 @@ export function LeaderProfileClient({ leader, viewerRole, facultySlug, facultyId
                   <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Current Faculty Assignments</span>
                   <div className="space-y-2">
                     {assignments.length === 0 ? (
-                      <span className="text-xs text-gray-450 italic">None logged</span>
+                      <span className="text-xs text-gray-500 dark:text-gray-400 italic">None logged</span>
                     ) : (
                       assignments.map((as, idx) => (
                         <div key={idx} className="flex items-center text-xs text-gray-700 dark:text-gray-300 font-medium">
@@ -400,7 +413,7 @@ export function LeaderProfileClient({ leader, viewerRole, facultySlug, facultyId
                 type="text" 
                 value={fullName}
                 onChange={e => setFullName(e.target.value)}
-                className="w-full bg-white dark:bg-black border border-gray-250/50 dark:border-white/10 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500/50 outline-none text-gray-900 dark:text-white font-medium"
+                className="w-full bg-white dark:bg-black border border-gray-200/50 dark:border-white/10 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500/50 outline-none text-gray-900 dark:text-white font-medium"
               />
             </div>
 
@@ -419,7 +432,7 @@ export function LeaderProfileClient({ leader, viewerRole, facultySlug, facultyId
                     setCustomRoleText(val);
                   }
                 }}
-                className="w-full bg-white dark:bg-black border border-gray-250/50 dark:border-white/10 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500/50 outline-none text-gray-900 dark:text-white"
+                className="w-full bg-white dark:bg-black border border-gray-200/50 dark:border-white/10 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500/50 outline-none text-gray-900 dark:text-white"
               >
                 {LEADERSHIP_ROLES.map(r => (
                   <option key={r} value={r}>{r}</option>
@@ -449,7 +462,7 @@ export function LeaderProfileClient({ leader, viewerRole, facultySlug, facultyId
                 value={bio}
                 onChange={e => setBio(e.target.value)}
                 maxLength={500}
-                className="w-full bg-white dark:bg-black border border-gray-250/50 dark:border-white/10 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-emerald-500/50 outline-none resize-none min-h-[100px] text-gray-900 dark:text-white"
+                className="w-full bg-white dark:bg-black border border-gray-200/50 dark:border-white/10 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-emerald-500/50 outline-none resize-none min-h-[100px] text-gray-900 dark:text-white"
               />
             </div>
 
@@ -461,7 +474,7 @@ export function LeaderProfileClient({ leader, viewerRole, facultySlug, facultyId
                 value={unit}
                 onChange={e => setUnit(e.target.value)}
                 placeholder="E.g., Senior Choreography Unit"
-                className="w-full bg-white dark:bg-black border border-gray-250/50 dark:border-white/10 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500/50 outline-none text-gray-900 dark:text-white font-medium"
+                className="w-full bg-white dark:bg-black border border-gray-200/50 dark:border-white/10 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500/50 outline-none text-gray-900 dark:text-white font-medium"
               />
             </div>
 
@@ -473,7 +486,7 @@ export function LeaderProfileClient({ leader, viewerRole, facultySlug, facultyId
                 value={oversight}
                 onChange={e => setOversight(e.target.value)}
                 placeholder="E.g., National Creative Arts Division"
-                className="w-full bg-white dark:bg-black border border-gray-250/50 dark:border-white/10 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500/50 outline-none text-gray-900 dark:text-white font-medium"
+                className="w-full bg-white dark:bg-black border border-gray-200/50 dark:border-white/10 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500/50 outline-none text-gray-900 dark:text-white font-medium"
               />
             </div>
 
@@ -484,7 +497,7 @@ export function LeaderProfileClient({ leader, viewerRole, facultySlug, facultyId
                 type="number" 
                 value={yearsOfService}
                 onChange={e => setYearsOfService(Number(e.target.value))}
-                className="w-full bg-white dark:bg-black border border-gray-250/50 dark:border-white/10 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500/50 outline-none text-gray-900 dark:text-white font-medium"
+                className="w-full bg-white dark:bg-black border border-gray-200/50 dark:border-white/10 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500/50 outline-none text-gray-900 dark:text-white font-medium"
               />
             </div>
 
@@ -496,7 +509,7 @@ export function LeaderProfileClient({ leader, viewerRole, facultySlug, facultyId
                 value={kingschat}
                 onChange={e => setKingschat(e.target.value.replace("@", ""))}
                 placeholder="username"
-                className="w-full bg-white dark:bg-black border border-gray-250/50 dark:border-white/10 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500/50 outline-none text-gray-900 dark:text-white font-medium"
+                className="w-full bg-white dark:bg-black border border-gray-200/50 dark:border-white/10 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500/50 outline-none text-gray-900 dark:text-white font-medium"
               />
             </div>
 
@@ -507,7 +520,7 @@ export function LeaderProfileClient({ leader, viewerRole, facultySlug, facultyId
                 value={responsibilities}
                 onChange={e => setResponsibilities(e.target.value)}
                 placeholder="Enter vision mandate..."
-                className="w-full bg-white dark:bg-black border border-gray-250/50 dark:border-white/10 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-emerald-500/50 outline-none resize-none min-h-[80px] text-gray-900 dark:text-white"
+                className="w-full bg-white dark:bg-black border border-gray-200/50 dark:border-white/10 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-emerald-500/50 outline-none resize-none min-h-[80px] text-gray-900 dark:text-white"
               />
             </div>
 

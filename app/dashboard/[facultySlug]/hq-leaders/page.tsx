@@ -31,7 +31,7 @@ export default async function HQLeadersDirectoryPage({
 
   const viewerRole = facultyAccess?.role || "STUDENT";
 
-  // Step 3: Fetch all ADMINS associated with this faculty who have completed profiles
+  // Step 3: Fetch all members associated with this faculty who have leadership roles
   const { data: adminUsers, error } = await supabase
     .from("user_faculties")
     .select(`
@@ -54,8 +54,7 @@ export default async function HQLeadersDirectoryPage({
         )
       )
     `)
-    .eq("faculty_id", faculty.id)
-    .eq("role", "ADMIN");
+    .eq("faculty_id", faculty.id);
 
   if (error) {
     return (

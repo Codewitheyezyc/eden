@@ -85,24 +85,8 @@ export function HQLeadersClient({ leaders, potentialLeaders, viewerRole, faculty
       return;
     }
 
-    const targetUser = potentialLeaders.find(p => p.id === selectedUserId);
-    const originalRole = targetUser ? targetUser.currentRole : null;
-    let roleElevated = false;
-
     try {
-      // 1. Elevate user role to ADMIN in user_faculties (if not already)
-      if (targetUser && targetUser.currentRole !== "ADMIN") {
-        const { error: roleError } = await supabase
-          .from("user_faculties")
-          .update({ role: "ADMIN" })
-          .eq("user_id", selectedUserId)
-          .eq("faculty_id", facultyId);
-
-        if (roleError) throw roleError;
-        roleElevated = true;
-      }
-
-      // 2. Upsert profile with leadership_role
+      // 1. Upsert profile with leadership_role (Users keep their original role)
       const { error: profileError } = await supabase
         .from("profiles")
         .upsert({
@@ -125,18 +109,6 @@ export function HQLeadersClient({ leaders, potentialLeaders, viewerRole, faculty
       }, 1500);
 
     } catch (error: any) {
-      // ROLLBACK: Revert user role back to original role if profile update failed
-      if (roleElevated && originalRole) {
-        try {
-          await supabase
-            .from("user_faculties")
-            .update({ role: originalRole })
-            .eq("user_id", selectedUserId)
-            .eq("faculty_id", facultyId);
-        } catch (rollbackError) {
-          console.error("Failed to rollback role elevation:", rollbackError);
-        }
-      }
       setMessage({ type: "error", text: error.message || "Failed to assign leader." });
     } finally {
       setLoading(false);
@@ -287,7 +259,7 @@ export function HQLeadersClient({ leaders, potentialLeaders, viewerRole, faculty
                   <option value="">Select a member...</option>
                   {potentialLeaders.map(p => (
                     <option key={p.id} value={p.id}>
-                      {p.fullName} ({p.email}) — Current: {p.currentRole}
+                      {p.fullName} ({p.email}) — Current: {p.currentRole === "COORDINATOR" ? "Zonal Leader" : p.currentRole === "ADMIN" ? "Admin" : "Student"}
                     </option>
                   ))}
                 </select>

@@ -50,7 +50,8 @@ export default async function CoordinatorsDirectoryPage({
           campus_zone,
           date_of_birth,
           bio,
-          is_verified
+          is_verified,
+          leadership_role
         )
       )
     `)
@@ -78,7 +79,7 @@ export default async function CoordinatorsDirectoryPage({
   return (
     <div className="animate-in fade-in duration-700 slide-in-from-bottom-4">
       <DirectoryGrid 
-        title="Coordinators Directory" 
+        title="Zonal Leaders Directory" 
         users={users} 
         currentUserRole={currentUserRole}
         facultyId={faculty.id}

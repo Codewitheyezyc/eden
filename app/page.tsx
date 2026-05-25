@@ -37,15 +37,15 @@ export default function LandingPage() {
     },
     {
       q: "How does the multi-campus registry scale?",
-      a: "Eden is designed for complete zone-wide scalability. During onboarding, students and coordinators register their respective campus locations (such as Headquarters, Lagos Zone 1 through 6, and Sub-zones). Admins can dynamically append new campuses in the registry, and audience targeting cascades automatically."
+      a: "Eden is designed for complete zone-wide scalability. During onboarding, students and zonal leaders register their respective campus locations (such as Headquarters, Lagos Zone 1 through 6, and Sub-zones). Admins can dynamically append new campuses in the registry, and audience targeting cascades automatically."
     },
     {
       q: "Is there support for attendance check-ins?",
-      a: "Yes! Coordinators and Admins can schedule workshops and events on the calendar. Students check in to verify attendance, uploading creative proof directly inside their portal. The system instantly marks logs, offering real-time progress supervision."
+      a: "Yes! Zonal Leaders and Admins can schedule workshops and events on the calendar. Students check in to verify attendance, uploading creative proof directly inside their portal. The system instantly marks logs, offering real-time progress supervision."
     },
     {
       q: "How are announcements targeted?",
-      a: "Our targeting system allows creators to broadcast notifications either to 'Everyone' or 'Coordinators'. If coordinators are selected, the sender can specify a target campus (e.g. Lagos Zone 3) or target all coordinators, ensuring that high-level operational directives only reach the intended audience."
+      a: "Our targeting system allows creators to broadcast notifications either to 'Everyone' or 'Zonal Leaders'. If zonal leaders are selected, the sender can specify a target campus (e.g. Lagos Zone 3) or target all zonal leaders, ensuring that high-level operational directives only reach the intended audience."
     },
     {
       q: "What future features are coming to Eden?",
@@ -132,7 +132,7 @@ export default function LandingPage() {
                     }
                   `}
                 >
-                  {r} Portal
+                  {r === "COORDINATOR" ? "Zonal Leader" : r === "ADMIN" ? "Admin" : "Student"} Portal
                 </button>
               ))}
             </div>
@@ -206,7 +206,7 @@ export default function LandingPage() {
                       
                       <div className="relative z-10">
                         <span className="px-3 py-1 rounded-full text-[9px] bg-white/20 font-bold uppercase tracking-widest border border-white/25 shadow-sm inline-block mb-4">
-                          {activeRole} PORTAL
+                          {activeRole === "COORDINATOR" ? "ZONAL LEADER" : activeRole} PORTAL
                         </span>
                         <h3 className="text-2xl sm:text-4xl font-extrabold tracking-tight drop-shadow-sm">Welcome to Eden.</h3>
                         <p className="text-xs sm:text-sm text-emerald-50/90 font-light mt-2 max-w-xl leading-relaxed">
@@ -288,7 +288,7 @@ export default function LandingPage() {
                       )}
                       {activeRole === "ADMIN" && (
                         <div className="bg-gray-50/50 dark:bg-[#070707] border border-gray-200 dark:border-white/5 p-4 rounded-2xl shadow-sm">
-                          <span className="text-[8px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider block">Coordinators</span>
+                          <span className="text-[8px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider block">Zonal Leaders</span>
                           <span className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white mt-1 block">0</span>
                         </div>
                       )}
@@ -340,7 +340,7 @@ export default function LandingPage() {
                                 <span className="text-[8px] text-gray-400 dark:text-gray-500 font-semibold font-mono">28m ago</span>
                               </div>
                               <p className="text-[9px] text-gray-500 dark:text-gray-400 mt-2 font-light line-clamp-2 leading-relaxed">
-                                All coordinators and student representatives should prepare their creative portfolios.
+                                All zonal leaders and student representatives should prepare their creative portfolios.
                               </p>
                               <div className="flex items-center space-x-1.5 mt-3 pt-2.5 border-t border-gray-100 dark:border-white/5">
                                 <div className="w-4 h-4 rounded-full bg-emerald-500 text-white flex items-center justify-center font-bold text-[7px]">CP</div>
@@ -405,7 +405,7 @@ export default function LandingPage() {
                           </button>
                         </div>
 
-                        {/* Newest Students (Admin/Coordinator Only) */}
+                        {/* Newest Students (Admin/Zonal Leader Only) */}
                         {(activeRole === "ADMIN" || activeRole === "COORDINATOR") && (
                           <div className="bg-gray-50/50 dark:bg-[#070707] border border-gray-200 dark:border-white/5 rounded-3xl p-5 shadow-sm space-y-3">
                             <span className="text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest block">Newest Students</span>
@@ -413,7 +413,7 @@ export default function LandingPage() {
                               <div className="p-2.5 bg-white dark:bg-black/30 border border-gray-200 dark:border-white/5 rounded-xl flex items-center">
                                 <div className="w-5 h-5 rounded-full bg-emerald-500/10 text-emerald-600 flex items-center justify-center font-extrabold text-[8px] shrink-0">I</div>
                                 <div className="ml-2 truncate">
-                                  <span className="text-[9px] font-bold text-gray-805 dark:text-white block leading-none">Isaac Peter</span>
+                                  <span className="text-[9px] font-bold text-gray-850 dark:text-white block leading-none">Isaac Peter</span>
                                   <span className="text-[7px] text-gray-400 dark:text-gray-500 truncate block mt-0.5">codewitheyezyc@gmail.com</span>
                                 </div>
                               </div>
@@ -421,12 +421,12 @@ export default function LandingPage() {
                           </div>
                         )}
 
-                        {/* Coordinators Widget (Admin Only) */}
+                        {/* Zonal Leaders Widget (Admin Only) */}
                         {activeRole === "ADMIN" && (
                           <div className="bg-gray-50/50 dark:bg-[#070707] border border-gray-200 dark:border-white/5 rounded-3xl p-5 shadow-sm space-y-3">
-                            <span className="text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest block">Coordinators</span>
+                            <span className="text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest block">Zonal Leaders</span>
                             <div className="py-4 text-center border border-dashed border-gray-200 dark:border-white/5 rounded-xl">
-                              <span className="text-[8px] text-gray-400 dark:text-gray-500 font-bold uppercase">No coordinators assigned</span>
+                              <span className="text-[8px] text-gray-400 dark:text-gray-500 font-bold uppercase">No zonal leaders assigned</span>
                             </div>
                           </div>
                         )}
@@ -481,7 +481,7 @@ export default function LandingPage() {
                   </div>
                   <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">Role-Based Dashboard Layouts</h3>
                   <p className="text-gray-500 dark:text-gray-400 leading-relaxed font-light text-sm">
-                    Tailored control centers dynamically adapted to Admins, Coordinators, and Students. Clean modular layout structure.
+                    Tailored control centers dynamically adapted to Admins, Zonal Leaders, and Students. Clean modular layout structure.
                   </p>
                 </div>
               </ScrollReveal>
@@ -495,7 +495,7 @@ export default function LandingPage() {
                   </div>
                   <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">Targeted Announcement Feed</h3>
                   <p className="text-gray-500 dark:text-gray-400 leading-relaxed font-light text-sm">
-                    Broadcasting portal supporting Everyone or Coordinators-only configurations with fine-grained campus filtering.
+                    Broadcasting portal supporting Everyone or Zonal Leaders-only configurations with fine-grained campus filtering.
                   </p>
                 </div>
               </ScrollReveal>
@@ -509,7 +509,7 @@ export default function LandingPage() {
                   </div>
                   <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">Event Schedules & Calendar</h3>
                   <p className="text-gray-500 dark:text-gray-400 leading-relaxed font-light text-sm">
-                    Interactive monthly calendar mapping scheduled classes. Role-aware editing triggers for Admins and coordinators.
+                    Interactive monthly calendar mapping scheduled classes. Role-aware editing triggers for Admins and zonal leaders.
                   </p>
                 </div>
               </ScrollReveal>
@@ -591,11 +591,11 @@ export default function LandingPage() {
                   <div className="space-y-4 text-[11px] font-light leading-relaxed text-gray-400">
                     <div className="p-3 bg-white/5 rounded-xl border border-white/5">
                       <span className="font-bold text-white block mb-1">User Query:</span>
-                      "Create an event called Design Review on May 25th at 3 PM and alert coordinators of Zone 1"
+                      "Create an event called Design Review on May 25th at 3 PM and alert zonal leaders of Zone 1"
                     </div>
                     <div className="p-3 bg-emerald-500/5 rounded-xl border border-emerald-500/15">
                       <span className="font-bold text-emerald-400 block mb-1">Eden AI:</span>
-                      "Processing... Event scheduled on May 25th, 2026. Notification dispatched to target group (Coordinators &bull; Lagos Zone 1)."
+                      "Processing... Event scheduled on May 25th, 2026. Notification dispatched to target group (Zonal Leaders &bull; Lagos Zone 1)."
                     </div>
                   </div>
                 </div>

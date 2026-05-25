@@ -27,6 +27,7 @@ export interface DirectoryUser {
     date_of_birth: string | null;
     bio: string | null;
     is_verified: boolean;
+    leadership_role?: string | null;
   } | null;
 }
 
@@ -192,7 +193,7 @@ export function DirectoryGrid({ title, users, currentUserRole, facultyId, facult
               className="w-full sm:w-auto inline-flex items-center justify-center space-x-1.5 px-4 py-2 bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 text-xs font-bold rounded-xl transition-all border border-amber-500/20"
             >
               <UserMinus className="w-3.5 h-3.5" />
-              <span>Delete All {title.toLowerCase().includes("student") ? "Students" : "Coordinators"}</span>
+              <span>Delete All {title.toLowerCase().includes("student") ? "Students" : "Zonal Leaders"}</span>
             </button>
           </div>
         </div>
@@ -235,16 +236,21 @@ export function DirectoryGrid({ title, users, currentUserRole, facultyId, facult
             </div>
             
             <div className="flex flex-col items-center min-w-0 w-full px-2">
-              <div className="flex items-center gap-1.5 mb-1 max-w-full justify-center">
+              <div className="flex items-center gap-1.5 mb-1 max-w-full justify-center flex-wrap">
                 <h3 className="font-bold text-gray-900 dark:text-white truncate">{user.full_name || "Anonymous User"}</h3>
                 {user.profile?.is_verified && <VerifiedBadge className="w-4 h-4 shrink-0" />}
+                {user.profile?.leadership_role && (
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-black bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 uppercase tracking-widest shrink-0 select-none animate-pulse">
+                    👑 Leader
+                  </span>
+                )}
               </div>
               <p className="text-sm text-gray-500 dark:text-gray-400 truncate w-full">{user.profile?.campus_zone ? parseCampuses(user.profile.campus_zone).join(", ") : user.email}</p>
             </div>
             
             <div className="mt-4 pt-4 border-t border-gray-100 dark:border-white/5 w-full flex justify-between items-center px-2">
               <span className="text-[10px] font-bold tracking-widest uppercase text-emerald-600 dark:text-emerald-400">
-                {user.role}
+                {user.role === "COORDINATOR" ? "Zonal Leader" : user.role}
               </span>
               <span className="text-xs font-semibold text-gray-400 group-hover:text-emerald-500 transition-colors">
                 View Profile &rarr;
@@ -303,58 +309,68 @@ export function DirectoryGrid({ title, users, currentUserRole, facultyId, facult
                       getInitials(selectedUser.full_name, selectedUser.email)
                     )}
                   </div>
-                <div className="pt-2 sm:pt-16">
-                  <div className="flex items-center gap-2 mb-1">
-                    <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">{selectedUser.full_name || "Anonymous User"}</h2>
-                    {selectedUser.profile?.is_verified && <VerifiedBadge className="w-6 h-6" />}
-                  </div>
-                  <div className="flex items-center gap-3 mb-2 flex-wrap">
-                    {currentUserRole === "ADMIN" ? (
-                      <div className="flex items-center gap-3 flex-wrap">
-                        <div className="relative">
-                          <select
-                            value={selectedUser.role}
-                            onChange={(e) => handleRoleChange(e.target.value as any)}
-                            disabled={isUpdatingRole}
-                            className="appearance-none bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 text-sm font-bold tracking-widest uppercase px-3 py-1.5 pr-8 rounded-lg border border-emerald-200 dark:border-emerald-900/50 cursor-pointer focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:opacity-50"
-                          >
-                            <option value="STUDENT" className="bg-white dark:bg-[#111] text-gray-900 dark:text-white font-sans text-sm">Student</option>
-                            <option value="COORDINATOR" className="bg-white dark:bg-[#111] text-gray-900 dark:text-white font-sans text-sm">Coordinator</option>
-                            <option value="ADMIN" className="bg-white dark:bg-[#111] text-gray-900 dark:text-white font-sans text-sm">Admin</option>
-                          </select>
-                          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-emerald-600 dark:text-emerald-400">
-                            <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
-                          </div>
-                          {isUpdatingRole && (
-                            <div className="absolute -right-6 top-1/2 -translate-y-1/2">
-                              <Loader2 className="w-4 h-4 animate-spin text-emerald-600 dark:text-emerald-400" />
+                  <div className="pt-2 sm:pt-16">
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
+                      <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">{selectedUser.full_name || "Anonymous User"}</h2>
+                      {selectedUser.profile?.is_verified && <VerifiedBadge className="w-6 h-6" />}
+                      {selectedUser.profile?.leadership_role && (
+                        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-black bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 uppercase tracking-widest shrink-0 select-none animate-pulse">
+                          👑 Leader
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-3 mb-2 flex-wrap">
+                      {currentUserRole === "ADMIN" ? (
+                        <div className="flex items-center gap-3 flex-wrap">
+                          <div className="relative">
+                            <select
+                              value={selectedUser.role}
+                              onChange={(e) => handleRoleChange(e.target.value as any)}
+                              disabled={isUpdatingRole}
+                              className="appearance-none bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 text-sm font-bold tracking-widest uppercase px-3 py-1.5 pr-8 rounded-lg border border-emerald-200 dark:border-emerald-900/50 cursor-pointer focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:opacity-50"
+                            >
+                              <option value="STUDENT" className="bg-white dark:bg-[#111] text-gray-900 dark:text-white font-sans text-sm">Student</option>
+                              <option value="COORDINATOR" className="bg-white dark:bg-[#111] text-gray-900 dark:text-white font-sans text-sm">Zonal Leader</option>
+                              <option value="ADMIN" className="bg-white dark:bg-[#111] text-gray-900 dark:text-white font-sans text-sm">Admin</option>
+                            </select>
+                            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-emerald-600 dark:text-emerald-400">
+                              <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
                             </div>
-                          )}
+                            {isUpdatingRole && (
+                              <div className="absolute -right-6 top-1/2 -translate-y-1/2">
+                                <Loader2 className="w-4 h-4 animate-spin text-emerald-600 dark:text-emerald-450" />
+                              </div>
+                            )}
+                          </div>
+                          
+                          <button
+                             onClick={() => setDeleteConfirmUser(selectedUser)}
+                            className="inline-flex items-center space-x-1.5 px-3 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 text-xs font-bold rounded-lg border border-rose-500/20 transition-all shadow-sm"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                            <span>Delete Account</span>
+                          </button>
                         </div>
-                        
-                        <button
-                          onClick={() => setDeleteConfirmUser(selectedUser)}
-                          className="inline-flex items-center space-x-1.5 px-3 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 text-xs font-bold rounded-lg border border-rose-500/20 transition-all shadow-sm"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                          <span>Delete Account</span>
-                        </button>
+                      ) : (
+                        <p className="text-sm font-medium text-emerald-600 dark:text-emerald-400 tracking-widest uppercase">
+                          {selectedUser.role === "COORDINATOR" ? "Zonal Leader" : selectedUser.role}
+                        </p>
+                      )}
+                    </div>
+                    {selectedUser.profile?.leadership_role && (
+                      <div className="mt-2 text-xs font-extrabold text-amber-650 dark:text-amber-500 uppercase tracking-widest">
+                        👑 HQ Position: {selectedUser.profile.leadership_role}
                       </div>
-                    ) : (
-                      <p className="text-sm font-medium text-emerald-600 dark:text-emerald-400 tracking-widest uppercase">
-                        {selectedUser.role}
-                      </p>
                     )}
+                    {error && (
+                      <p className="text-xs text-rose-500 mb-2">{error}</p>
+                    )}
+                    <p className="text-gray-550 dark:text-gray-400">{selectedUser.email}</p>
                   </div>
-                  {error && (
-                    <p className="text-xs text-rose-500 mb-2">{error}</p>
-                  )}
-                  <p className="text-gray-500 dark:text-gray-400">{selectedUser.email}</p>
                 </div>
-              </div>
 
               {/* Details Grid */}
-              <div className="grid sm:grid-cols-2 gap-6 mb-8">
+              <div className="grid sm:grid-cols-2 gap-6 mb-8 px-6 sm:px-10">
                 <div className="space-y-1">
                   <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Campus / Zone</span>
                   <p className="font-medium text-gray-900 dark:text-white">{selectedUser.profile?.campus_zone ? parseCampuses(selectedUser.profile.campus_zone).join(", ") : "Not provided"}</p>
@@ -388,7 +404,7 @@ export function DirectoryGrid({ title, users, currentUserRole, facultyId, facult
                 </div>
               </div>
 
-              {/* Coordinator/Admin Exclusive: Student Academy progress tracker */}
+              {/* Zonal Leader/Admin Exclusive: Student Academy progress tracker */}
               {selectedUser.role === "STUDENT" && (currentUserRole === "ADMIN" || currentUserRole === "COORDINATOR") && (
                 <div className="mt-8 pt-6 border-t border-gray-100 dark:border-white/5 space-y-6">
                   <div className="flex items-center space-x-2">

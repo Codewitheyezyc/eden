@@ -38,7 +38,8 @@ export default async function StudentsDirectoryPage({
           campus_zone,
           date_of_birth,
           bio,
-          is_verified
+          is_verified,
+          leadership_role
         )
       )
     `)

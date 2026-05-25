@@ -161,7 +161,7 @@ export default async function FacultyDashboardPage({
         full_name,
         avatar_url,
         email,
-        profiles (campus_zone, is_verified)
+        profiles (campus_zone, is_verified, leadership_role)
       )
     `)
     .eq("faculty_id", faculty.id)
@@ -178,7 +178,7 @@ export default async function FacultyDashboardPage({
         full_name,
         avatar_url,
         email,
-        profiles (is_verified)
+        profiles (is_verified, leadership_role)
       )
     `)
     .eq("faculty_id", faculty.id)
@@ -198,7 +198,8 @@ export default async function FacultyDashboardPage({
         email,
         profiles (
           campus_zone,
-          is_verified
+          is_verified,
+          leadership_role
         )
       )
     `)
@@ -216,7 +217,8 @@ export default async function FacultyDashboardPage({
       role: m.role || "STUDENT",
       profile: profile ? {
         campusZone: profile.campus_zone,
-        isVerified: !!profile.is_verified
+        isVerified: !!profile.is_verified,
+        leadershipRole: profile.leadership_role || null
       } : null
     };
   })
@@ -244,8 +246,7 @@ export default async function FacultyDashboardPage({
         )
       )
     `)
-    .eq("faculty_id", faculty.id)
-    .eq("role", "ADMIN");
+    .eq("faculty_id", faculty.id);
 
   const hqLeadersWidgetList = (hqLeadersData || []).map((m: any) => {
     const userObj = Array.isArray(m.users) ? m.users[0] : m.users;
@@ -424,7 +425,7 @@ export default async function FacultyDashboardPage({
             <div className="w-14 h-14 bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 rounded-2xl flex items-center justify-center mb-6">
                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
             </div>
-            <h3 className="font-medium text-gray-500 dark:text-gray-400 text-xs tracking-widest uppercase mb-1">Coordinators</h3>
+            <h3 className="font-medium text-gray-500 dark:text-gray-400 text-xs tracking-widest uppercase mb-1">Zonal Leaders</h3>
             <p className="text-3xl font-bold text-gray-900 dark:text-white">{coordinatorCount || 0}</p>
           </div>
         )}
@@ -573,7 +574,7 @@ export default async function FacultyDashboardPage({
                         {m.role === "ADMIN" ? (
                           <span className="text-[8px] bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20 px-1 py-0.5 rounded font-bold uppercase tracking-wide">Admin</span>
                         ) : m.role === "COORDINATOR" ? (
-                          <span className="text-[8px] bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20 px-1 py-0.5 rounded font-bold uppercase tracking-wide">Coord</span>
+                          <span className="text-[8px] bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20 px-1 py-0.5 rounded font-bold uppercase tracking-wide">Zonal Ldr</span>
                         ) : (
                           <span className="text-[8px] bg-blue-500/10 text-blue-750 dark:text-blue-400 border border-blue-500/20 px-1 py-0.5 rounded font-bold uppercase tracking-wide">Stud</span>
                         )}
@@ -726,9 +727,14 @@ export default async function FacultyDashboardPage({
                         {userObj?.avatar_url ? <img src={userObj.avatar_url} className="w-full h-full rounded-full" /> : userObj?.full_name?.charAt(0) || 'S'}
                       </div>
                       <div className="ml-3 min-w-0 flex-1">
-                        <div className="flex items-center gap-1.5 mb-0.5">
+                        <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
                           <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{userObj?.full_name || 'Anonymous Student'}</p>
                           {profile?.is_verified && <VerifiedBadge className="w-3.5 h-3.5 shrink-0" />}
+                          {profile?.leadership_role && (
+                            <span className="inline-flex items-center px-1.5 py-0.2 rounded-full text-[8px] font-black bg-amber-500/10 text-amber-600 dark:text-amber-450 border border-amber-500/20 uppercase tracking-widest shrink-0 select-none animate-pulse">
+                              👑 Leader
+                            </span>
+                          )}
                         </div>
                         <p className="text-xs text-gray-500 truncate">{profile?.campus_zone ? parseCampuses(profile.campus_zone).join(", ") : userObj?.email}</p>
                       </div>
@@ -745,10 +751,10 @@ export default async function FacultyDashboardPage({
           {/* Coordinators */}
           {(role === "ADMIN" || role === "COORDINATOR") && (
             <div>
-              <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Coordinators</h3>
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Zonal Leaders</h3>
               <div className="space-y-4">
                 {coordinatorsList?.length === 0 ? (
-                  <p className="text-sm text-gray-500">No coordinators assigned.</p>
+                  <p className="text-sm text-gray-500">No zonal leaders assigned.</p>
                 ) : (
                   coordinatorsList?.map((c: any) => {
                     const userObj = Array.isArray(c.users) ? c.users[0] : c.users;
@@ -756,14 +762,19 @@ export default async function FacultyDashboardPage({
                     return (
                       <div key={c.user_id} className="flex items-center">
                         <div className="w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400 flex items-center justify-center font-bold text-sm shrink-0 border-2 border-white dark:border-[#0a0a0a]">
-                          {userObj?.avatar_url ? <img src={userObj.avatar_url} className="w-full h-full rounded-full" /> : userObj?.full_name?.charAt(0) || 'C'}
+                          {userObj?.avatar_url ? <img src={userObj.avatar_url} className="w-full h-full rounded-full" /> : userObj?.full_name?.charAt(0) || 'L'}
                         </div>
                         <div className="ml-3 min-w-0 flex-1">
-                          <div className="flex items-center gap-1.5 mb-0.5">
-                            <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{userObj?.full_name || 'Anonymous Coordinator'}</p>
+                          <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
+                            <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{userObj?.full_name || 'Anonymous Zonal Leader'}</p>
                             {profile?.is_verified && <VerifiedBadge className="w-3.5 h-3.5 shrink-0" />}
+                            {profile?.leadership_role && (
+                              <span className="inline-flex items-center px-1.5 py-0.2 rounded-full text-[8px] font-black bg-amber-500/10 text-amber-600 dark:text-amber-450 border border-amber-500/20 uppercase tracking-widest shrink-0 select-none animate-pulse">
+                                👑 Leader
+                              </span>
+                            )}
                           </div>
-                          <p className="text-xs text-amber-600 dark:text-amber-500 font-medium">Coordinator</p>
+                          <p className="text-xs text-amber-600 dark:text-amber-500 font-medium">Zonal Leader</p>
                         </div>
                         <div className="text-xs text-gray-400 whitespace-nowrap ml-2">
                           Joined {timeAgo(c.created_at)}

@@ -11,11 +11,11 @@ export const metadata: Metadata = {
     default: "Loveworld Arts Academy — Premium Creative Governance Platform",
     template: "%s | Loveworld Arts Academy",
   },
-  description: "Discover Loveworld Arts Academy, the ultra-premium multi-tenant digital workspace for student learning and focused coordinator administration.",
+  description: "Discover Loveworld Arts Academy, the ultra-premium multi-tenant digital workspace for student learning and focused zonal leader administration.",
   metadataBase: new URL("https://eden-academy.org"),
   openGraph: {
     title: "Loveworld Arts Academy — Premium Creative Governance Platform",
-    description: "Discover Loveworld Arts Academy, the ultra-premium multi-tenant digital workspace for student learning and focused coordinator administration.",
+    description: "Discover Loveworld Arts Academy, the ultra-premium multi-tenant digital workspace for student learning and focused zonal leader administration.",
     url: "https://eden-academy.org",
     siteName: "Loveworld Arts Academy",
     images: [
@@ -32,7 +32,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "Loveworld Arts Academy — Premium Creative Governance Platform",
-    description: "Discover Loveworld Arts Academy, the ultra-premium multi-tenant digital workspace for student learning and focused coordinator administration.",
+    description: "Discover Loveworld Arts Academy, the ultra-premium multi-tenant digital workspace for student learning and focused zonal leader administration.",
     images: ["/og-image.png"],
     creator: "@CreedTech",
   },

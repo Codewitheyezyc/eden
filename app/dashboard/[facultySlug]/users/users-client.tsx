@@ -179,7 +179,7 @@ export function UsersManagementClient({ initialUsers, facultyId, facultySlug, cu
                   : "bg-transparent text-gray-500 hover:text-gray-900 dark:hover:text-white border-transparent"
               )}
             >
-              {tab === "ALL" ? "All Roles" : tab + "S"}
+              {tab === "ALL" ? "All Roles" : tab === "COORDINATOR" ? "Zonal Leaders" : tab === "ADMIN" ? "Admins" : "Students"}
             </button>
           ))}
         </div>
@@ -274,11 +274,16 @@ export function UsersManagementClient({ initialUsers, facultyId, facultySlug, cu
                           )}
                         </div>
                         <div className="min-w-0">
-                          <div className="flex items-center gap-1.5 mb-0.5">
+                          <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
                             <span className="font-bold text-sm text-gray-900 dark:text-white truncate">
                               {user.full_name || "Anonymous User"}
                             </span>
                             {user.profile?.is_verified && <VerifiedBadge className="w-3.5 h-3.5 shrink-0" />}
+                            {user.profile?.leadership_role && (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-black bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 uppercase tracking-widest shrink-0 select-none animate-pulse">
+                                👑 Leader
+                              </span>
+                            )}
                           </div>
                           <span className="text-xs text-gray-400 dark:text-gray-500 truncate block">
                             {user.email}
@@ -304,7 +309,7 @@ export function UsersManagementClient({ initialUsers, facultyId, facultySlug, cu
                           ? "bg-amber-500/10 border-amber-500/20 text-amber-700 dark:text-amber-400"
                           : "bg-emerald-500/10 border-emerald-500/20 text-emerald-700 dark:text-emerald-400"
                       )}>
-                        {user.role}
+                        {user.role === "COORDINATOR" ? "ZONAL LEADER" : user.role}
                       </span>
                     </td>
 
@@ -325,7 +330,7 @@ export function UsersManagementClient({ initialUsers, facultyId, facultySlug, cu
                             <button
                               onClick={() => setRoleChangeTarget({ user, role: "COORDINATOR" })}
                               className="inline-flex items-center justify-center p-1.5 text-gray-400 hover:text-amber-600 dark:hover:text-amber-400 bg-gray-50 dark:bg-white/5 rounded-xl border border-gray-200/50 dark:border-white/5 hover:border-amber-500/20 transition-all shadow-sm"
-                              title="Promote to Coordinator"
+                              title="Promote to Zonal Leader"
                             >
                               <Shield className="w-4 h-4" />
                             </button>
@@ -384,7 +389,7 @@ export function UsersManagementClient({ initialUsers, facultyId, facultySlug, cu
             className="inline-flex items-center space-x-1.5 px-4 py-2.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 text-xs font-bold rounded-2xl border border-amber-500/20 transition-all shadow-sm"
           >
             <UserMinus className="w-4 h-4" />
-            <span>Delete All {selectedRoleTab.toLowerCase()}s</span>
+            <span>Delete All {selectedRoleTab === "COORDINATOR" ? "Zonal Leaders" : selectedRoleTab.toLowerCase() + "s"}</span>
           </button>
         </div>
       )}
@@ -429,9 +434,14 @@ export function UsersManagementClient({ initialUsers, facultyId, facultySlug, cu
                     )}
                   </div>
                   <div className="pt-2 sm:pt-16">
-                    <div className="flex items-center gap-2 mb-1">
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
                       <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">{selectedUser.full_name || "Anonymous User"}</h2>
                       {selectedUser.profile?.is_verified && <VerifiedBadge className="w-6 h-6" />}
+                      {selectedUser.profile?.leadership_role && (
+                        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-black bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 uppercase tracking-widest shrink-0 select-none animate-pulse">
+                          👑 Leader
+                        </span>
+                      )}
                     </div>
                     
                     <div className="flex items-center gap-3 mb-2 flex-wrap">
@@ -444,7 +454,7 @@ export function UsersManagementClient({ initialUsers, facultyId, facultySlug, cu
                             className="appearance-none bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 text-sm font-bold tracking-widest uppercase px-3 py-1.5 pr-8 rounded-lg border border-emerald-200 dark:border-emerald-900/50 cursor-pointer focus:outline-none"
                           >
                             <option value="STUDENT" className="bg-white dark:bg-[#111] text-gray-900 dark:text-white">Student</option>
-                            <option value="COORDINATOR" className="bg-white dark:bg-[#111] text-gray-900 dark:text-white">Coordinator</option>
+                            <option value="COORDINATOR" className="bg-white dark:bg-[#111] text-gray-900 dark:text-white">Zonal Leader</option>
                             <option value="ADMIN" className="bg-white dark:bg-[#111] text-gray-900 dark:text-white">Admin</option>
                           </select>
                           
@@ -462,6 +472,11 @@ export function UsersManagementClient({ initialUsers, facultyId, facultySlug, cu
                         </span>
                       )}
                     </div>
+                    {selectedUser.profile?.leadership_role && (
+                      <div className="mt-2 text-xs font-extrabold text-amber-650 dark:text-amber-500 uppercase tracking-widest">
+                        👑 HQ Position: {selectedUser.profile.leadership_role}
+                      </div>
+                    )}
                     <p className="text-gray-500 dark:text-gray-400 mt-2">{selectedUser.email}</p>
                   </div>
                 </div>
@@ -630,7 +645,7 @@ export function UsersManagementClient({ initialUsers, facultyId, facultySlug, cu
               <h3 className="text-lg font-extrabold tracking-tight">Confirm Role Assignment</h3>
             </div>
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-6 leading-relaxed">
-              Are you sure you want to change the role of <span className="font-bold text-gray-900 dark:text-white">{roleChangeTarget.user.full_name || "this user"}</span> to <span className="font-extrabold text-emerald-600 dark:text-emerald-400 uppercase tracking-widest">{roleChangeTarget.role}</span>? This will immediately reconfigure their permissions and access areas.
+              Are you sure you want to change the role of <span className="font-bold text-gray-900 dark:text-white">{roleChangeTarget.user.full_name || "this user"}</span> to <span className="font-extrabold text-emerald-600 dark:text-emerald-400 uppercase tracking-widest">{roleChangeTarget.role === "COORDINATOR" ? "ZONAL LEADER" : roleChangeTarget.role}</span>? This will immediately reconfigure their permissions and access areas.
             </p>
             <div className="flex justify-end space-x-3">
               <button

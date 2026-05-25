@@ -53,7 +53,8 @@ export default async function UsersManagementPage({
           campus_zone,
           date_of_birth,
           bio,
-          is_verified
+          is_verified,
+          leadership_role
         )
       )
     `)
@@ -79,7 +80,7 @@ export default async function UsersManagementPage({
       <div className="mb-2">
         <h1 className="text-2xl md:text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">User Directory & Role Assignments</h1>
         <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-          Supervise registered faculty members. Elevate roles to coordinators/admins, downgrade roles, or clear access profiles.
+          Supervise registered faculty members. Elevate roles to zonal leaders/admins, downgrade roles, or clear access profiles.
         </p>
       </div>
 

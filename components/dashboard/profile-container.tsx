@@ -291,7 +291,7 @@ export function ProfileContainer({ userId, userEmail, initialProfile, initialFul
           <p className="text-sm text-gray-500 dark:text-gray-400 truncate w-full px-2" title={userEmail}>{userEmail}</p>
           
           <div className="mt-6 w-full p-4 bg-emerald-50 dark:bg-emerald-900/10 rounded-2xl border border-emerald-100 dark:border-emerald-900/20">
-            <p className="text-xs text-emerald-800 dark:text-emerald-400 font-medium">Keep your profile updated to help coordinators assign you to the right events and classes.</p>
+            <p className="text-xs text-emerald-800 dark:text-emerald-400 font-medium">Keep your profile updated to help zonal leaders assign you to the right events and classes.</p>
           </div>
         </div>
 

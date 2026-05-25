@@ -43,7 +43,7 @@ export function OnboardingTour({ role, facultySlug, initialCompletedTour, isVeri
           {
             targetId: "tour-overview",
             title: "Administrative Overview",
-            content: "Your main dashboard aggregates total students, faculty coordinators, upcoming events, and submitted reports in real-time.",
+            content: "Your main dashboard aggregates total students, faculty zonal leaders, upcoming events, and submitted reports in real-time.",
             position: "right",
           },
           {
@@ -60,8 +60,8 @@ export function OnboardingTour({ role, facultySlug, initialCompletedTour, isVeri
           },
           {
             targetId: "tour-coordinators",
-            title: "Coordinate Staff",
-            content: "Appoint coordinators, assign campus permissions, and oversee the administrative team directory.",
+            title: "Manage Zonal Leaders",
+            content: "Appoint zonal leaders, assign campus permissions, and oversee the administrative team directory.",
             position: "right",
           },
           {
@@ -75,8 +75,8 @@ export function OnboardingTour({ role, facultySlug, initialCompletedTour, isVeri
         return [
           {
             targetId: null,
-            title: "Welcome, Faculty Coordinator! ⚡",
-            content: "You coordinate operations, schedule sessions, and supervise student progress. Let's explore your tools.",
+            title: "Welcome, Zonal Leader! ⚡",
+            content: "You oversee operations, schedule sessions, and supervise student progress. Let's explore your tools.",
             position: "center",
           },
           {
@@ -133,7 +133,7 @@ export function OnboardingTour({ role, facultySlug, initialCompletedTour, isVeri
           {
             targetId: "tour-messages",
             title: "Stay Notified",
-            content: "Check important messages and directives sent directly to your campus by coordinators.",
+            content: "Check important messages and directives sent directly to your campus by zonal leaders.",
             position: "right",
           },
         ];

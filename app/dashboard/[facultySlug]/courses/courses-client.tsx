@@ -124,6 +124,56 @@ Trust is the fuel of voluntary organizations. In a student ministry, peer-to-pee
   },
 ];
 
+interface ParsedVideo {
+  type: "youtube" | "vimeo" | "gdrive" | "direct";
+  embedUrl: string;
+}
+
+function parseVideoUrl(url: string): ParsedVideo {
+  if (!url) {
+    return { type: "direct", embedUrl: "" };
+  }
+
+  const trimmed = url.trim();
+
+  // YouTube Check
+  const ytRegExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=|shorts\/)([^#\&\?]*).*/;
+  const ytMatch = trimmed.match(ytRegExp);
+  if (ytMatch && ytMatch[2].length === 11) {
+    const videoId = ytMatch[2];
+    return {
+      type: "youtube",
+      embedUrl: `https://www.youtube.com/embed/${videoId}?enablejsapi=1&rel=0`,
+    };
+  }
+
+  // Vimeo Check
+  const vimeoRegExp = /(?:vimeo\.com\/|player\.vimeo\.com\/video\/)(\d+)/;
+  const vimeoMatch = trimmed.match(vimeoRegExp);
+  if (vimeoMatch && vimeoMatch[1]) {
+    return {
+      type: "vimeo",
+      embedUrl: `https://player.vimeo.com/video/${vimeoMatch[1]}`,
+    };
+  }
+
+  // Google Drive Check
+  const gdriveRegExp = /drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)\/(?:view|preview)/;
+  const gdriveMatch = trimmed.match(gdriveRegExp);
+  if (gdriveMatch && gdriveMatch[1]) {
+    return {
+      type: "gdrive",
+      embedUrl: `https://drive.google.com/file/d/${gdriveMatch[1]}/preview`,
+    };
+  }
+
+  // Fallback as direct video link
+  return {
+    type: "direct",
+    embedUrl: trimmed,
+  };
+}
+
 export function CoursesClient({ 
   role, 
   facultySlug, 
@@ -288,6 +338,36 @@ export function CoursesClient({
     completeLesson(activeCourse.id, lesson.id);
   };
 
+  // Listen to messages from YouTube Player API to auto-complete when video ends
+  useEffect(() => {
+    if (!activeCourse) return;
+    const lesson = activeCourse.lessons[activeLessonIndex];
+    if (lesson.type !== "video") return;
+
+    const parsed = parseVideoUrl(lesson.content);
+    if (parsed.type !== "youtube") return;
+
+    const handleYTMessage = (event: MessageEvent) => {
+      try {
+        let data = event.data;
+        if (typeof data === "string") {
+          data = JSON.parse(data);
+        }
+        if (data && data.event === "onStateChange" && data.info === 0) {
+          // info: 0 means ENDED in YouTube Player API
+          completeLesson(activeCourse.id, lesson.id);
+        }
+      } catch (err) {
+        // Safe check for other message formats
+      }
+    };
+
+    window.addEventListener("message", handleYTMessage);
+    return () => {
+      window.removeEventListener("message", handleYTMessage);
+    };
+  }, [activeCourse, activeLessonIndex]);
+
   // Calculate percentage progress of course
   const getCourseProgressPercentage = (courseId: string, lessonsCount: number) => {
     if (lessonsCount === 0) return 0;
@@ -389,82 +469,113 @@ export function CoursesClient({
                 </div>
 
                 {/* VIDEO PLAYER VIEW */}
-                {activeCourse.lessons[activeLessonIndex].type === "video" ? (
-                  <div className="space-y-6">
-                    <div className="relative rounded-3xl overflow-hidden bg-black aspect-video border border-gray-200/50 dark:border-white/5 shadow-2xl">
-                      <video
-                        ref={videoRef}
-                        src={activeCourse.lessons[activeLessonIndex].content}
-                        controls
-                        onEnded={handleVideoEnded}
-                        className="w-full h-full object-contain"
-                      />
-                    </div>
-                    
-                    {/* Advanced Controls Utility Bar */}
-                    <div className="flex flex-wrap items-center justify-between gap-4 bg-gray-50 dark:bg-white/[0.02] border border-gray-200/50 dark:border-white/5 p-4 rounded-2xl">
-                      <div className="flex items-center space-x-3">
-                        {/* Rewind 10s */}
-                        <button
-                          onClick={() => {
-                            if (videoRef.current) {
-                              videoRef.current.currentTime = Math.max(0, videoRef.current.currentTime - 10);
-                            }
-                          }}
-                          className="p-2.5 rounded-xl bg-white dark:bg-white/5 border border-gray-200 dark:border-transparent hover:bg-gray-100 dark:hover:bg-white/10 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition flex items-center gap-1.5 text-xs font-bold shadow-sm"
-                          title="Rewind 10 seconds"
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
-                          <span>-10s</span>
-                        </button>
+                {(() => {
+                  if (activeCourse.lessons[activeLessonIndex].type !== "video") return null;
+                  const lessonContent = activeCourse.lessons[activeLessonIndex].content;
+                  const parsedVideo = parseVideoUrl(lessonContent);
 
-                        {/* Forward 10s */}
-                        <button
-                          onClick={() => {
-                            if (videoRef.current) {
-                              videoRef.current.currentTime = Math.min(videoRef.current.duration || 0, videoRef.current.currentTime + 10);
-                            }
-                          }}
-                          className="p-2.5 rounded-xl bg-white dark:bg-white/5 border border-gray-200 dark:border-transparent hover:bg-gray-100 dark:hover:bg-white/10 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition flex items-center gap-1.5 text-xs font-bold shadow-sm"
-                          title="Forward 10 seconds"
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 1 1-9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>
-                          <span>+10s</span>
-                        </button>
+                  return (
+                    <div className="space-y-6">
+                      <div className="relative rounded-3xl overflow-hidden bg-black aspect-video border border-gray-200/50 dark:border-white/5 shadow-2xl">
+                        {parsedVideo.type !== "direct" ? (
+                          <iframe
+                            src={parsedVideo.embedUrl}
+                            className="w-full h-full border-0 absolute top-0 left-0"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                            allowFullScreen
+                            title={activeCourse.lessons[activeLessonIndex].title}
+                          />
+                        ) : (
+                          <video
+                            ref={videoRef}
+                            src={lessonContent}
+                            controls
+                            onEnded={handleVideoEnded}
+                            className="w-full h-full object-contain"
+                          />
+                        )}
+                      </div>
+                      
+                      {/* Advanced Controls Utility Bar */}
+                      <div className="flex flex-wrap items-center justify-between gap-4 bg-gray-50 dark:bg-white/[0.02] border border-gray-200/50 dark:border-white/5 p-4 rounded-2xl">
+                        {parsedVideo.type === "direct" ? (
+                          <div className="flex items-center space-x-3">
+                            {/* Rewind 10s */}
+                            <button
+                              onClick={() => {
+                                if (videoRef.current) {
+                                  videoRef.current.currentTime = Math.max(0, videoRef.current.currentTime - 10);
+                                }
+                              }}
+                              className="p-2.5 rounded-xl bg-white dark:bg-white/5 border border-gray-200 dark:border-transparent hover:bg-gray-100 dark:hover:bg-white/10 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition flex items-center gap-1.5 text-xs font-bold shadow-sm"
+                              title="Rewind 10 seconds"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                              <span>-10s</span>
+                            </button>
 
-                        {/* Speed controller */}
-                        <div className="flex items-center space-x-1.5 bg-white dark:bg-white/5 border border-gray-200 dark:border-transparent px-2.5 py-1.5 rounded-xl shadow-sm">
-                          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest pl-1">Speed:</span>
-                          <select
-                            onChange={(e) => {
-                              if (videoRef.current) {
-                                videoRef.current.playbackRate = parseFloat(e.target.value);
-                              }
-                            }}
-                            defaultValue="1.0"
-                            className="bg-transparent text-xs font-bold text-emerald-600 dark:text-emerald-400 focus:outline-none cursor-pointer pr-1"
+                            {/* Forward 10s */}
+                            <button
+                              onClick={() => {
+                                if (videoRef.current) {
+                                  videoRef.current.currentTime = Math.min(videoRef.current.duration || 0, videoRef.current.currentTime + 10);
+                                }
+                              }}
+                              className="p-2.5 rounded-xl bg-white dark:bg-white/5 border border-gray-200 dark:border-transparent hover:bg-gray-100 dark:hover:bg-white/10 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition flex items-center gap-1.5 text-xs font-bold shadow-sm"
+                              title="Forward 10 seconds"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 1 1-9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>
+                              <span>+10s</span>
+                            </button>
+
+                            {/* Speed controller */}
+                            <div className="flex items-center space-x-1.5 bg-white dark:bg-white/5 border border-gray-200 dark:border-transparent px-2.5 py-1.5 rounded-xl shadow-sm">
+                              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest pl-1">Speed:</span>
+                              <select
+                                onChange={(e) => {
+                                  if (videoRef.current) {
+                                    videoRef.current.playbackRate = parseFloat(e.target.value);
+                                  }
+                                }}
+                                defaultValue="1.0"
+                                className="bg-transparent text-xs font-bold text-emerald-600 dark:text-emerald-400 focus:outline-none cursor-pointer pr-1"
+                              >
+                                <option value="0.5" className="bg-white dark:bg-[#0d0d12] text-gray-900 dark:text-white">0.5x</option>
+                                <option value="1.0" className="bg-white dark:bg-[#0d0d12] text-gray-900 dark:text-white">1.0x (Normal)</option>
+                                <option value="1.5" className="bg-white dark:bg-[#0d0d12] text-gray-900 dark:text-white">1.5x</option>
+                                <option value="2.0" className="bg-white dark:bg-[#0d0d12] text-gray-900 dark:text-white">2.0x</option>
+                              </select>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex items-center space-x-2 bg-emerald-500/5 border border-emerald-500/10 px-3 py-1.5 rounded-xl">
+                            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                            <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-widest">
+                              Playing via {parsedVideo.type === "youtube" ? "YouTube" : parsedVideo.type === "vimeo" ? "Vimeo" : "Cloud Reader"}
+                            </span>
+                          </div>
+                        )}
+
+                        <div className="flex items-center space-x-3">
+                          {parsedVideo.type === "youtube" && (
+                            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest hidden sm:inline">
+                              Auto-completes on video end
+                            </span>
+                          )}
+                          <Button
+                            onClick={() => completeLesson(activeCourse.id, activeCourse.lessons[activeLessonIndex].id)}
+                            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl transition"
                           >
-                            <option value="0.5" className="bg-white dark:bg-[#0d0d12] text-gray-900 dark:text-white">0.5x</option>
-                            <option value="1.0" className="bg-white dark:bg-[#0d0d12] text-gray-900 dark:text-white">1.0x (Normal)</option>
-                            <option value="1.5" className="bg-white dark:bg-[#0d0d12] text-gray-900 dark:text-white">1.5x</option>
-                            <option value="2.0" className="bg-white dark:bg-[#0d0d12] text-gray-900 dark:text-white">2.0x</option>
-                          </select>
+                            Mark as Completed
+                          </Button>
                         </div>
                       </div>
-
-                      <div className="flex items-center space-x-3">
-                        <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest hidden sm:inline">Auto-complete on end</span>
-                        <Button
-                          onClick={() => completeLesson(activeCourse.id, activeCourse.lessons[activeLessonIndex].id)}
-                          className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl transition"
-                        >
-                          Mark as Completed
-                        </Button>
-                      </div>
                     </div>
-                  </div>
-                ) : (
-                  /* TEXT READER VIEW */
+                  );
+                })()}
+
+                {/* TEXT READER VIEW */}
+                {activeCourse.lessons[activeLessonIndex].type === "text" && (
                   <div className="space-y-8">
                     <div className="p-8 md:p-12 bg-white/50 dark:bg-white/[0.02] backdrop-blur-xl border border-gray-200/50 dark:border-white/5 rounded-3xl text-gray-800 dark:text-gray-300 space-y-6 shadow-xl leading-relaxed text-sm md:text-base font-light max-w-none">
                       {/* Render basic markdown/content text nicely */}
@@ -818,7 +929,7 @@ export function CoursesClient({
                             placeholder={
                               newType === "text" 
                                 ? "Enter full textbook lecture markdown text content here..." 
-                                : "Enter video .mp4 direct link URL feed (e.g. https://www.w3schools.com/html/mov_bbb.mp4)"
+                                : "Enter YouTube watch link, Vimeo link, Google Drive preview embed, or direct .mp4 URL feed"
                             }
                             className="w-full bg-white dark:bg-black/50 border border-gray-200 dark:border-white/10 rounded-xl p-3 text-xs font-light text-gray-950 dark:text-white placeholder-gray-400 dark:placeholder-gray-650 min-h-[80px]"
                             required

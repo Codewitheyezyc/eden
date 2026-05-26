@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { X, Send, CheckCircle2, AlertCircle, LifeBuoy } from "lucide-react";
 import confetti from "canvas-confetti";
+import toast from "react-hot-toast";
 
 export function SupportModal() {
   const { isOpen, closeSupport, userEmail, userName } = useSupport();
@@ -107,16 +108,19 @@ export function SupportModal() {
     if (!formData.name.trim()) {
       setStatus("error");
       setErrorMessage("Please enter your name.");
+      toast.error("Please enter your name.");
       return;
     }
     if (!formData.email.trim() || !/\S+@\S+\.\S+/.test(formData.email)) {
       setStatus("error");
       setErrorMessage("Please enter a valid email address.");
+      toast.error("Please enter a valid email address.");
       return;
     }
     if (formData.message.trim().length < 10) {
       setStatus("error");
       setErrorMessage("Message must be at least 10 characters long.");
+      toast.error("Message must be at least 10 characters long.");
       return;
     }
 
@@ -134,14 +138,19 @@ export function SupportModal() {
       console.log("Transmission Data:", formData);
       console.log("To fully connect, set NEXT_PUBLIC_EMAILJS_SERVICE_ID, NEXT_PUBLIC_EMAILJS_TEMPLATE_ID, and NEXT_PUBLIC_EMAILJS_PUBLIC_KEY in your .env.local");
 
+      const loadToast = toast.loading("Simulating transmission (Sandbox)...");
       // Simulate a high-fidelity loading transmission
       await new Promise((resolve) => setTimeout(resolve, 1500));
+      toast.dismiss(loadToast);
+      
       setStatus("success");
+      toast.success("Sandbox ticket simulated successfully!");
       triggerConfetti();
       return;
     }
 
     // LIVE EMAILJS TRANSMISSION
+    const submitToast = toast.loading("Transmitting ticket to support team...");
     try {
       const response = await fetch("https://api.emailjs.com/api/v1.0/email/send", {
         method: "POST",
@@ -163,17 +172,22 @@ export function SupportModal() {
         }),
       });
 
+      toast.dismiss(submitToast);
+
       if (response.ok) {
         setStatus("success");
+        toast.success("Support ticket registered successfully!");
         triggerConfetti();
       } else {
         const errText = await response.text();
         throw new Error(errText || "Failed to send message via EmailJS.");
       }
     } catch (err: any) {
+      toast.dismiss(submitToast);
       console.error("EmailJS Transmission Error:", err);
       setStatus("error");
       setErrorMessage(err.message || "An unexpected error occurred. Please try again.");
+      toast.error(err.message || "An unexpected transmission error occurred.");
     }
   };
 

@@ -3,6 +3,8 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/providers/theme-provider";
 import QueryProvider from "@/providers/query-provider";
+import { SupportProvider } from "@/providers/support-provider";
+import { FloatingSupport, SupportModal } from "@/components/shared";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -47,16 +49,21 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
         <QueryProvider>
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="system"
-            enableSystem
-            disableTransitionOnChange
-          >
-            {children}
-          </ThemeProvider>
+          <SupportProvider>
+            <ThemeProvider
+              attribute="class"
+              defaultTheme="system"
+              enableSystem
+              disableTransitionOnChange
+            >
+              {children}
+              <FloatingSupport />
+              <SupportModal />
+            </ThemeProvider>
+          </SupportProvider>
         </QueryProvider>
       </body>
     </html>
   );
 }
+

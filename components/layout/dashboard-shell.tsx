@@ -9,6 +9,7 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { NotificationsDropdown } from "@/components/dashboard/notifications-dropdown";
 import { OnboardingTour } from "@/components/dashboard/onboarding-tour";
+import { useSupport } from "@/providers/support-provider";
 
 interface DashboardShellProps {
   children: React.ReactNode;
@@ -25,6 +26,7 @@ interface DashboardShellProps {
 export function DashboardShell({ children, facultyName, facultySlug, role, userEmail, userName, avatarUrl, isVerified, completedTour }: DashboardShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const pathname = usePathname();
+  const { openSupport } = useSupport();
 
   // Navigation Items with explicit roles
   const navItems = [
@@ -115,6 +117,20 @@ export function DashboardShell({ children, facultyName, facultySlug, role, userE
               </Link>
             )
           })}
+          
+          {/* Custom Contact Support Action inside the sidebar navigation */}
+          <button
+            onClick={() => {
+              setSidebarOpen(false);
+              openSupport();
+            }}
+            className="w-full flex items-center px-3 py-2.5 text-sm font-medium rounded-xl transition-all duration-200 text-gray-600 hover:bg-white dark:hover:bg-white/5 hover:shadow-sm hover:text-gray-900 dark:text-gray-400 dark:hover:text-white border border-transparent hover:border-gray-200/50 dark:hover:border-white/5 group"
+          >
+            <div className="mr-3 text-gray-400 group-hover:text-emerald-500 dark:group-hover:text-emerald-400 transition-colors">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            </div>
+            Support Desk
+          </button>
         </nav>
         
         {/* Footer Area (User & Theme) */}

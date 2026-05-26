@@ -1,7 +1,12 @@
+"use client";
+
 import Link from "next/link";
 import { Logo } from "@/components/ui/logo";
+import { useSupport } from "@/providers/support-provider";
 
 export function MarketingFooter() {
+  const { openSupport } = useSupport();
+
   return (
     <footer className="border-t border-gray-200 dark:border-gray-900/50 bg-white dark:bg-[#030303] pt-16 pb-12 transition-colors relative overflow-hidden">
       <div className="absolute inset-x-0 bottom-0 h-44 bg-gradient-to-t from-emerald-500/[0.02] to-transparent pointer-events-none" />
@@ -31,7 +36,14 @@ export function MarketingFooter() {
             <ul className="space-y-2 text-xs text-gray-500 dark:text-gray-400">
               <li><Link href="#" className="hover:text-emerald-500 transition-colors">Privacy Policy</Link></li>
               <li><Link href="#" className="hover:text-emerald-500 transition-colors">Terms of Service</Link></li>
-              <li><Link href="#" className="hover:text-emerald-500 transition-colors">Contact Support</Link></li>
+              <li>
+                <button 
+                  onClick={openSupport} 
+                  className="hover:text-emerald-500 transition-colors text-left bg-transparent border-none p-0 cursor-pointer font-light"
+                >
+                  Contact Support
+                </button>
+              </li>
             </ul>
           </div>
           <div>
@@ -55,3 +67,4 @@ export function MarketingFooter() {
     </footer>
   );
 }
+

@@ -277,8 +277,6 @@ export function CoursesClient({
         setNewLessons([{ title: "Lesson 1: Getting Started", content: "", duration: "5 mins" }]);
         setShowAddModal(false);
         toast.success("Course created successfully!");
-      } else if (result.error) {
-        toast.error("Failed to create course: " + result.error);
       }
     } catch (error: any) {
       toast.error(error.message || "Failed to create course");

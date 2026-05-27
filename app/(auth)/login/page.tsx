@@ -21,22 +21,32 @@ export default function LoginPage() {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
+    console.log("Attempting sign in for:", email);
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      console.log("Supabase client instance config:", {
+        supabaseUrl: (supabase as any).supabaseUrl,
+        hasKey: !!(supabase as any).supabaseKey
+      });
+
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
+      console.log("Sign in result:", { data, error });
+
       if (error) {
+        console.error("Sign in error returned from Supabase:", error);
         setError(error.message);
         setIsLoading(false);
       } else {
+        console.log("Sign in successful, session set. Redirecting to /onboarding...");
         // Use window.location.replace to force a full reload and guarantee cookies are synchronized with the server
         window.location.replace("/onboarding");
       }
     } catch (err: any) {
-      console.error("Login error:", err);
+      console.error("Login catch-block exception:", err);
       setError(err?.message || "An unexpected error occurred during sign in.");
       setIsLoading(false);
     }

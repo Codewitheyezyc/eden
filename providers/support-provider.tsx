@@ -35,7 +35,7 @@ export function SupportProvider({ children }: { children: ReactNode }) {
             .from("profiles")
             .select("full_name")
             .eq("id", session.user.id)
-            .single();
+            .maybeSingle();
             
           if (profile?.full_name) {
             setUserName(profile.full_name);
@@ -51,19 +51,25 @@ export function SupportProvider({ children }: { children: ReactNode }) {
     // Listen for auth state changes to update support info dynamically
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        if (session?.user) {
-          setUserEmail(session.user.email || "");
-          const { data: profile } = await supabase
-            .from("profiles")
-            .select("full_name")
-            .eq("id", session.user.id)
-            .single();
-          if (profile?.full_name) {
-            setUserName(profile.full_name);
+        try {
+          if (session?.user) {
+            setUserEmail(session.user.email || "");
+            const { data: profile } = await supabase
+              .from("profiles")
+              .select("full_name")
+              .eq("id", session.user.id)
+              .maybeSingle();
+            if (profile?.full_name) {
+              setUserName(profile.full_name);
+            } else {
+              setUserName("");
+            }
+          } else {
+            setUserEmail("");
+            setUserName("");
           }
-        } else {
-          setUserEmail("");
-          setUserName("");
+        } catch (err) {
+          console.error("Error in support-provider onAuthStateChange callback:", err);
         }
       }
     );

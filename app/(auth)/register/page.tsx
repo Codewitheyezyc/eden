@@ -23,8 +23,14 @@ export default function RegisterPage() {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
+    console.log("Attempting registration for email:", email, "name:", fullName);
 
     try {
+      console.log("Supabase client instance config:", {
+        supabaseUrl: (supabase as any).supabaseUrl,
+        hasKey: !!(supabase as any).supabaseKey
+      });
+
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -35,7 +41,10 @@ export default function RegisterPage() {
         },
       });
 
+      console.log("Registration result payload:", { data, error });
+
       if (error) {
+        console.error("Registration error returned from Supabase:", error);
         if (error.message.toLowerCase().includes("user already registered")) {
           setError("This email is already registered. Please log in instead.");
         } else {
@@ -45,6 +54,7 @@ export default function RegisterPage() {
       } else {
         if (!data.session) {
           // Email verification is required
+          console.log("Registration successful: verification required. Redirecting to /verify...");
           if (typeof window !== "undefined") {
             localStorage.setItem("pending_verification_email", email);
           }
@@ -52,11 +62,12 @@ export default function RegisterPage() {
           return;
         }
         setSuccess(true);
+        console.log("Registration successful: session obtained. Redirecting to /onboarding...");
         // Use window.location.replace to force a full reload and guarantee cookies are synchronized with the server
         window.location.replace("/onboarding");
       }
     } catch (err: any) {
-      console.error("Registration error:", err);
+      console.error("Registration catch-block exception:", err);
       setError(err?.message || "An unexpected error occurred during signup.");
       setIsLoading(false);
     }

@@ -94,7 +94,7 @@ export function CreateEventModal({ facultyId, isOpen, onClose, onSuccess, editin
       const facultySlug = faculty?.slug || "";
 
       if (members && members.length > 0) {
-        const notificationsToInsert = members.map((m) => ({
+        const notificationsToInsert = members.map((m: any) => ({
           user_id: m.user_id,
           faculty_id: facultyId,
           title: isUpdate ? "Event Updated" : "New Event Scheduled",

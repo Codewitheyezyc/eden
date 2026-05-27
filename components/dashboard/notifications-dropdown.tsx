@@ -102,7 +102,7 @@ export function NotificationsDropdown({ facultySlug }: { facultySlug: string }) 
           table: "notifications",
           filter: `user_id=eq.${userId}`,
         },
-        (payload) => {
+        (payload: any) => {
           if (payload.eventType === "INSERT") {
             const newNotif = payload.new as Notification;
             setNotifications((prev) => [newNotif, ...prev]);

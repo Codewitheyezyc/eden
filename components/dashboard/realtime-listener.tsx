@@ -21,7 +21,7 @@ export function RealtimeDashboardListener({ facultyId }: { facultyId: string }) 
           table: "user_faculties",
           filter: `faculty_id=eq.${facultyId}`
         },
-        (payload) => {
+        (payload: any) => {
           console.log("Realtime update (user_faculties):", payload);
           router.refresh();
         }
@@ -34,7 +34,7 @@ export function RealtimeDashboardListener({ facultyId }: { facultyId: string }) 
           table: "reports",
           filter: `faculty_id=eq.${facultyId}`
         },
-        (payload) => {
+        (payload: any) => {
           console.log("Realtime update (reports):", payload);
           router.refresh();
         }
@@ -47,7 +47,7 @@ export function RealtimeDashboardListener({ facultyId }: { facultyId: string }) 
           table: "events",
           filter: `faculty_id=eq.${facultyId}`
         },
-        (payload) => {
+        (payload: any) => {
           console.log("Realtime update (events):", payload);
           router.refresh();
         }
@@ -60,7 +60,7 @@ export function RealtimeDashboardListener({ facultyId }: { facultyId: string }) 
           table: "announcements",
           filter: `faculty_id=eq.${facultyId}`
         },
-        (payload) => {
+        (payload: any) => {
           console.log("Realtime update (announcements):", payload);
           router.refresh();
         }
@@ -73,12 +73,12 @@ export function RealtimeDashboardListener({ facultyId }: { facultyId: string }) 
           table: "courses",
           filter: `faculty_id=eq.${facultyId}`
         },
-        (payload) => {
+        (payload: any) => {
           console.log("Realtime update (courses):", payload);
           router.refresh();
         }
       )
-      .subscribe((status) => {
+      .subscribe((status: any) => {
         console.log("Realtime subscription status:", status);
       });
 

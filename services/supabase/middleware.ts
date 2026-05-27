@@ -29,11 +29,21 @@ export async function updateSession(request: NextRequest) {
             value,
             ...options,
           });
+          
+          // Capture existing cookies to avoid losing them when recreating the response
+          const oldCookies = response.cookies.getAll();
+          
           response = NextResponse.next({
             request: {
               headers: request.headers,
             },
           });
+          
+          // Re-apply old cookies
+          oldCookies.forEach((cookie) => {
+            response.cookies.set(cookie);
+          });
+          
           response.cookies.set({
             name,
             value,
@@ -46,11 +56,21 @@ export async function updateSession(request: NextRequest) {
             value: "",
             ...options,
           });
+          
+          // Capture existing cookies to avoid losing them when recreating the response
+          const oldCookies = response.cookies.getAll();
+          
           response = NextResponse.next({
             request: {
               headers: request.headers,
             },
           });
+          
+          // Re-apply old cookies
+          oldCookies.forEach((cookie) => {
+            response.cookies.set(cookie);
+          });
+          
           response.cookies.set({
             name,
             value: "",

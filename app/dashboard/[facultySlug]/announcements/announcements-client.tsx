@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { toast } from "react-hot-toast";
 import { Plus, X, Megaphone, Trash2, Calendar, Clock, AlertTriangle, MessageSquare, Send, Globe, Users, MapPin } from "lucide-react";
 import { createAnnouncement, deleteAnnouncement, updateAnnouncement } from "./actions";
 import { format, formatDistanceToNow, isAfter } from "date-fns";
@@ -156,8 +157,9 @@ export function AnnouncementsClient({ initialAnnouncements, facultyId, facultySl
       if (selectedAnnouncement?.id === id) {
         setSelectedAnnouncement(null);
       }
+      toast.success("Announcement deleted successfully!");
     } catch (err) {
-      alert("Failed to delete announcement");
+      toast.error("Failed to delete announcement");
     }
   };
 

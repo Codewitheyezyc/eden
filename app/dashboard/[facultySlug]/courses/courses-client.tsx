@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { toast } from "react-hot-toast";
 import { 
   BookOpen, Video, Plus, CheckCircle, Play, ArrowLeft, 
   Award, Trophy, Clock, FileText, ChevronRight, Sparkles, 
@@ -275,9 +276,12 @@ export function CoursesClient({
         setNewType("text");
         setNewLessons([{ title: "Lesson 1: Getting Started", content: "", duration: "5 mins" }]);
         setShowAddModal(false);
+        toast.success("Course created successfully!");
+      } else if (result.error) {
+        toast.error("Failed to create course: " + result.error);
       }
     } catch (error: any) {
-      alert(error.message || "Failed to create course");
+      toast.error(error.message || "Failed to create course");
     } finally {
       setIsCreating(false);
     }
@@ -295,8 +299,9 @@ export function CoursesClient({
       if (activeCourse?.id === courseId) {
         setActiveCourse(null);
       }
+      toast.success("Course deleted successfully!");
     } catch (error: any) {
-      alert(error.message || "Failed to delete course");
+      toast.error(error.message || "Failed to delete course");
     } finally {
       setIsDeleting(null);
     }
@@ -314,6 +319,7 @@ export function CoursesClient({
 
     try {
       await toggleLessonProgressAction(lessonId, true);
+      toast.success("Lesson progress saved!");
 
       // Check if entire course is completed!
       const course = courses.find(c => c.id === courseId);
@@ -323,7 +329,7 @@ export function CoursesClient({
     } catch (error: any) {
       // Rollback progress on failure
       setProgress({ ...progress, [courseId]: currentCompleted });
-      alert(error.message || "Failed to save lesson progress");
+      toast.error(error.message || "Failed to save lesson progress");
     } finally {
       setIsCompleting(null);
     }

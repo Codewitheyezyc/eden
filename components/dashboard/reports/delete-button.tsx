@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { toast } from "react-hot-toast";
 import { Trash2 } from "lucide-react";
 import { deleteReport } from "@/app/dashboard/[facultySlug]/reports/actions";
 import { useRouter } from "next/navigation";
@@ -16,9 +17,10 @@ export function DeleteReportButton({ reportId, facultyId, facultySlug }: { repor
     const result = await deleteReport(reportId, facultyId, facultySlug);
     
     if (result.error) {
-      alert("Failed to delete report: " + result.error);
+      toast.error("Failed to delete report: " + result.error);
       setIsDeleting(false);
     } else {
+      toast.success("Report deleted successfully!");
       router.push(`/dashboard/${facultySlug}/reports`);
       router.refresh();
     }

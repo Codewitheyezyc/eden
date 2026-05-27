@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { toast } from "react-hot-toast";
 import { Plus, X, Megaphone, Trash2, Calendar, Clock, AlertTriangle, MessageSquare, Send } from "lucide-react";
 import { createMessage, deleteMessage } from "./actions";
 import { format, formatDistanceToNow, isAfter } from "date-fns";
@@ -101,8 +102,9 @@ export function MessagesClient({ initialMessages, facultyId, facultySlug, role }
       if (selectedMessage?.id === id) {
         setSelectedMessage(null);
       }
+      toast.success("Announcement deleted successfully!");
     } catch (err) {
-      alert("Failed to delete message");
+      toast.error("Failed to delete announcement");
     }
   };
 

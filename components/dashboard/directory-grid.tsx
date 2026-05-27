@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { toast } from "react-hot-toast";
 import { VerifiedBadge } from "@/components/ui/verified-badge";
 import { createPortal } from "react-dom";
 import { Loader2, Trash2, UserMinus, ShieldAlert, CheckSquare, Square } from "lucide-react";
@@ -59,12 +60,12 @@ export function DirectoryGrid({ title, users, currentUserRole, facultyId, facult
     const result = await deleteUserAccount(deleteConfirmUser.id, facultyId, facultySlug);
     if (result.error) {
       setError(result.error);
-      alert(result.error);
+      toast.error(result.error);
     } else {
       setSelectedUser(null);
       setDeleteConfirmUser(null);
       setSelectedUserIds(selectedUserIds.filter(id => id !== deleteConfirmUser.id));
-      alert("User account and profile deleted completely from the system!");
+      toast.success("User account and profile deleted completely from the system!");
       window.location.reload();
     }
     setIsRemoving(false);
@@ -77,11 +78,11 @@ export function DirectoryGrid({ title, users, currentUserRole, facultyId, facult
     const result = await deleteUserAccounts(selectedUserIds, facultyId, facultySlug);
     if (result.error) {
       setError(result.error);
-      alert(result.error);
+      toast.error(result.error);
     } else {
       setSelectedUserIds([]);
       setDeleteConfirmBulk(false);
-      alert("Selected user accounts deleted completely from the system!");
+      toast.success("Selected user accounts deleted completely from the system!");
       window.location.reload();
     }
     setIsRemoving(false);
@@ -90,7 +91,7 @@ export function DirectoryGrid({ title, users, currentUserRole, facultyId, facult
   const handleDeleteAllUsersByRole = async () => {
     if (!facultyId || !facultySlug) return;
     if (confirmText !== "DELETE ALL") {
-      alert("Please type 'DELETE ALL' to confirm!");
+      toast.error("Please type 'DELETE ALL' to confirm!");
       return;
     }
     setIsRemoving(true);
@@ -101,12 +102,12 @@ export function DirectoryGrid({ title, users, currentUserRole, facultyId, facult
     const result = await deleteAllUsersByRole(roleFilter, facultyId, facultySlug);
     if (result.error) {
       setError(result.error);
-      alert(result.error);
+      toast.error(result.error);
     } else {
       setSelectedUserIds([]);
       setConfirmText("");
       setDeleteConfirmClear(false);
-      alert(`All registered ${roleFilter.toLowerCase()} accounts deleted completely from the system!`);
+      toast.success(`All registered ${roleFilter.toLowerCase()} accounts deleted completely from the system!`);
       window.location.reload();
     }
     setIsRemoving(false);
@@ -124,9 +125,10 @@ export function DirectoryGrid({ title, users, currentUserRole, facultyId, facult
     
     if (result.error) {
       setError(result.error);
+      toast.error(result.error);
     } else {
       setSelectedUser({ ...selectedUser, role: newRole });
-      alert("Role updated successfully!");
+      toast.success("Role updated successfully!");
     }
     setIsUpdatingRole(false);
   };

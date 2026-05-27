@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { toast } from "react-hot-toast";
 import { VerifiedBadge } from "@/components/ui/verified-badge";
 import { createPortal } from "react-dom";
 import { 
@@ -62,7 +63,7 @@ export function UsersManagementClient({ initialUsers, facultyId, facultySlug, cu
   // Actions
   const handleRoleChange = async (targetUser: DirectoryUser, newRole: "STUDENT" | "COORDINATOR" | "ADMIN") => {
     if (targetUser.id === currentAdminId) {
-      alert("You cannot change your own role!");
+      toast.error("You cannot change your own role!");
       return;
     }
     setIsUpdating(true);
@@ -71,14 +72,14 @@ export function UsersManagementClient({ initialUsers, facultyId, facultySlug, cu
     
     if (result.error) {
       setError(result.error);
-      alert(result.error);
+      toast.error(result.error);
     } else {
       setUsers(prev => prev.map(u => u.id === targetUser.id ? { ...u, role: newRole } : u));
       setRoleChangeTarget(null);
       if (selectedUser?.id === targetUser.id) {
         setSelectedUser(prev => prev ? { ...prev, role: newRole } : null);
       }
-      alert(`User role elevated/updated to ${newRole} successfully!`);
+      toast.success(`User role elevated/updated to ${newRole} successfully!`);
     }
     setIsUpdating(false);
   };
@@ -90,13 +91,13 @@ export function UsersManagementClient({ initialUsers, facultyId, facultySlug, cu
     const result = await deleteUserAccount(deleteConfirmUser.id, facultyId, facultySlug);
     if (result.error) {
       setError(result.error);
-      alert(result.error);
+      toast.error(result.error);
     } else {
       setUsers(prev => prev.filter(u => u.id !== deleteConfirmUser.id));
       setSelectedUserIds(prev => prev.filter(id => id !== deleteConfirmUser.id));
       setDeleteConfirmUser(null);
       setSelectedUser(null);
-      alert("User account and profile deleted completely from the system!");
+      toast.success("User account and profile deleted completely from the system!");
     }
     setIsRemoving(false);
   };
@@ -108,19 +109,19 @@ export function UsersManagementClient({ initialUsers, facultyId, facultySlug, cu
     const result = await deleteUserAccounts(selectedUserIds, facultyId, facultySlug);
     if (result.error) {
       setError(result.error);
-      alert(result.error);
+      toast.error(result.error);
     } else {
       setUsers(prev => prev.filter(u => !selectedUserIds.includes(u.id)));
       setSelectedUserIds([]);
       setDeleteConfirmBulk(false);
-      alert("Selected user accounts deleted completely from the system!");
+      toast.success("Selected user accounts deleted completely from the system!");
     }
     setIsRemoving(false);
   };
 
   const handleDeleteAllUsersByRole = async () => {
     if (confirmText !== "DELETE ALL") {
-      alert("Please type 'DELETE ALL' to confirm!");
+      toast.error("Please type 'DELETE ALL' to confirm!");
       return;
     }
     setIsRemoving(true);
@@ -132,13 +133,13 @@ export function UsersManagementClient({ initialUsers, facultyId, facultySlug, cu
     const result = await deleteAllUsersByRole(roleFilter, facultyId, facultySlug);
     if (result.error) {
       setError(result.error);
-      alert(result.error);
+      toast.error(result.error);
     } else {
       setUsers(prev => prev.filter(u => u.role !== roleFilter));
       setSelectedUserIds([]);
       setConfirmText("");
       setDeleteConfirmClear(false);
-      alert(`All registered ${roleFilter.toLowerCase()} accounts deleted completely from the system!`);
+      toast.success(`All registered ${roleFilter.toLowerCase()} accounts deleted completely from the system!`);
     }
     setIsRemoving(false);
   };

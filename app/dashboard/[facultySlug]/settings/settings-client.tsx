@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { toast } from "react-hot-toast";
 import { 
   User, Shield, Bell, Moon, Sun, Laptop, Users, Trash2, 
   HelpCircle, Settings, Check, Save, Sparkles, RefreshCw, Volume2 
@@ -139,9 +140,9 @@ export function SettingsClient({
       setMembers((prev) =>
         prev.map((m) => (m.user_id === targetUserId ? { ...m, role: newRole } : m))
       );
-      alert("Role updated successfully!");
+      toast.success("Role updated successfully!");
     } catch (err: any) {
-      alert(err.message || "Failed to update user role");
+      toast.error(err.message || "Failed to update user role");
     }
   };
 

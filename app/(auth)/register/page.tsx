@@ -48,7 +48,7 @@ export default function RegisterPage() {
           if (typeof window !== "undefined") {
             localStorage.setItem("pending_verification_email", email);
           }
-          router.push("/verify");
+          window.location.replace("/verify");
           return;
         }
         setSuccess(true);

@@ -8,9 +8,16 @@ export async function updateSession(request: NextRequest) {
     },
   });
 
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
+
+  if (!url || !anonKey) {
+    console.warn("Supabase middleware client initialized with missing environment variables!");
+  }
+
   const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    url,
+    anonKey,
     {
       cookies: {
         get(name: string) {
@@ -55,7 +62,13 @@ export async function updateSession(request: NextRequest) {
   );
 
   // refreshing the auth token
-  await supabase.auth.getUser();
+  try {
+    if (url && anonKey) {
+      await supabase.auth.getUser();
+    }
+  } catch (error) {
+    console.error("Failed to refresh user session in middleware:", error);
+  }
 
   return response;
 }

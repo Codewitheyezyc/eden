@@ -94,7 +94,7 @@ function ConfirmContent() {
 
         <div className="pt-2">
           <Button
-            onClick={() => router.push(next)}
+            onClick={() => window.location.replace(next)}
             className="w-full max-w-sm py-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-2xl shadow-lg shadow-emerald-500/10 transition flex items-center justify-center gap-2"
           >
             <span>Proceed to Onboarding</span>

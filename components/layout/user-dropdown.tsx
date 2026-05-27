@@ -32,7 +32,11 @@ export function UserDropdown({ userEmail, userName, avatarUrl, facultySlug, isVe
 
   const handleLogout = async () => {
     try {
-      await supabase.auth.signOut();
+      // Use Promise.race to guarantee logout redirect runs even if Supabase network call hangs
+      await Promise.race([
+        supabase.auth.signOut(),
+        new Promise((resolve) => setTimeout(resolve, 1000))
+      ]);
     } catch (err: any) {
       console.error("Signout error:", err);
     } finally {

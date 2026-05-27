@@ -31,9 +31,14 @@ export function UserDropdown({ userEmail, userName, avatarUrl, facultySlug, isVe
   }, []);
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
-    router.push("/login");
-    router.refresh();
+    try {
+      await supabase.auth.signOut();
+    } catch (err: any) {
+      console.error("Signout error:", err);
+    } finally {
+      // Force a full browser navigation to login page to ensure cookies/caches are cleared
+      window.location.href = "/login";
+    }
   };
 
   const initial = userName ? userName.charAt(0).toUpperCase() : userEmail.charAt(0).toUpperCase();

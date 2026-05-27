@@ -22,32 +22,44 @@ export default function LoginPage() {
     setIsLoading(true);
     setError(null);
 
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
-    if (error) {
-      setError(error.message);
+      if (error) {
+        setError(error.message);
+        setIsLoading(false);
+      } else {
+        // Use window.location.replace to force a full reload and guarantee cookies are synchronized with the server
+        window.location.replace("/onboarding");
+      }
+    } catch (err: any) {
+      console.error("Login error:", err);
+      setError(err?.message || "An unexpected error occurred during sign in.");
       setIsLoading(false);
-    } else {
-      router.push("/onboarding");
-      router.refresh();
     }
   };
 
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
     setError(null);
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
-      },
-    });
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+        },
+      });
 
-    if (error) {
-      setError(error.message);
+      if (error) {
+        setError(error.message);
+        setIsLoading(false);
+      }
+    } catch (err: any) {
+      console.error("Google sign-in error:", err);
+      setError(err?.message || "An unexpected error occurred during Google sign-in.");
       setIsLoading(false);
     }
   };

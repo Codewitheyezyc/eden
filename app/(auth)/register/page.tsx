@@ -24,50 +24,62 @@ export default function RegisterPage() {
     setIsLoading(true);
     setError(null);
 
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          full_name: fullName,
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            full_name: fullName,
+          },
         },
-      },
-    });
+      });
 
-    if (error) {
-      if (error.message.toLowerCase().includes("user already registered")) {
-        setError("This email is already registered. Please log in instead.");
-      } else {
-        setError(error.message);
-      }
-      setIsLoading(false);
-    } else {
-      if (!data.session) {
-        // Email verification is required
-        if (typeof window !== "undefined") {
-          localStorage.setItem("pending_verification_email", email);
+      if (error) {
+        if (error.message.toLowerCase().includes("user already registered")) {
+          setError("This email is already registered. Please log in instead.");
+        } else {
+          setError(error.message);
         }
-        router.push("/verify");
-        return;
+        setIsLoading(false);
+      } else {
+        if (!data.session) {
+          // Email verification is required
+          if (typeof window !== "undefined") {
+            localStorage.setItem("pending_verification_email", email);
+          }
+          router.push("/verify");
+          return;
+        }
+        setSuccess(true);
+        // Use window.location.replace to force a full reload and guarantee cookies are synchronized with the server
+        window.location.replace("/onboarding");
       }
-      setSuccess(true);
-      router.push("/onboarding");
-      router.refresh();
+    } catch (err: any) {
+      console.error("Registration error:", err);
+      setError(err?.message || "An unexpected error occurred during signup.");
+      setIsLoading(false);
     }
   };
 
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
     setError(null);
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
-      },
-    });
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+        },
+      });
 
-    if (error) {
-      setError(error.message);
+      if (error) {
+        setError(error.message);
+        setIsLoading(false);
+      }
+    } catch (err: any) {
+      console.error("Google sign-in error:", err);
+      setError(err?.message || "An unexpected error occurred during Google sign-in.");
       setIsLoading(false);
     }
   };

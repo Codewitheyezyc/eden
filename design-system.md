@@ -19,13 +19,15 @@ Eden is inspired by the "Garden of Eden" — a symbol of growth, creative beauty
 
 ## 2. Color System
 
-Our color system is built to convey growth (Deep Green), creativity (Emerald Accent), and premium excellence (Soft Gold) across light and dark modes.
+Our color system is built to convey growth (Deep Green), creativity (Emerald Accent), and premium excellence (Soft Gold/Orange Accent) across light and dark modes.
+
+To achieve standard visual balance, we combine our dominant brand green tones with highly precise warm orange-gold accents.
 
 | Color Role | Color Name | Hex Code | Purpose |
 | :--- | :--- | :--- | :--- |
 | **Brand Core** | Deep Forest Green | `#14532D` | Primary branding, solid backgrounds, major headers, solid buttons. |
-| **Accent Primary** | Emerald Accent | `#10B981` | Interactive elements, active links, success highlights, click CTAs. |
-| **Accent Gold** | Soft Gold | `#F59E0B` | Premium accounts, certifications, highlights, warning alerts. |
+| **Brand Accent (Logo Leaf)** | Emerald Green | `#10B981` / `#1F7B00` | Main branding leaf color, major interactive highlights, success states. |
+| **Warm Accent (Logo Leaf)** | Soft Gold / Orange | `#F59E0B` | Secondary branding leaf color, premium achievements, highlights, notification icons. |
 | **Light Backdrop** | Light Background | `#F8FAF7` | Anti-glare, organic off-white background in light mode. |
 | **Light Card Layer**| Light Surface | `#FFFFFF` | Solid white cards, panels, and tables. |
 | **Dark Backdrop** | Dark Background | `#07130D` | Rich, deeply dark green-black formula for dark mode backdrop. |

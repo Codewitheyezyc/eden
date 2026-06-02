@@ -111,7 +111,7 @@ export default function LandingPage() {
           <div className="container mx-auto max-w-7xl">
             <ScrollReveal delay={100}>
               <div className="text-center mb-12">
-                <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-widest bg-emerald-500/10 px-3 py-1 rounded-md">Interactive Console</span>
+                <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-widest bg-amber-500/10 px-3 py-1 rounded-md border border-amber-500/20 shadow-sm">Interactive Console</span>
                 <h2 className="text-3xl md:text-5xl font-extrabold tracking-tight text-gray-900 dark:text-white mt-4 mb-3">Live Portal Experience</h2>
                 <p className="text-base text-gray-500 dark:text-gray-400 max-w-2xl mx-auto font-light leading-relaxed">
                   Toggle between roles below to preview the exact, high-fidelity layouts of the Eden dashboard, complete with our signature green welcome panels and operations hubs.

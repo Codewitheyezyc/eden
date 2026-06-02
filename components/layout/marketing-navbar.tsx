@@ -39,7 +39,7 @@ export function MarketingNavbar() {
         <div className="flex items-center gap-6">
           <Link href="/" className="flex items-center gap-2 transition-opacity hover:opacity-80">
             <Logo className="h-8 w-auto" />
-            <span className="px-1.5 py-0.5 rounded-md text-[8px] font-bold tracking-widest bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 uppercase shrink-0">
+            <span className="px-1.5 py-0.5 rounded-md text-[8px] font-bold tracking-widest bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 uppercase shrink-0">
               Beta
             </span>
           </Link>

@@ -68,7 +68,7 @@ export function DashboardShell({ children, facultyName, facultySlug, role, userE
         <div className="h-16 flex items-center justify-between px-6 border-b border-gray-200/50 dark:border-white/5">
           <div className="flex items-center space-x-2">
             <Logo className="h-6 w-auto" />
-            <span className="px-1.5 py-0.5 rounded-md text-[8px] font-bold tracking-widest bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 uppercase shrink-0">
+            <span className="px-1.5 py-0.5 rounded-md text-[8px] font-bold tracking-widest bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 uppercase shrink-0">
               Beta
             </span>
           </div>
@@ -85,7 +85,12 @@ export function DashboardShell({ children, facultyName, facultySlug, role, userE
           <div className="font-semibold text-gray-900 dark:text-white truncate text-lg tracking-tight">
             {facultyName}
           </div>
-          <div className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 mt-2 uppercase tracking-widest border border-emerald-500/20">
+          <div className={cn(
+            "inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold mt-2 uppercase tracking-widest border transition-all shadow-sm",
+            role === "ADMIN" || role === "COORDINATOR"
+              ? "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20"
+              : "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20"
+          )}>
             {role === "COORDINATOR" ? "Zonal Leader" : role}
           </div>
         </div>

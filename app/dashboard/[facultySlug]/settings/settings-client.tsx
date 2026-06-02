@@ -30,7 +30,7 @@ interface SettingsClientProps {
     fullName: string;
     phone: string;
     gender: string;
-    kingschatHandle: string;
+    kingschatUsername: string;
     campusZone: string;
     dateOfBirth: string;
     bio: string;
@@ -63,7 +63,7 @@ export function SettingsClient({
   const [fullName, setFullName] = useState(currentUser.fullName);
   const [phone, setPhone] = useState(currentUser.phone);
   const [gender, setGender] = useState(currentUser.gender);
-  const [kingschatHandle, setKingschatHandle] = useState(currentUser.kingschatHandle);
+  const [kingschatUsername, setKingschatUsername] = useState(currentUser.kingschatUsername);
   const [campusZone, setCampusZone] = useState(currentUser.campusZone);
   const [dateOfBirth, setDateOfBirth] = useState(currentUser.dateOfBirth);
   const [bio, setBio] = useState(currentUser.bio);
@@ -97,12 +97,18 @@ export function SettingsClient({
     setSaveSuccess(false);
     setSaveError(null);
 
+    if (kingschatUsername && !/^[a-zA-Z0-9_]+$/.test(kingschatUsername)) {
+      setSaveError("Kingschat username cannot contain spaces or special characters (only letters, numbers, and underscores).");
+      setIsSaving(false);
+      return;
+    }
+
     try {
       await updateProfile({
         fullName,
         phone,
         gender,
-        kingschatHandle,
+        kingschatUsername,
         campusZone,
         dateOfBirth,
         bio
@@ -287,13 +293,33 @@ export function SettingsClient({
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">KingsChat Handle</label>
-                  <input
-                    type="text"
-                    value={kingschatHandle}
-                    onChange={(e) => setKingschatHandle(e.target.value)}
-                    className="w-full bg-gray-50/50 dark:bg-white/5 border border-gray-200 dark:border-white/5 rounded-2xl p-4 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 text-sm font-light text-gray-800 dark:text-white"
-                  />
+                  <label className="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-1.5">
+                    <img src="/kingschat.png" alt="" className="w-3.5 h-3.5 shrink-0 rounded-sm" />
+                    <span>KingsChat Username</span>
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm">@</span>
+                    <input
+                      type="text"
+                      value={kingschatUsername}
+                      onChange={(e) => {
+                        const val = e.target.value.replace(/\s+/g, "");
+                        setKingschatUsername(val);
+                      }}
+                      className={cn(
+                        "w-full bg-gray-50/50 dark:bg-white/5 border rounded-2xl p-4 pl-8 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 text-sm font-semibold text-gray-800 dark:text-white transition-all",
+                        kingschatUsername && !/^[a-zA-Z0-9_]+$/.test(kingschatUsername)
+                          ? "border-rose-500 focus:ring-rose-500/20 focus:border-rose-500"
+                          : "border-gray-200 dark:border-white/5"
+                      )}
+                      placeholder="Enter your Kingschat username"
+                    />
+                  </div>
+                  {kingschatUsername && !/^[a-zA-Z0-9_]+$/.test(kingschatUsername) && (
+                    <span className="text-[10px] text-rose-500 font-bold block mt-1 animate-pulse">
+                      ⚠️ No spaces or special characters allowed. (Use alphanumeric & underscores only)
+                    </span>
+                  )}
                 </div>
 
                 <div className="space-y-2">

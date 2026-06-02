@@ -20,7 +20,7 @@ export default async function ProfilePage({ params }: { params: { facultySlug: s
   // Fetch basic user record
   const { data: userRecord } = await supabase
     .from("users")
-    .select("full_name, avatar_url")
+    .select("full_name, avatar_url, kingschat_username")
     .eq("id", user.id)
     .single();
 
@@ -52,6 +52,7 @@ export default async function ProfilePage({ params }: { params: { facultySlug: s
         initialProfile={profile} 
         initialFullName={userRecord?.full_name} 
         initialAvatar={userRecord?.avatar_url}
+        initialKingschatUsername={userRecord?.kingschat_username}
         role={facultyAccess?.role || "STUDENT"}
       />
     </div>

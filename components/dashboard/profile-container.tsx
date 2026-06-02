@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { VerifiedBadge } from "@/components/ui/verified-badge";
 import { CAMPUSES, parseCampuses, formatCampusesForDb } from "@/lib/campuses";
 import { LEADERSHIP_ROLES } from "@/lib/leadership-roles";
+import { cn } from "@/lib/utils";
 
 interface ProfileData {
   id: string;
@@ -26,10 +27,11 @@ interface ProfileContainerProps {
   initialProfile: ProfileData | null;
   initialFullName: string | null;
   initialAvatar: string | null;
+  initialKingschatUsername?: string | null;
   role?: string;
 }
 
-export function ProfileContainer({ userId, userEmail, initialProfile, initialFullName, initialAvatar, role = "STUDENT" }: ProfileContainerProps) {
+export function ProfileContainer({ userId, userEmail, initialProfile, initialFullName, initialAvatar, initialKingschatUsername, role = "STUDENT" }: ProfileContainerProps) {
   const supabase = createClient();
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -42,7 +44,7 @@ export function ProfileContainer({ userId, userEmail, initialProfile, initialFul
     fullName: initialFullName || "",
     phone: initialProfile?.phone || "",
     gender: initialProfile?.gender || "",
-    kingschat: initialProfile?.kingschat_handle || "",
+    kingschatUsername: initialKingschatUsername || "",
     campus: initialProfile?.campus_zone || "",
     dob: initialProfile?.date_of_birth || "",
     bio: initialProfile?.bio || "",
@@ -82,7 +84,7 @@ export function ProfileContainer({ userId, userEmail, initialProfile, initialFul
     if (formData.fullName.trim() !== "") filled++;
     if (formData.phone.trim() !== "") filled++;
     if (formData.gender !== "") filled++;
-    if (formData.kingschat.trim() !== "") filled++;
+    if (formData.kingschatUsername.trim() !== "") filled++;
     if (selectedCampuses.length > 0) filled++;
     if (formData.dob !== "") filled++;
     if (formData.bio.trim() !== "") filled++;
@@ -153,9 +155,18 @@ export function ProfileContainer({ userId, userEmail, initialProfile, initialFul
     setLoading(true);
     setMessage(null);
 
+    if (formData.kingschatUsername && !/^[a-zA-Z0-9_]+$/.test(formData.kingschatUsername)) {
+      setMessage({ type: 'error', text: 'Kingschat username cannot contain spaces or special characters (only letters, numbers, and underscores).' });
+      setLoading(false);
+      return;
+    }
+
     try {
-      // Update basic user info (full_name)
-      await supabase.from("users").update({ full_name: formData.fullName }).eq("id", userId);
+      // Update basic user info (full_name & kingschat_username)
+      await supabase.from("users").update({ 
+        full_name: formData.fullName,
+        kingschat_username: formData.kingschatUsername || null
+      }).eq("id", userId);
       
       // Update auth user so navbar name updates
       await supabase.auth.updateUser({
@@ -167,7 +178,6 @@ export function ProfileContainer({ userId, userEmail, initialProfile, initialFul
         id: userId,
         phone: formData.phone,
         gender: formData.gender,
-        kingschat_handle: formData.kingschat,
         campus_zone: formatCampusesForDb(selectedCampuses),
         date_of_birth: formData.dob || null,
         bio: formData.bio,
@@ -290,6 +300,20 @@ export function ProfileContainer({ userId, userEmail, initialProfile, initialFul
           </div>
           <p className="text-sm text-gray-500 dark:text-gray-400 truncate w-full px-2" title={userEmail}>{userEmail}</p>
           
+          {formData.kingschatUsername && (
+            <div className="mt-3 flex items-center gap-2 justify-center animate-in fade-in duration-300">
+              <a 
+                href={`https://kingschat.online/user/${formData.kingschatUsername}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-8 h-8 rounded-full bg-emerald-50 dark:bg-emerald-500/15 border border-emerald-100 dark:border-emerald-500/20 hover:border-emerald-500 hover:bg-emerald-500 hover:text-white text-emerald-600 dark:text-emerald-455 flex items-center justify-center transition-all hover:scale-110 shadow-sm"
+                title={`Follow on Kingschat: @${formData.kingschatUsername}`}
+              >
+                <img src="/kingschat.png" alt="Kingschat" className="w-4 h-4 shrink-0 rounded-sm bg-white p-0.5" />
+              </a>
+            </div>
+          )}
+          
           <div className="mt-6 w-full p-4 bg-emerald-50 dark:bg-emerald-900/10 rounded-2xl border border-emerald-100 dark:border-emerald-900/20">
             <p className="text-xs text-emerald-800 dark:text-emerald-400 font-medium">Keep your profile updated to help zonal leaders assign you to the right events and classes.</p>
           </div>
@@ -328,17 +352,30 @@ export function ProfileContainer({ userId, userEmail, initialProfile, initialFul
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Kingschat Handle</label>
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
+                  <img src="/kingschat.png" alt="" className="w-3.5 h-3.5 shrink-0 rounded-sm" />
+                  <span>KingsChat Username</span>
+                </label>
                 <div className="relative">
                   <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">@</span>
                   <input 
                     type="text" 
-                    value={formData.kingschat}
-                    onChange={(e) => setFormData({...formData, kingschat: e.target.value.replace('@', '')})}
-                    className="w-full bg-white dark:bg-[#0a0a0a] border border-gray-200 dark:border-white/10 rounded-xl pl-8 pr-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500/50 outline-none transition-all text-gray-900 dark:text-white"
-                    placeholder="username"
+                    value={formData.kingschatUsername}
+                    onChange={(e) => setFormData({...formData, kingschatUsername: e.target.value.replace(/\s+/g, "")})}
+                    className={cn(
+                      "w-full bg-white dark:bg-[#0a0a0a] border rounded-xl pl-8 pr-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500/50 outline-none transition-all text-gray-900 dark:text-white",
+                      formData.kingschatUsername && !/^[a-zA-Z0-9_]+$/.test(formData.kingschatUsername)
+                        ? "border-rose-500 focus:ring-rose-500/20"
+                        : "border-gray-200 dark:border-white/10"
+                    )}
+                    placeholder="Enter your Kingschat username"
                   />
                 </div>
+                {formData.kingschatUsername && !/^[a-zA-Z0-9_]+$/.test(formData.kingschatUsername) && (
+                  <span className="text-[10px] text-rose-500 font-bold block mt-1 animate-pulse">
+                    ⚠️ No spaces or special characters allowed. (Use alphanumeric & underscores only)
+                  </span>
+                )}
               </div>
 
               <div className="space-y-2 relative" id="tour-campus-select">

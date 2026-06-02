@@ -35,7 +35,7 @@ export default async function SettingsPage({
   // Fetch user profile info
   const { data: userRecord } = await supabase
     .from("users")
-    .select("full_name, avatar_url")
+    .select("full_name, avatar_url, kingschat_username")
     .eq("id", user.id)
     .single();
 
@@ -50,7 +50,7 @@ export default async function SettingsPage({
     fullName: userRecord?.full_name || "",
     phone: profile?.phone || "",
     gender: profile?.gender || "",
-    kingschatHandle: profile?.kingschat_handle || "",
+    kingschatUsername: userRecord?.kingschat_username || "",
     campusZone: parseCampuses(profile?.campus_zone).join(", "),
     dateOfBirth: profile?.date_of_birth || "",
     bio: profile?.bio || "",

@@ -12,6 +12,7 @@ import {
   deleteAllUsersByRole
 } from "@/app/dashboard/[facultySlug]/directory-actions";
 import { parseCampuses } from "@/lib/campuses";
+import { cn } from "@/lib/utils";
 
 
 export interface DirectoryUser {
@@ -19,6 +20,7 @@ export interface DirectoryUser {
   full_name: string | null;
   avatar_url: string | null;
   email: string;
+  kingschat_username: string | null;
   role: string;
   profile: {
     phone: string | null;
@@ -254,9 +256,23 @@ export function DirectoryGrid({ title, users, currentUserRole, facultyId, facult
               <span className="text-[10px] font-bold tracking-widest uppercase text-emerald-600 dark:text-emerald-400">
                 {user.role === "COORDINATOR" ? "Zonal Leader" : user.role}
               </span>
-              <span className="text-xs font-semibold text-gray-400 group-hover:text-emerald-500 transition-colors">
-                View Profile &rarr;
-              </span>
+              <div className="flex items-center space-x-3">
+                {user.kingschat_username && (
+                  <a 
+                    href={`https://kingschat.online/user/${user.kingschat_username}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    className="p-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 hover:bg-emerald-500 hover:text-white text-emerald-600 dark:text-emerald-450 border border-emerald-100 dark:border-emerald-500/20 transition-all hover:scale-110 shadow-sm"
+                    title={`Follow on Kingschat: @${user.kingschat_username}`}
+                  >
+                    <img src="/kingschat.png" alt="" className="w-3.5 h-3.5 rounded-sm shrink-0 bg-white" />
+                  </a>
+                )}
+                <span className="text-xs font-semibold text-gray-400 group-hover:text-emerald-500 transition-colors">
+                  View Profile &rarr;
+                </span>
+              </div>
             </div>
           </div>
         ))}
@@ -378,8 +394,23 @@ export function DirectoryGrid({ title, users, currentUserRole, facultyId, facult
                   <p className="font-medium text-gray-900 dark:text-white">{selectedUser.profile?.campus_zone ? parseCampuses(selectedUser.profile.campus_zone).join(", ") : "Not provided"}</p>
                 </div>
                 <div className="space-y-1">
-                  <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Kingschat Handle</span>
-                  <p className="font-medium text-gray-900 dark:text-white">{selectedUser.profile?.kingschat_handle ? `@${selectedUser.profile.kingschat_handle}` : "Not provided"}</p>
+                  <span className="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-1.5">
+                    <img src="/kingschat.png" alt="" className="w-3.5 h-3.5 shrink-0 rounded-sm" />
+                    <span>Kingschat Follow</span>
+                  </span>
+                  {selectedUser.kingschat_username ? (
+                    <a
+                      href={`https://kingschat.online/user/${selectedUser.kingschat_username}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 mt-1 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/25 px-2.5 py-1 rounded-xl text-xs font-bold hover:bg-emerald-600 hover:text-white hover:border-emerald-600 transition-all scale-100 hover:scale-[1.02] transform"
+                    >
+                      <span>@{selectedUser.kingschat_username}</span>
+                      <span className="text-[10px] opacity-75 font-normal">&rarr; Follow</span>
+                    </a>
+                  ) : (
+                    <p className="font-medium text-gray-400 italic text-xs mt-1">Not provided</p>
+                  )}
                 </div>
                 <div className="space-y-1">
                   <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Phone Number</span>

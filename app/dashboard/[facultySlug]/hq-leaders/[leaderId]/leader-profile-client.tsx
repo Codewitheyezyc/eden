@@ -24,7 +24,7 @@ interface LeaderProfile {
   campusZone: string;
   gender: string;
   phone: string;
-  kingschat: string;
+  kingschatUsername: string;
   bio: string;
   isVerified: boolean;
   leadershipRole: string;
@@ -61,7 +61,7 @@ export function LeaderProfileClient({ leader, viewerRole, facultySlug, facultyId
   // Form State variables
   const [fullName, setFullName] = useState(leader.fullName);
   const [phone, setPhone] = useState(leader.profile.phone);
-  const [kingschat, setKingschat] = useState(leader.profile.kingschat);
+  const [kingschatUsername, setKingschatUsername] = useState(leader.profile.kingschatUsername);
   const [bio, setBio] = useState(leader.profile.bio);
   
   const [selectedRoleOption, setSelectedRoleOption] = useState(() => {
@@ -124,9 +124,18 @@ export function LeaderProfileClient({ leader, viewerRole, facultySlug, facultyId
       return;
     }
 
+    if (kingschatUsername && !/^[a-zA-Z0-9_]+$/.test(kingschatUsername)) {
+      setMessage({ type: "error", text: "Kingschat username cannot contain spaces or special characters (only letters, numbers, and underscores)." });
+      setLoading(false);
+      return;
+    }
+
     try {
-      // 1. Update basic user table (full_name)
-      await supabase.from("users").update({ full_name: fullName }).eq("id", leader.id);
+      // 1. Update basic user table (full_name & kingschat_username)
+      await supabase.from("users").update({ 
+        full_name: fullName,
+        kingschat_username: kingschatUsername || null
+      }).eq("id", leader.id);
 
       // 2. Build metadata JSON structure
       const metadataPayload: LeaderMetadata = {
@@ -147,7 +156,6 @@ export function LeaderProfileClient({ leader, viewerRole, facultySlug, facultyId
         .from("profiles")
         .update({
           phone,
-          kingschat_handle: kingschat,
           bio,
           leadership_role: finalRole,
           leadership_metadata: metadataPayload as any, // Cast to any to fit JSON typing
@@ -300,10 +308,18 @@ export function LeaderProfileClient({ leader, viewerRole, facultySlug, facultyId
 
               {/* Social contact tags */}
               <div className="pt-6">
-                <div className="flex gap-2">
-                  <span className="bg-emerald-50/80 dark:bg-emerald-500/10 text-emerald-900 dark:text-emerald-450 border border-emerald-200 dark:border-emerald-500/20 px-2.5 py-1.5 rounded-xl font-bold text-[10px] uppercase tracking-wider block text-center flex-1">
-                    💬 KingsChat: @{leader.profile.kingschat || "handle"}
-                  </span>
+                <div className="flex flex-col gap-2.5">
+                  {leader.profile.kingschatUsername && (
+                    <a
+                      href={`https://kingschat.online/user/${leader.profile.kingschatUsername}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="bg-emerald-600 hover:bg-emerald-700 text-white border border-emerald-500/20 px-3 py-2.5 rounded-xl font-bold text-[11px] uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-md shadow-emerald-600/15 hover:scale-[1.02] transform"
+                    >
+                      <img src="/kingschat.png" alt="" className="w-4.5 h-4.5 shrink-0 bg-white rounded-sm p-0.5" />
+                      <span>Follow on KingsChat (@{leader.profile.kingschatUsername})</span>
+                    </a>
+                  )}
                 </div>
               </div>
             </div>
@@ -497,16 +513,32 @@ export function LeaderProfileClient({ leader, viewerRole, facultySlug, facultyId
               />
             </div>
 
-            {/* KingsChat */}
+
             <div className="space-y-2">
-              <label className="text-xs font-bold text-gray-400 uppercase tracking-wider block">KingsChat Username</label>
-              <input 
-                type="text" 
-                value={kingschat}
-                onChange={e => setKingschat(e.target.value.replace("@", ""))}
-                placeholder="username"
-                className="w-full bg-white dark:bg-black border border-gray-200/50 dark:border-white/10 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500/50 outline-none text-gray-900 dark:text-white font-medium"
-              />
+              <label className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
+                <img src="/kingschat.png" alt="" className="w-3.5 h-3.5 shrink-0 rounded-sm" />
+                <span>KingsChat Username</span>
+              </label>
+              <div className="relative">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm">@</span>
+                <input 
+                  type="text" 
+                  value={kingschatUsername}
+                  onChange={e => setKingschatUsername(e.target.value.replace(/\s+/g, ""))}
+                  placeholder="Enter your Kingschat username"
+                  className={cn(
+                    "w-full bg-white dark:bg-black border rounded-xl pl-8 pr-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500/50 outline-none text-gray-900 dark:text-white font-semibold transition-all",
+                    kingschatUsername && !/^[a-zA-Z0-9_]+$/.test(kingschatUsername)
+                      ? "border-rose-500 focus:ring-rose-500/20 focus:border-rose-500"
+                      : "border-gray-200/50 dark:border-white/10"
+                  )}
+                />
+              </div>
+              {kingschatUsername && !/^[a-zA-Z0-9_]+$/.test(kingschatUsername) && (
+                <span className="text-[10px] text-rose-500 font-bold block mt-1 animate-pulse">
+                  ⚠️ No spaces or special characters allowed. (Use alphanumeric & underscores only)
+                </span>
+              )}
             </div>
 
             {/* Vision Mandate */}

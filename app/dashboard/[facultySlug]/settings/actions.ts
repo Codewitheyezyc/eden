@@ -9,7 +9,7 @@ export async function updateProfile(data: {
   fullName: string;
   phone: string;
   gender: string;
-  kingschatHandle: string;
+  kingschatUsername: string;
   campusZone: string;
   dateOfBirth: string;
   bio: string;
@@ -22,7 +22,10 @@ export async function updateProfile(data: {
   // Update public.users
   const { error: userError } = await supabase
     .from("users")
-    .update({ full_name: data.fullName })
+    .update({ 
+      full_name: data.fullName,
+      kingschat_username: data.kingschatUsername || null
+    })
     .eq("id", user.id);
 
   if (userError) throw new Error(userError.message);
@@ -39,7 +42,6 @@ export async function updateProfile(data: {
     .update({
       phone: data.phone || null,
       gender: data.gender || null,
-      kingschat_handle: data.kingschatHandle || null,
       campus_zone: dbCampusZone || null,
       date_of_birth: data.dateOfBirth || null,
       bio: data.bio || null,

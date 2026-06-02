@@ -31,6 +31,7 @@ export default async function StudentsDirectoryPage({
         full_name,
         avatar_url,
         email,
+        kingschat_username,
         profiles (
           phone,
           gender,
@@ -56,6 +57,7 @@ export default async function StudentsDirectoryPage({
       full_name: userObj?.full_name || null,
       avatar_url: userObj?.avatar_url || null,
       email: userObj?.email || "",
+      kingschat_username: userObj?.kingschat_username || null,
       role: "STUDENT",
       profile: profile || null,
     };

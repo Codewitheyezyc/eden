@@ -51,6 +51,7 @@ export default async function HQLeaderProfilePage({
       full_name,
       avatar_url,
       email,
+      kingschat_username,
       profiles (
         campus_zone,
         phone,
@@ -88,6 +89,7 @@ export default async function HQLeaderProfilePage({
       phone: profileObj.phone || "",
       gender: profileObj.gender || "",
       kingschat: profileObj.kingschat_handle || "",
+      kingschatUsername: userProfile.kingschat_username || "",
       bio: profileObj.bio || "",
       isVerified: !!profileObj.is_verified,
       leadershipRole: profileObj.leadership_role || "",

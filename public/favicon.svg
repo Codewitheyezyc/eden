@@ -1,1 +1,31 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🚀</text></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100%" height="100%">
+  <style>
+    .fav-bg {
+      fill: #14532D;
+    }
+    .leaf-1 {
+      fill: #10B981;
+    }
+    .leaf-2 {
+      fill: #F59E0B;
+    }
+    @media (prefers-color-scheme: dark) {
+      .fav-bg {
+        fill: #07130D;
+        stroke: #10B981;
+        stroke-width: 2px;
+      }
+    }
+  </style>
+  
+  <!-- Squircle app icon background -->
+  <rect x="2" y="2" width="96" height="96" rx="28" class="fav-bg" />
+  
+  <!-- Centered and scaled leaves -->
+  <g transform="translate(-156.8, 21.4) scale(2.2)">
+    <!-- Main Leaf -->
+    <path d="M 85 24 Q 78 5 98 0 Q 110 5 95 24 Q 90 26 85 24 Z" class="leaf-1" />
+    <!-- Smaller Leaf -->
+    <path d="M 86 24 Q 78 12 85 6 Q 95 6 92 14 Q 90 20 86 24 Z" class="leaf-2" />
+  </g>
+</svg>

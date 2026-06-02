@@ -16,6 +16,15 @@ export const metadata: Metadata = {
   },
   description: "Discover Loveworld Arts Academy, the ultra-premium multi-tenant digital workspace for student learning and focused zonal leader administration.",
   metadataBase: new URL("https://eden-academy.org"),
+  icons: {
+    icon: [
+      { url: "/favicon.svg", type: "image/svg+xml" }
+    ],
+    shortcut: "/favicon.svg",
+    apple: [
+      { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }
+    ]
+  },
   openGraph: {
     title: "Loveworld Arts Academy — Premium Creative Governance Platform",
     description: "Discover Loveworld Arts Academy, the ultra-premium multi-tenant digital workspace for student learning and focused zonal leader administration.",
@@ -40,6 +49,7 @@ export const metadata: Metadata = {
     creator: "@CreedTech",
   },
 };
+
 
 export default function RootLayout({
   children,

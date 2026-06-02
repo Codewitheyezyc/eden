@@ -30,14 +30,6 @@ export const metadata: Metadata = {
     description: "Discover Loveworld Arts Academy, the ultra-premium multi-tenant digital workspace for student learning and focused zonal leader administration.",
     url: "https://eden-academy.org",
     siteName: "Loveworld Arts Academy",
-    images: [
-      {
-        url: "/og-image.png",
-        width: 1200,
-        height: 630,
-        alt: "Loveworld Arts Academy Portal Workspace Preview",
-      },
-    ],
     locale: "en_US",
     type: "website",
   },
@@ -45,7 +37,6 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Loveworld Arts Academy — Premium Creative Governance Platform",
     description: "Discover Loveworld Arts Academy, the ultra-premium multi-tenant digital workspace for student learning and focused zonal leader administration.",
-    images: ["/og-image.png"],
     creator: "@CreedTech",
   },
 };

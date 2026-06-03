@@ -51,7 +51,7 @@ export async function updateProfile(data: {
 
   if (profileError) throw new Error(profileError.message);
 
-  revalidatePath(`/dashboard`);
+  revalidatePath("/", "layout");
 }
 
 export async function updateFaculty(facultyId: string, name: string) {
@@ -79,7 +79,7 @@ export async function updateFaculty(facultyId: string, name: string) {
 
   if (error) throw new Error(error.message);
 
-  revalidatePath(`/dashboard`);
+  revalidatePath("/", "layout");
 }
 
 export async function updateUserRoleInFaculty(
@@ -116,5 +116,5 @@ export async function updateUserRoleInFaculty(
 
   if (error) throw new Error(error.message);
 
-  revalidatePath(`/dashboard`);
+  revalidatePath("/", "layout");
 }

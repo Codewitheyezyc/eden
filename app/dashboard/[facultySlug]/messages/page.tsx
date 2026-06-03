@@ -2,6 +2,12 @@ import { createClient } from "@/services/supabase/server";
 import { redirect } from "next/navigation";
 import { MessagesClient } from "./messages-client";
 import { parseCampuses } from "@/lib/campuses";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Messages",
+};
+
 
 export default async function MessagesPage({
   params,
@@ -13,54 +19,60 @@ export default async function MessagesPage({
 
   if (!user) redirect("/login");
 
-  // Get Faculty by slug
-  const { data: faculty } = await supabase
-    .from("faculties")
-    .select("id, slug")
-    .eq("slug", params.facultySlug)
-    .single();
+  // Fetch Faculty and user's profile details in parallel
+  const [facultyRes, profileRes] = await Promise.all([
+    supabase
+      .from("faculties")
+      .select("id, slug")
+      .eq("slug", params.facultySlug)
+      .single(),
+    supabase
+      .from("profiles")
+      .select("campus_zone")
+      .eq("id", user.id)
+      .single()
+  ]);
+
+  const faculty = facultyRes.data;
+  const profile = profileRes.data;
 
   if (!faculty) redirect("/dashboard");
 
-  // Check access & fetch role
-  const { data: facultyAccess } = await supabase
-    .from("user_faculties")
-    .select("role")
-    .eq("user_id", user.id)
-    .eq("faculty_id", faculty.id)
-    .single();
+  // Fetch access role and messages in parallel
+  const [accessRes, messagesRes] = await Promise.all([
+    supabase
+      .from("user_faculties")
+      .select("role")
+      .eq("user_id", user.id)
+      .eq("faculty_id", faculty.id)
+      .single(),
+    supabase
+      .from("messages")
+      .select(`
+        id,
+        title,
+        content,
+        created_at,
+        expires_at,
+        target_campuses,
+        target_roles,
+        sender:users!messages_sender_id_fkey(
+          full_name,
+          avatar_url,
+          email
+        )
+      `)
+      .eq("faculty_id", faculty.id)
+      .or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`)
+      .order("created_at", { ascending: false })
+  ]);
+
+  const facultyAccess = accessRes.data;
+  const messagesData = messagesRes.data;
 
   if (!facultyAccess) redirect("/dashboard");
 
-  // Fetch verified status and campus zone
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("campus_zone")
-    .eq("id", user.id)
-    .single();
-
   const userCampuses = parseCampuses(profile?.campus_zone);
-
-  // Fetch messages where expires_at is in the future OR null (this automatically archives expired messages)
-  const { data: messagesData, error } = await supabase
-    .from("messages")
-    .select(`
-      id,
-      title,
-      content,
-      created_at,
-      expires_at,
-      target_campuses,
-      target_roles,
-      sender:users!messages_sender_id_fkey(
-        full_name,
-        avatar_url,
-        email
-      )
-    `)
-    .eq("faculty_id", faculty.id)
-    .or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`)
-    .order("created_at", { ascending: false });
 
   // Map to exact client types and filter by target permissions
   const allMessages = (messagesData || []).map((m: any) => {

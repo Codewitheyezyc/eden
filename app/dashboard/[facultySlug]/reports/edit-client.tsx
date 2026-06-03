@@ -1,8 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { RichTextEditor } from "@/components/dashboard/reports/rich-text-editor";
+import dynamic from "next/dynamic";
 import { saveReport } from "./actions";
+
+const RichTextEditor = dynamic(
+  () => import("@/components/dashboard/reports/rich-text-editor").then(mod => mod.RichTextEditor),
+  { ssr: false }
+);
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

@@ -3,6 +3,19 @@ import { redirect } from "next/navigation";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { RealtimeDashboardListener } from "@/components/dashboard/realtime-listener";
 import { ResourceNotFound } from "@/components/ui/resource-not-found";
+import type { Metadata } from "next";
+
+export async function generateMetadata({ params }: { params: { facultySlug: string } }): Promise<Metadata> {
+  const slug = params.facultySlug;
+  const facultyName = slug.charAt(0).toUpperCase() + slug.slice(1) + " Faculty";
+  return {
+    title: {
+      default: `${facultyName} Dashboard`,
+      template: `%s | ${facultyName} | Loveworld Arts Academy`
+    }
+  };
+}
+
 
 export default async function DashboardLayout({
   children,
@@ -18,12 +31,23 @@ export default async function DashboardLayout({
     redirect("/login");
   }
 
-  // Step 1: Get the faculty by slug
-  const { data: faculty, error: facultyError } = await supabase
-    .from("faculties")
-    .select("id, name, slug")
-    .eq("slug", params.facultySlug)
-    .single();
+  // Step 1: Fetch the faculty by slug and user's profile details in parallel
+  const [facultyRes, profileRes] = await Promise.all([
+    supabase
+      .from("faculties")
+      .select("id, name, slug")
+      .eq("slug", params.facultySlug)
+      .single(),
+    supabase
+      .from("profiles")
+      .select("is_verified, completed_tour")
+      .eq("id", user.id)
+      .single()
+  ]);
+
+  const faculty = facultyRes.data;
+  const facultyError = facultyRes.error;
+  const profile = profileRes.data;
 
   if (facultyError || !faculty) {
     return (
@@ -51,13 +75,6 @@ export default async function DashboardLayout({
       />
     );
   }
-
-  // Fetch verified status
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("is_verified, completed_tour")
-    .eq("id", user.id)
-    .single();
 
   return (
     <DashboardShell 

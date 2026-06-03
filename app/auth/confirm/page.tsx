@@ -13,7 +13,10 @@ function ConfirmContent() {
 
   const tokenHash = searchParams.get("token_hash");
   const type = searchParams.get("type");
-  const next = searchParams.get("next") || "/onboarding";
+  let next = searchParams.get("next") || "/onboarding";
+  if (next.startsWith("http:") || next.startsWith("https:") || next.startsWith("//")) {
+    next = "/onboarding";
+  }
 
   const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
   const [errorMsg, setErrorMsg] = useState("");

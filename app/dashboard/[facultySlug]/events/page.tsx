@@ -2,6 +2,12 @@ import { createClient } from "@/services/supabase/server";
 import { redirect } from "next/navigation";
 import { EventCard } from "@/components/dashboard/event-card";
 import { CreateEventButton } from "@/components/dashboard/create-event-button";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Events",
+};
+
 
 export default async function EventsPage({ params }: { params: { facultySlug: string } }) {
   const supabase = createClient();
@@ -9,26 +15,25 @@ export default async function EventsPage({ params }: { params: { facultySlug: st
 
   if (!user) redirect("/login");
 
-  // Get Faculty
-  const { data: faculty } = await supabase.from("faculties").select("id").eq("slug", params.facultySlug).single();
+  // Fetch Faculty and user's attendance details in parallel
+  const [facultyRes, attendanceRes] = await Promise.all([
+    supabase.from("faculties").select("id").eq("slug", params.facultySlug).single(),
+    supabase.from("event_attendance").select("*").eq("user_id", user.id)
+  ]);
+
+  const faculty = facultyRes.data;
+  const attendance = attendanceRes.data;
+
   if (!faculty) redirect("/dashboard");
 
-  // Get Role
-  const { data: facultyAccess } = await supabase.from("user_faculties").select("role").eq("user_id", user.id).eq("faculty_id", faculty.id).single();
-  const role = facultyAccess?.role || "STUDENT";
+  // Fetch Viewer Role and Events in parallel
+  const [accessRes, eventsRes] = await Promise.all([
+    supabase.from("user_faculties").select("role").eq("user_id", user.id).eq("faculty_id", faculty.id).single(),
+    supabase.from("events").select("*").eq("faculty_id", faculty.id).order("event_date", { ascending: true })
+  ]);
 
-  // Fetch Events
-  const { data: events } = await supabase
-    .from("events")
-    .select("*")
-    .eq("faculty_id", faculty.id)
-    .order("event_date", { ascending: true });
-
-  // Fetch User's Attendance
-  const { data: attendance } = await supabase
-    .from("event_attendance")
-    .select("*")
-    .eq("user_id", user.id);
+  const role = accessRes.data?.role || "STUDENT";
+  const events = eventsRes.data;
 
   // Map attendance by event_id for quick lookup
   const attendanceMap = (attendance || []).reduce((acc: any, curr: any) => {

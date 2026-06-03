@@ -4,6 +4,12 @@ import Link from "next/link";
 import { timeAgo, cn } from "@/lib/utils";
 import { VerifiedBadge } from "@/components/ui/verified-badge";
 import { parseCampuses } from "@/lib/campuses";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Dashboard Home",
+};
+
 
 export default async function FacultyDashboardPage({
   params,
@@ -32,41 +38,33 @@ export default async function FacultyDashboardPage({
     .eq("faculty_id", faculty.id)
     .single();
 
-  // Step 3: Fetch Metrics
-  const role = facultyAccess?.role || "STUDENT";
+  if (!facultyAccess) redirect("/dashboard");
+  const role = facultyAccess.role;
 
-  const { count: studentCount } = await supabase.from("user_faculties").select("*", { count: "exact", head: true }).eq("faculty_id", faculty.id).eq("role", "STUDENT");
-  const { count: coordinatorCount } = await supabase.from("user_faculties").select("*", { count: "exact", head: true }).eq("faculty_id", faculty.id).eq("role", "COORDINATOR");
-
-  // Fetch dynamic totals for card counts
-  const { count: announcementsCount } = await supabase
-    .from("announcements")
-    .select("*", { count: "exact", head: true })
-    .eq("faculty_id", faculty.id);
-
-  const { count: eventsCount } = await supabase
-    .from("events")
-    .select("*", { count: "exact", head: true })
-    .eq("faculty_id", faculty.id);
-
-  const { count: coursesCount } = await supabase
-    .from("courses")
-    .select("*", { count: "exact", head: true })
-    .eq("faculty_id", faculty.id);
-
-  // Fetch user profile for campus checks and verification status
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("campus_zone, is_verified")
-    .eq("id", user.id)
-    .single();
-
-  const userCampuses = parseCampuses(profile?.campus_zone);
-
-  // Fetch announcements
-  const { data: rawAnnouncements } = await supabase
-    .from("announcements")
-    .select(`
+  // Step 3: Fetch Metrics & Lists in parallel
+  const [
+    studentCountRes,
+    coordinatorCountRes,
+    announcementsCountRes,
+    eventsCountRes,
+    coursesCountRes,
+    profileRes,
+    rawAnnouncementsRes,
+    upcomingEventsRes,
+    monthEventsRes,
+    recentReportsRes,
+    recentStudentsRes,
+    coordinatorsListRes,
+    verifiedMembersDataRes,
+    hqLeadersDataRes
+  ] = await Promise.all([
+    supabase.from("user_faculties").select("*", { count: "exact", head: true }).eq("faculty_id", faculty.id).eq("role", "STUDENT"),
+    supabase.from("user_faculties").select("*", { count: "exact", head: true }).eq("faculty_id", faculty.id).eq("role", "COORDINATOR"),
+    supabase.from("announcements").select("*", { count: "exact", head: true }).eq("faculty_id", faculty.id),
+    supabase.from("events").select("*", { count: "exact", head: true }).eq("faculty_id", faculty.id),
+    supabase.from("courses").select("*", { count: "exact", head: true }).eq("faculty_id", faculty.id),
+    supabase.from("profiles").select("campus_zone, is_verified").eq("id", user.id).single(),
+    supabase.from("announcements").select(`
       id,
       title,
       content,
@@ -78,10 +76,86 @@ export default async function FacultyDashboardPage({
         full_name,
         avatar_url
       )
-    `)
-    .eq("faculty_id", faculty.id)
-    .or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`)
-    .order("created_at", { ascending: false });
+    `).eq("faculty_id", faculty.id)
+      .or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`)
+      .order("created_at", { ascending: false }),
+    supabase.from("events").select("*").eq("faculty_id", faculty.id).order("created_at", { ascending: false }).limit(3),
+    supabase.from("events").select("id, event_date").eq("faculty_id", faculty.id),
+    supabase.from("reports").select(`
+      id, title, created_at,
+      author:users!reports_author_id_fkey(full_name)
+    `).eq("faculty_id", faculty.id).order("created_at", { ascending: false }).limit(3),
+    supabase.from("user_faculties").select(`
+      created_at,
+      user_id,
+      users:user_id (
+        full_name,
+        avatar_url,
+        email,
+        profiles (campus_zone, is_verified, leadership_role)
+      )
+    `).eq("faculty_id", faculty.id).eq("role", "STUDENT").order("created_at", { ascending: false }).limit(3),
+    supabase.from("user_faculties").select(`
+      created_at,
+      user_id,
+      users:user_id (
+        full_name,
+        avatar_url,
+        email,
+        profiles (is_verified, leadership_role)
+      )
+    `).eq("faculty_id", faculty.id).eq("role", "COORDINATOR").order("created_at", { ascending: false }).limit(3),
+    supabase.from("user_faculties").select(`
+      user_id,
+      role,
+      users:user_id!inner (
+        full_name,
+        avatar_url,
+        email,
+        profiles!inner (
+          campus_zone,
+          is_verified,
+          leadership_role
+        )
+      )
+    `).eq("faculty_id", faculty.id)
+      .eq("users.profiles.is_verified", true)
+      .limit(50),
+    supabase.from("user_faculties").select(`
+      user_id,
+      role,
+      users:user_id!inner (
+        id,
+        full_name,
+        avatar_url,
+        email,
+        profiles!inner (
+          campus_zone,
+          leadership_role
+        )
+      )
+    `).eq("faculty_id", faculty.id)
+      .not("users.profiles.leadership_role", "is", null)
+      .neq("users.profiles.leadership_role", "")
+      .limit(50)
+  ]);
+
+  const studentCount = studentCountRes.count;
+  const coordinatorCount = coordinatorCountRes.count;
+  const announcementsCount = announcementsCountRes.count;
+  const eventsCount = eventsCountRes.count;
+  const coursesCount = coursesCountRes.count;
+  const profile = profileRes.data;
+  const rawAnnouncements = rawAnnouncementsRes.data;
+  const upcomingEvents = upcomingEventsRes.data;
+  const monthEvents = monthEventsRes.data;
+  const recentReports = recentReportsRes.data;
+  const recentStudents = recentStudentsRes.data;
+  const coordinatorsList = coordinatorsListRes.data;
+  const verifiedMembersData = verifiedMembersDataRes.data;
+  const hqLeadersData = hqLeadersDataRes.data;
+
+  const userCampuses = parseCampuses(profile?.campus_zone);
 
   // Filter announcements by target permissions
   const filteredAnnouncements = (rawAnnouncements || []).map((m: any) => {
@@ -119,12 +193,6 @@ export default async function FacultyDashboardPage({
     return true;
   }).slice(0, 3); // Max 3 latest announcements
 
-  // Fetch Lists
-  const { data: upcomingEvents } = await supabase.from("events").select("*").eq("faculty_id", faculty.id).order("created_at", { ascending: false }).limit(3);
-  
-  // Fetch all events for the compact calendar widget
-  const { data: monthEvents } = await supabase.from("events").select("id, event_date").eq("faculty_id", faculty.id);
-
   // Generate days for the current month for the compact calendar widget
   const today = new Date();
   const year = today.getFullYear();
@@ -141,69 +209,6 @@ export default async function FacultyDashboardPage({
   for (let d = 1; d <= daysInMonth; d++) {
     calendarCells.push(new Date(year, month, d));
   }
-
-  
-  const { data: recentReports } = await supabase
-    .from("reports")
-    .select(`
-      id, title, created_at,
-      author:users!reports_author_id_fkey(full_name)
-    `)
-    .eq("faculty_id", faculty.id)
-    .order("created_at", { ascending: false })
-    .limit(3);
-  const { data: recentStudents } = await supabase
-    .from("user_faculties")
-    .select(`
-      created_at,
-      user_id,
-      users:user_id (
-        full_name,
-        avatar_url,
-        email,
-        profiles (campus_zone, is_verified, leadership_role)
-      )
-    `)
-    .eq("faculty_id", faculty.id)
-    .eq("role", "STUDENT")
-    .order("created_at", { ascending: false })
-    .limit(3);
-
-  const { data: coordinatorsList } = await supabase
-    .from("user_faculties")
-    .select(`
-      created_at,
-      user_id,
-      users:user_id (
-        full_name,
-        avatar_url,
-        email,
-        profiles (is_verified, leadership_role)
-      )
-    `)
-    .eq("faculty_id", faculty.id)
-    .eq("role", "COORDINATOR")
-    .order("created_at", { ascending: false })
-    .limit(3);
-
-  // Fetch General Attendance verified members for widget
-  const { data: verifiedMembersData } = await supabase
-    .from("user_faculties")
-    .select(`
-      user_id,
-      role,
-      users:user_id (
-        full_name,
-        avatar_url,
-        email,
-        profiles (
-          campus_zone,
-          is_verified,
-          leadership_role
-        )
-      )
-    `)
-    .eq("faculty_id", faculty.id);
 
   // Map, filter, and sort: Admins first, then Coordinators, then Students
   const eligibleWidgetUsers = (verifiedMembersData || []).map((m: any) => {
@@ -229,24 +234,6 @@ export default async function FacultyDashboardPage({
     .sort((a, b) => roleWeights[a.role] - roleWeights[b.role])
     .slice(0, 10);
 
-  // Fetch HQ Leaders for overview widget
-  const { data: hqLeadersData } = await supabase
-    .from("user_faculties")
-    .select(`
-      user_id,
-      role,
-      users:user_id (
-        id,
-        full_name,
-        avatar_url,
-        email,
-        profiles (
-          campus_zone,
-          leadership_role
-        )
-      )
-    `)
-    .eq("faculty_id", faculty.id);
 
   const hqLeadersWidgetList = (hqLeadersData || []).map((m: any) => {
     const userObj = Array.isArray(m.users) ? m.users[0] : m.users;

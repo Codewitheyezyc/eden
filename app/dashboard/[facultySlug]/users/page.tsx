@@ -2,11 +2,19 @@ import { createClient } from "@/services/supabase/server";
 import { redirect } from "next/navigation";
 import { UsersManagementClient } from "./users-client";
 import { DirectoryUser } from "@/components/dashboard/directory-grid";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "User Directory",
+};
+
 
 export default async function UsersManagementPage({
   params,
+  searchParams,
 }: {
   params: { facultySlug: string };
+  searchParams: { q?: string; role?: string; page?: string };
 }) {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -34,14 +42,21 @@ export default async function UsersManagementPage({
     redirect(`/dashboard/${params.facultySlug}`);
   }
 
-  // Fetch all users mapped to this faculty
-  const { data: facultyUsersData } = await supabase
+  const query = searchParams.q || "";
+  const roleFilter = searchParams.role || "ALL";
+  const currentPage = Number(searchParams.page) || 1;
+  const pageSize = 10;
+  const from = (currentPage - 1) * pageSize;
+  const to = from + pageSize - 1;
+
+  // Fetch all users mapped to this faculty with search and pagination range
+  let queryBuilder = supabase
     .from("user_faculties")
     .select(`
       user_id,
       role,
       created_at,
-      users:user_id (
+      users:user_id!inner (
         id,
         full_name,
         avatar_url,
@@ -58,9 +73,24 @@ export default async function UsersManagementPage({
           leadership_role
         )
       )
-    `)
-    .eq("faculty_id", faculty.id)
-    .order("created_at", { ascending: false });
+    `, { count: "exact" })
+    .eq("faculty_id", faculty.id);
+
+  if (roleFilter !== "ALL") {
+    queryBuilder = queryBuilder.eq("role", roleFilter);
+  }
+
+  if (query) {
+    queryBuilder = queryBuilder.or(`full_name.ilike.%${query}%,email.ilike.%${query}%,kingschat_username.ilike.%${query}%`, { foreignTable: "users" });
+  }
+
+  queryBuilder = queryBuilder
+    .order("created_at", { ascending: false })
+    .range(from, to);
+
+  const { data: facultyUsersData, count } = await queryBuilder;
+  const totalCount = count || 0;
+  const totalPages = Math.ceil(totalCount / pageSize);
 
   // Map to DirectoryUser format, incorporating user_faculties role
   const users: DirectoryUser[] = (facultyUsersData || []).map((s: any) => {
@@ -72,7 +102,7 @@ export default async function UsersManagementPage({
       avatar_url: userObj?.avatar_url || null,
       email: userObj?.email || "",
       kingschat_username: userObj?.kingschat_username || null,
-      role: s.role || "STUDENT", // Fetch the faculty role directly
+      role: s.role || "STUDENT",
       profile: profile || null,
     };
   });
@@ -91,6 +121,12 @@ export default async function UsersManagementPage({
         facultyId={faculty.id}
         facultySlug={params.facultySlug}
         currentAdminId={user.id}
+        currentPage={currentPage}
+        totalPages={totalPages}
+        totalCount={totalCount}
+        pageSize={pageSize}
+        initialSearchQuery={query}
+        initialRoleFilter={roleFilter}
       />
     </div>
   );

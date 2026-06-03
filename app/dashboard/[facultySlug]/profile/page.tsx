@@ -8,28 +8,30 @@ export default async function ProfilePage({ params }: { params: { facultySlug: s
 
   if (!user) redirect("/login");
 
-  // Get Faculty
-  const { data: faculty } = await supabase
-    .from("faculties")
-    .select("id")
-    .eq("slug", params.facultySlug)
-    .single();
+  // Fetch Faculty details, User record, and Profile details in parallel
+  const [facultyRes, userRecordRes, profileRes] = await Promise.all([
+    supabase
+      .from("faculties")
+      .select("id")
+      .eq("slug", params.facultySlug)
+      .single(),
+    supabase
+      .from("users")
+      .select("full_name, avatar_url, kingschat_username")
+      .eq("id", user.id)
+      .single(),
+    supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", user.id)
+      .single()
+  ]);
+
+  const faculty = facultyRes.data;
+  const userRecord = userRecordRes.data;
+  const profile = profileRes.data;
 
   if (!faculty) redirect("/dashboard");
-
-  // Fetch basic user record
-  const { data: userRecord } = await supabase
-    .from("users")
-    .select("full_name, avatar_url, kingschat_username")
-    .eq("id", user.id)
-    .single();
-
-  // Fetch profile record (might be null if they haven't set it up yet)
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("id", user.id)
-    .single();
 
   // Get user's role in this faculty
   const { data: facultyAccess } = await supabase

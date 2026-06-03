@@ -12,63 +12,67 @@ export default async function HQLeaderProfilePage({
 
   if (!user) redirect("/login");
 
-  // Step 1: Get Faculty by slug
-  const { data: faculty } = await supabase
-    .from("faculties")
-    .select("id, name, slug")
-    .eq("slug", params.facultySlug)
-    .single();
+  // Step 1: Get Faculty and Leader's user/profile details in parallel
+  const [facultyRes, profileRes] = await Promise.all([
+    supabase
+      .from("faculties")
+      .select("id, name, slug")
+      .eq("slug", params.facultySlug)
+      .single(),
+    supabase
+      .from("users")
+      .select(`
+        id,
+        full_name,
+        avatar_url,
+        email,
+        kingschat_username,
+        profiles (
+          campus_zone,
+          phone,
+          gender,
+          kingschat_handle,
+          bio,
+          is_verified,
+          leadership_role,
+          leadership_metadata
+        )
+      `)
+      .eq("id", params.leaderId)
+      .single()
+  ]);
 
-  if (!faculty) redirect("/dashboard");
+  const faculty = facultyRes.data;
+  const userProfile = profileRes.data;
 
-  // Step 2: Get user's role in this faculty (Viewer)
-  const { data: facultyAccess } = await supabase
-    .from("user_faculties")
-    .select("role")
-    .eq("user_id", user.id)
-    .eq("faculty_id", faculty.id)
-    .single();
+  if (!faculty || !userProfile) {
+    redirect(`/dashboard/${params.facultySlug}/hq-leaders`);
+  }
+
+  // Step 2: Fetch viewer role and leader role in parallel
+  const [viewerAccessRes, leaderAccessRes] = await Promise.all([
+    supabase
+      .from("user_faculties")
+      .select("role")
+      .eq("user_id", user.id)
+      .eq("faculty_id", faculty.id)
+      .single(),
+    supabase
+      .from("user_faculties")
+      .select("role")
+      .eq("user_id", params.leaderId)
+      .eq("faculty_id", faculty.id)
+      .single()
+  ]);
+
+  const facultyAccess = viewerAccessRes.data;
+  const leaderAccess = leaderAccessRes.data;
+
+  if (!leaderAccess) {
+    redirect(`/dashboard/${params.facultySlug}/hq-leaders`);
+  }
 
   const viewerRole = facultyAccess?.role || "STUDENT";
-
-  // Step 3: Fetch the Leader's basic user & faculty record
-  const { data: leaderAccess, error: accessError } = await supabase
-    .from("user_faculties")
-    .select("role")
-    .eq("user_id", params.leaderId)
-    .eq("faculty_id", faculty.id)
-    .single();
-
-  if (accessError || !leaderAccess) {
-    redirect(`/dashboard/${params.facultySlug}/hq-leaders`);
-  }
-
-  // Step 4: Fetch detailed profile variables
-  const { data: userProfile, error: profileError } = await supabase
-    .from("users")
-    .select(`
-      id,
-      full_name,
-      avatar_url,
-      email,
-      kingschat_username,
-      profiles (
-        campus_zone,
-        phone,
-        gender,
-        kingschat_handle,
-        bio,
-        is_verified,
-        leadership_role,
-        leadership_metadata
-      )
-    `)
-    .eq("id", params.leaderId)
-    .single();
-
-  if (profileError || !userProfile) {
-    redirect(`/dashboard/${params.facultySlug}/hq-leaders`);
-  }
 
   const profileObj = Array.isArray(userProfile.profiles) ? userProfile.profiles[0] : userProfile.profiles;
 

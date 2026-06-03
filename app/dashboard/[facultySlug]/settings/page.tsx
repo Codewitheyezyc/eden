@@ -2,6 +2,12 @@ import { createClient } from "@/services/supabase/server";
 import { redirect } from "next/navigation";
 import { SettingsClient } from "./settings-client";
 import { parseCampuses } from "@/lib/campuses";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Settings",
+};
+
 
 export default async function SettingsPage({
   params,
@@ -13,37 +19,57 @@ export default async function SettingsPage({
 
   if (!user) redirect("/login");
 
-  // Get Faculty details
-  const { data: faculty } = await supabase
-    .from("faculties")
-    .select("id, name, slug")
-    .eq("slug", params.facultySlug)
-    .single();
+  // Step 1: Fetch Faculty details, User record, and Profile details in parallel
+  const [facultyRes, userRecordRes, profileRes] = await Promise.all([
+    supabase
+      .from("faculties")
+      .select("id, name, slug")
+      .eq("slug", params.facultySlug)
+      .single(),
+    supabase
+      .from("users")
+      .select("full_name, avatar_url, kingschat_username")
+      .eq("id", user.id)
+      .single(),
+    supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", user.id)
+      .single()
+  ]);
+
+  const faculty = facultyRes.data;
+  const userRecord = userRecordRes.data;
+  const profile = profileRes.data;
 
   if (!faculty) redirect("/dashboard");
 
-  // Fetch access & role
-  const { data: facultyAccess } = await supabase
-    .from("user_faculties")
-    .select("role")
-    .eq("user_id", user.id)
-    .eq("faculty_id", faculty.id)
-    .single();
+  // Step 2: Fetch viewer's role and all faculty members in parallel
+  const [accessRes, membersRes] = await Promise.all([
+    supabase
+      .from("user_faculties")
+      .select("role")
+      .eq("user_id", user.id)
+      .eq("faculty_id", faculty.id)
+      .single(),
+    supabase
+      .from("user_faculties")
+      .select(`
+        user_id,
+        role,
+        user:users!user_faculties_user_id_fkey(
+          full_name,
+          avatar_url,
+          email
+        )
+      `)
+      .eq("faculty_id", faculty.id)
+  ]);
+
+  const facultyAccess = accessRes.data;
+  const membersData = membersRes.data;
 
   if (!facultyAccess) redirect("/dashboard");
-
-  // Fetch user profile info
-  const { data: userRecord } = await supabase
-    .from("users")
-    .select("full_name, avatar_url, kingschat_username")
-    .eq("id", user.id)
-    .single();
-
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("id", user.id)
-    .single();
 
   const currentUserData = {
     id: user.id,
@@ -55,20 +81,6 @@ export default async function SettingsPage({
     dateOfBirth: profile?.date_of_birth || "",
     bio: profile?.bio || "",
   };
-
-  // Fetch all faculty members for the role delegation tab
-  const { data: membersData } = await supabase
-    .from("user_faculties")
-    .select(`
-      user_id,
-      role,
-      user:users!user_faculties_user_id_fkey(
-        full_name,
-        avatar_url,
-        email
-      )
-    `)
-    .eq("faculty_id", faculty.id);
 
   // Map to exact client types
   const members = (membersData || []).map((m: any) => {

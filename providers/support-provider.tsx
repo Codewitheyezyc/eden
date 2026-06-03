@@ -30,15 +30,14 @@ export function SupportProvider({ children }: { children: ReactNode }) {
         if (session?.user) {
           setUserEmail(session.user.email || "");
           
-          // Try to fetch custom profile name if exists
-          const { data: profile } = await supabase
-            .from("profiles")
+          const { data: userData } = await supabase
+            .from("users")
             .select("full_name")
             .eq("id", session.user.id)
             .maybeSingle();
             
-          if (profile?.full_name) {
-            setUserName(profile.full_name);
+          if (userData?.full_name) {
+            setUserName(userData.full_name);
           }
         }
       } catch (err) {
@@ -54,13 +53,13 @@ export function SupportProvider({ children }: { children: ReactNode }) {
         try {
           if (session?.user) {
             setUserEmail(session.user.email || "");
-            const { data: profile } = await supabase
-              .from("profiles")
+            const { data: userData } = await supabase
+              .from("users")
               .select("full_name")
               .eq("id", session.user.id)
               .maybeSingle();
-            if (profile?.full_name) {
-              setUserName(profile.full_name);
+            if (userData?.full_name) {
+              setUserName(userData.full_name);
             } else {
               setUserName("");
             }

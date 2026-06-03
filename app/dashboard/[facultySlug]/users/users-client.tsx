@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { toast } from "react-hot-toast";
 import { VerifiedBadge } from "@/components/ui/verified-badge";
 import { createPortal } from "react-dom";
+import { useRouter } from "next/navigation";
 import { 
   Search, Shield, ShieldAlert, ShieldCheck, UserCheck, 
   Trash2, UserMinus, Loader2, ChevronRight, Info 
@@ -23,12 +24,30 @@ interface UsersManagementClientProps {
   facultyId: string;
   facultySlug: string;
   currentAdminId: string;
+  currentPage: number;
+  totalPages: number;
+  totalCount: number;
+  pageSize: number;
+  initialSearchQuery: string;
+  initialRoleFilter: string;
 }
 
-export function UsersManagementClient({ initialUsers, facultyId, facultySlug, currentAdminId }: UsersManagementClientProps) {
+export function UsersManagementClient({
+  initialUsers,
+  facultyId,
+  facultySlug,
+  currentAdminId,
+  currentPage,
+  totalPages,
+  totalCount,
+  pageSize,
+  initialSearchQuery,
+  initialRoleFilter,
+}: UsersManagementClientProps) {
+  const router = useRouter();
   const [users, setUsers] = useState<DirectoryUser[]>(initialUsers);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedRoleTab, setSelectedRoleTab] = useState<"ALL" | "ADMIN" | "COORDINATOR" | "STUDENT">("ALL");
+  const [searchTerm, setSearchTerm] = useState(initialSearchQuery);
+  const [selectedRoleTab, setSelectedRoleTab] = useState<"ALL" | "ADMIN" | "COORDINATOR" | "STUDENT">(initialRoleFilter as any);
   const [selectedUser, setSelectedUser] = useState<DirectoryUser | null>(null);
   
   // Selection and Deletion State
@@ -46,19 +65,44 @@ export function UsersManagementClient({ initialUsers, facultyId, facultySlug, cu
   // Role modification confirmation
   const [roleChangeTarget, setRoleChangeTarget] = useState<{ user: DirectoryUser, role: "STUDENT" | "COORDINATOR" | "ADMIN" } | null>(null);
 
-  // Search & Filter Logic
-  const filteredUsers = useMemo(() => {
-    return users.filter(user => {
-      const matchSearch = 
-        (user.full_name || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (user.profile?.campus_zone || "").toLowerCase().includes(searchTerm.toLowerCase());
-      
-      const matchRole = selectedRoleTab === "ALL" ? true : user.role === selectedRoleTab;
+  // Sync initialUsers to state when it changes from server-side pagination
+  useEffect(() => {
+    setUsers(initialUsers);
+  }, [initialUsers]);
 
-      return matchSearch && matchRole;
-    });
-  }, [users, searchTerm, selectedRoleTab]);
+  // Debounced search logic to update searchParams
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(() => {
+      if (searchTerm !== initialSearchQuery) {
+        const params = new URLSearchParams(window.location.search);
+        if (searchTerm) {
+          params.set("q", searchTerm);
+        } else {
+          params.delete("q");
+        }
+        params.set("page", "1"); // Reset to page 1
+        router.push(`/dashboard/${facultySlug}/users?${params.toString()}`);
+      }
+    }, 450);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchTerm, facultySlug, router, initialSearchQuery]);
+
+  // Role filter tab change logic
+  const handleRoleTabChange = (role: string) => {
+    setSelectedRoleTab(role as any);
+    const params = new URLSearchParams(window.location.search);
+    if (role === "ALL") {
+      params.delete("role");
+    } else {
+      params.set("role", role);
+    }
+    params.set("page", "1"); // Reset to page 1
+    router.push(`/dashboard/${facultySlug}/users?${params.toString()}`);
+  };
+
+  // Search & Filter Logic is now handled server-side
+  const filteredUsers = users;
 
   // Actions
   const handleRoleChange = async (targetUser: DirectoryUser, newRole: "STUDENT" | "COORDINATOR" | "ADMIN") => {
@@ -172,7 +216,7 @@ export function UsersManagementClient({ initialUsers, facultyId, facultySlug, cu
           {["ALL", "ADMIN", "COORDINATOR", "STUDENT"].map((tab) => (
             <button
               key={tab}
-              onClick={() => setSelectedRoleTab(tab as any)}
+              onClick={() => handleRoleTabChange(tab)}
               className={cn(
                 "px-4 py-2 rounded-xl text-xs font-bold transition-all border",
                 selectedRoleTab === tab 
@@ -377,6 +421,46 @@ export function UsersManagementClient({ initialUsers, facultyId, facultySlug, cu
             </div>
           )}
         </div>
+
+        {/* Pagination Panel */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between border-t border-gray-150/40 dark:border-white/5 p-4 bg-gray-50/20 dark:bg-white/[0.01]">
+            <div className="text-xs text-gray-500 dark:text-gray-400 font-medium">
+              Showing <span className="font-bold text-gray-900 dark:text-white">{(currentPage - 1) * pageSize + 1}</span> to{" "}
+              <span className="font-bold text-gray-900 dark:text-white">
+                {Math.min(currentPage * pageSize, totalCount)}
+              </span>{" "}
+              of <span className="font-bold text-gray-900 dark:text-white">{totalCount}</span> members
+            </div>
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={() => {
+                  const params = new URLSearchParams(window.location.search);
+                  params.set("page", String(currentPage - 1));
+                  router.push(`/dashboard/${facultySlug}/users?${params.toString()}`);
+                }}
+                disabled={currentPage <= 1}
+                className="inline-flex items-center justify-center px-3 py-1.5 border border-gray-200 dark:border-white/10 rounded-xl text-xs font-bold text-gray-700 dark:text-gray-300 bg-white dark:bg-transparent transition-all shadow-xs disabled:opacity-45 disabled:pointer-events-none"
+              >
+                Previous
+              </button>
+              <span className="text-xs font-bold text-gray-700 dark:text-gray-300 px-1 select-none">
+                Page {currentPage} of {totalPages}
+              </span>
+              <button
+                onClick={() => {
+                  const params = new URLSearchParams(window.location.search);
+                  params.set("page", String(currentPage + 1));
+                  router.push(`/dashboard/${facultySlug}/users?${params.toString()}`);
+                }}
+                disabled={currentPage >= totalPages}
+                className="inline-flex items-center justify-center px-3 py-1.5 border border-gray-200 dark:border-white/10 rounded-xl text-xs font-bold text-gray-700 dark:text-gray-300 bg-white dark:bg-transparent transition-all shadow-xs disabled:opacity-45 disabled:pointer-events-none"
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Directory Clearing Header Button for specific selections */}

@@ -40,7 +40,7 @@ export async function createMessage(
 
   if (error) throw new Error(error.message);
 
-  revalidatePath(`/dashboard`);
+  revalidatePath("/", "layout");
 }
 
 export async function deleteMessage(messageId: string) {
@@ -77,5 +77,5 @@ export async function deleteMessage(messageId: string) {
 
   if (error) throw new Error(error.message);
 
-  revalidatePath(`/dashboard`);
+  revalidatePath("/", "layout");
 }

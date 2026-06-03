@@ -1,6 +1,12 @@
 import { createClient } from "@/services/supabase/server";
 import { redirect } from "next/navigation";
 import { CoursesClient } from "./courses-client";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Courses",
+};
+
 
 export default async function CoursesPage({
   params,
@@ -12,47 +18,59 @@ export default async function CoursesPage({
 
   if (!user) redirect("/login");
 
-  // Get Faculty by slug
-  const { data: faculty } = await supabase
-    .from("faculties")
-    .select("id, slug")
-    .eq("slug", params.facultySlug)
-    .single();
+  // Fetch Faculty and user's completion progress in parallel
+  const [facultyRes, progressRes] = await Promise.all([
+    supabase
+      .from("faculties")
+      .select("id, slug")
+      .eq("slug", params.facultySlug)
+      .single(),
+    supabase
+      .from("user_lesson_progress")
+      .select("lesson_id")
+      .eq("user_id", user.id)
+  ]);
+
+  const faculty = facultyRes.data;
+  const progressData = progressRes.data;
 
   if (!faculty) redirect("/dashboard");
 
-  // Fetch access & role
-  const { data: facultyAccess } = await supabase
-    .from("user_faculties")
-    .select("role")
-    .eq("user_id", user.id)
-    .eq("faculty_id", faculty.id)
-    .single();
+  // Fetch role and courses in parallel
+  const [accessRes, coursesRes] = await Promise.all([
+    supabase
+      .from("user_faculties")
+      .select("role")
+      .eq("user_id", user.id)
+      .eq("faculty_id", faculty.id)
+      .single(),
+    supabase
+      .from("courses")
+      .select(`
+        id,
+        title,
+        description,
+        type,
+        cover_gradient,
+        lessons (
+          id,
+          title,
+          type,
+          content,
+          duration,
+          order_index
+        )
+      `)
+      .eq("faculty_id", faculty.id)
+      .order("created_at", { ascending: true })
+  ]);
+
+  const facultyAccess = accessRes.data;
+  const coursesData = coursesRes.data;
 
   if (!facultyAccess) redirect("/dashboard");
 
   const role = facultyAccess.role || "STUDENT";
-
-  // Fetch courses with their lessons
-  const { data: coursesData } = await supabase
-    .from("courses")
-    .select(`
-      id,
-      title,
-      description,
-      type,
-      cover_gradient,
-      lessons (
-        id,
-        title,
-        type,
-        content,
-        duration,
-        order_index
-      )
-    `)
-    .eq("faculty_id", faculty.id)
-    .order("created_at", { ascending: true });
 
   // Map to Course types and sort lessons programmatically by order_index
   const courses = (coursesData || []).map((course: any) => {
@@ -74,12 +92,6 @@ export default async function CoursesPage({
       })),
     };
   });
-
-  // Fetch user's completion progress
-  const { data: progressData } = await supabase
-    .from("user_lesson_progress")
-    .select("lesson_id")
-    .eq("user_id", user.id);
 
   const completedLessonIds = (progressData || []).map((p: any) => p.lesson_id);
 

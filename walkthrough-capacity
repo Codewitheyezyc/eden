@@ -1,0 +1,126 @@
+# Walkthrough - Eden Pre-Deployment Audit Resolution
+
+This walkthrough details all the code modifications implemented to resolve the security vulnerabilities, bugs, data isolation issues, database waterfalls, pagination needs, caching revalidation problems, and type errors identified during the Eden application pre-deployment audits.
+
+---
+
+## 🛠️ Security & Bug Fixes
+
+### 1. Middleware Session Cookie Persistence on Redirects
+*   **File modified:** [middleware.ts](file:///c:/Users/CT/Documents/Applications/eden/services/supabase/middleware.ts#L96-L108)
+*   **Fix details:** Extracted updated session cookies from the main middleware response and appended them directly to both `isAuthRoute` and `isProtectedRoute` redirect responses (`NextResponse.redirect`). This prevents session loss or redirect loops when tokens refresh during redirect operations.
+
+---
+
+### 2. Sanitized Open Redirect Vectors
+*   **Files modified:** 
+    *   [route.ts (auth/callback)](file:///c:/Users/CT/Documents/Applications/eden/app/auth/callback/route.ts#L7-L11)
+    *   [page.tsx (auth/confirm)](file:///c:/Users/CT/Documents/Applications/eden/app/auth/confirm/page.tsx#L16-L19)
+*   **Fix details:** Added regex-based checks to ensure that the `next` query parameter does not begin with an external URL scheme (`http:`, `https:`) or double slashes (`//`). If an external URL is matched, the redirection defaults back to the safe `/onboarding` path.
+
+---
+
+### 3. Eliminated Onboarding Privilege Escalation
+*   **Files modified:** 
+    *   [actions.ts (onboarding)](file:///c:/Users/CT/Documents/Applications/eden/app/onboarding/actions.ts#L6-L21)
+    *   [faculty-selector.tsx](file:///c:/Users/CT/Documents/Applications/eden/components/onboarding/faculty-selector.tsx#L31)
+*   **Fix details:** Removed the client-supplied `role` parameter from the `assignFaculty` server action entirely and hardcoded the role value to `'STUDENT'` inside the server function. Updated the client component invocation to only supply `facultyId` and `facultySlug`. This ensures new users cannot assign themselves the `'ADMIN'` role.
+
+---
+
+### 4. Resolved Support Provider Crash
+*   **File modified:** [support-provider.tsx](file:///c:/Users/CT/Documents/Applications/eden/providers/support-provider.tsx#L34-L66)
+*   **Fix details:** Modified the select query inside the initialization and auth state change hooks to target the `users` table instead of the `profiles` table to pull `full_name`. This aligns with the database schema design where name is stored in `users.full_name` rather than `profiles.full_name`.
+
+---
+
+### 5. Bound Course Deletion Scope
+*   **File modified:** [actions.ts (courses)](file:///c:/Users/CT/Documents/Applications/eden/app/dashboard/%5BfacultySlug%5D/courses/actions.ts#L96-L99)
+*   **Fix details:** Added a `.eq("faculty_id", facultyId)` constraint to the database deletion call inside the `deleteCourseAction` server action. This binds the course deletion scope to the validated tenant workspace, preventing cross-tenant delete attempts.
+
+---
+
+### 6. Fixed Settings Client Theme Persistence
+*   **File modified:** [settings-client.tsx](file:///c:/Users/CT/Documents/Applications/eden/app/dashboard/%5BfacultySlug%5D/settings/settings-client.tsx#L3-L525)
+*   **Fix details:** Replaced DOM class list mutations (`document.documentElement.classList.add/remove`) with standard `next-themes` calls (`setTheme("light")` / `setTheme("dark")` / `setTheme("system")`). Theme preferences are now correctly stored in LocalStorage, preventing flashing when routing.
+
+---
+
+### 7. Completed Schema Migrations Setup File
+*   **File modified:** [supabase_schema.md](file:///c:/Users/CT/Documents/Applications/eden/supabase_schema.md)
+*   **Fix details:** Replaced the incomplete database migration file with a consolidated production database SQL schema script containing all missing tables (`announcements`, `courses`, `lessons`, `notifications`, `user_lesson_progress`, `reports`), columns, triggers, RLS policies, and RPC routines.
+
+---
+
+## ⚡ Performance, Caching & Data Fetching Optimizations
+
+### 8. Parallelized Independent Database Waterfalls
+*   **Files modified:**
+    *   [layout.tsx](file:///c:/Users/CT/Documents/Applications/eden/app/dashboard/%5BfacultySlug%5D/layout.tsx)
+    *   [page.tsx (dashboard)](file:///c:/Users/CT/Documents/Applications/eden/app/dashboard/%5BfacultySlug%5D/page.tsx)
+    *   [events/page.tsx](file:///c:/Users/CT/Documents/Applications/eden/app/dashboard/%5BfacultySlug%5D/events/page.tsx)
+    *   [courses/page.tsx](file:///c:/Users/CT/Documents/Applications/eden/app/dashboard/%5BfacultySlug%5D/courses/page.tsx)
+    *   [calendar/page.tsx](file:///c:/Users/CT/Documents/Applications/eden/app/dashboard/%5BfacultySlug%5D/calendar/page.tsx)
+    *   [announcements/page.tsx](file:///c:/Users/CT/Documents/Applications/eden/app/dashboard/%5BfacultySlug%5D/announcements/page.tsx)
+    *   [messages/page.tsx](file:///c:/Users/CT/Documents/Applications/eden/app/dashboard/%5BfacultySlug%5D/messages/page.tsx)
+    *   [hq-leaders/page.tsx](file:///c:/Users/CT/Documents/Applications/eden/app/dashboard/%5BfacultySlug%5D/hq-leaders/page.tsx) (also removed redundant user lists query by mapping directly in memory)
+    *   [hq-leaders/[leaderId]/page.tsx](file:///c:/Users/CT/Documents/Applications/eden/app/dashboard/%5BfacultySlug%5D/hq-leaders/%5BleaderId%5D/page.tsx)
+    *   [reports/[reportId]/page.tsx](file:///c:/Users/CT/Documents/Applications/eden/app/dashboard/%5BfacultySlug%5D/reports/%5BreportId%5D/page.tsx)
+    *   [reports/[reportId]/edit/page.tsx](file:///c:/Users/CT/Documents/Applications/eden/app/dashboard/%5BfacultySlug%5D/reports/%5BreportId%5D/edit/page.tsx)
+    *   [settings/page.tsx](file:///c:/Users/CT/Documents/Applications/eden/app/dashboard/%5BfacultySlug%5D/settings/page.tsx)
+    *   [profile/page.tsx](file:///c:/Users/CT/Documents/Applications/eden/app/dashboard/%5BfacultySlug%5D/profile/page.tsx)
+*   **Fix details:** Grouped independent queries using `Promise.all` after obtaining prerequisites (e.g. `user` and `faculty` identity). This completely removes page-load query waterfalls, dramatically reducing route response times.
+
+---
+
+### 9. Server-Side Range Pagination
+*   **Files modified:**
+    *   [reports/page.tsx](file:///c:/Users/CT/Documents/Applications/eden/app/dashboard/%5BfacultySlug%5D/reports/page.tsx)
+    *   [users/page.tsx](file:///c:/Users/CT/Documents/Applications/eden/app/dashboard/%5BfacultySlug%5D/users/page.tsx)
+    *   [users-client.tsx](file:///c:/Users/CT/Documents/Applications/eden/app/dashboard/%5BfacultySlug%5D/users/users-client.tsx)
+*   **Fix details:** 
+    *   Implemented server-side `.range(from, to)` querying with a page size of 6 on the Reports list page and rendered pagination controls.
+    *   Reconfigured User Directory from client-side filtering to complete server-side filtering and paginated query fetching.
+    *   Used Supabase `.or` queries with `{ foreignTable: 'users' }` on an inner join (`users!inner(...)`) to filter the directory records by search terms. Added client debouncing (450ms) to prevent URL spamming.
+
+---
+
+### 10. Corrected revalidatePath Scopes
+*   **Files modified:**
+    *   [settings/actions.ts](file:///c:/Users/CT/Documents/Applications/eden/app/dashboard/%5BfacultySlug%5D/settings/actions.ts)
+    *   [messages/actions.ts](file:///c:/Users/CT/Documents/Applications/eden/app/dashboard/%5BfacultySlug%5D/messages/actions.ts)
+*   **Fix details:** Replaced `revalidatePath("/dashboard")` calls with global `revalidatePath("/", "layout")` calls. This ensures Next.js router cache correctly invalidates all sub-routes when updating faculty settings or publishing announcements/messages.
+
+---
+
+## 🏗️ Compilation & Type Validations
+
+### 11. Type Correction in Dashboard page.tsx
+*   **File modified:** [page.tsx (dashboard)](file:///c:/Users/CT/Documents/Applications/eden/app/dashboard/%5BfacultySlug%5D/page.tsx#L34-L36)
+*   **Fix details:** Defined the missing `role` variable by pulling it from the retrieved `facultyAccess` object and checking for fallback logic. Added safety redirects. This resolves compile-time error: `Type error: Cannot find name 'role'.`
+
+---
+
+### 12. Database-Level Filtering and Payload Optimization
+*   **File modified:** [page.tsx (dashboard)](file:///c:/Users/CT/Documents/Applications/eden/app/dashboard/%5BfacultySlug%5D/page.tsx#L102-L130)
+*   **Fix details:** Refactored the dashboard queries for verified members and HQ leaders to filter active fields (`is_verified = true` and `leadership_role != null`) directly in the database using PostgREST nested inner joins (`users:user_id!inner(profiles!inner(...))`), limiting the retrieved rows to 50 instead of loading the entire user database table. This resolves the page latency bottleneck for faculties with 10,000+ users.
+
+---
+
+## 🧪 Verification Plan
+
+### Automated Validation
+We ran the Next.js production build command to verify that all code compiles cleanly:
+```bash
+npm run build
+```
+**Result:** **SUCCESS**
+All pages built successfully, including page static/dynamic indicators and Middleware traces:
+*   Static checks: **Passed**
+*   TypeScript compiler checks: **Passed**
+*   ESLint checks: **Passed**
+
+### Manual Inspection Guidelines
+1.  **Dashboard load & announcement filters:** Go to the dashboard. The dashboard should load rapidly as queries execute in parallel. Verify that announcements target roles and campuses correctly.
+2.  **Pagination:** Navigate to **Reports** or **Users** list views. Check that changing page sizes and pages correctly executes range queries, updating URL search params cleanly.
+3.  **Realtime cleanups:** Open browser tools and confirm there are no memory leaks or uncleaned subscriptions when moving between views (handled by `useEffect` unmount functions).

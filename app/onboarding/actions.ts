@@ -3,7 +3,7 @@
 import { createClient } from "@/services/supabase/server";
 import { redirect } from "next/navigation";
 
-export async function assignFaculty(facultyId: string, facultySlug: string, role: string) {
+export async function assignFaculty(facultyId: string, facultySlug: string) {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -17,7 +17,7 @@ export async function assignFaculty(facultyId: string, facultySlug: string, role
     .insert({
       user_id: user.id,
       faculty_id: facultyId,
-      role: role
+      role: "STUDENT" // Hardcode role to STUDENT for security
     });
 
   if (error) {

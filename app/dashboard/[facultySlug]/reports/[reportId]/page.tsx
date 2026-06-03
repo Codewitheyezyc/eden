@@ -20,25 +20,29 @@ export default async function ViewReportPage({ params }: { params: { facultySlug
 
   if (!faculty) redirect("/dashboard");
 
-  const { data: roleData } = await supabase
-    .from("user_faculties")
-    .select("role")
-    .eq("user_id", user.id)
-    .eq("faculty_id", faculty.id)
-    .single();
+  // Fetch Viewer Role and Report in parallel
+  const [roleRes, reportRes] = await Promise.all([
+    supabase
+      .from("user_faculties")
+      .select("role")
+      .eq("user_id", user.id)
+      .eq("faculty_id", faculty.id)
+      .single(),
+    supabase
+      .from("reports")
+      .select(`
+        *,
+        author:users!reports_author_id_fkey(id, full_name, avatar_url)
+      `)
+      .eq("id", params.reportId)
+      .eq("faculty_id", faculty.id)
+      .single()
+  ]);
+
+  const roleData = roleRes.data;
+  const report = reportRes.data;
 
   const canManage = roleData?.role === "ADMIN" || roleData?.role === "COORDINATOR";
-
-  // Fetch report
-  const { data: report } = await supabase
-    .from("reports")
-    .select(`
-      *,
-      author:users!reports_author_id_fkey(id, full_name, avatar_url)
-    `)
-    .eq("id", params.reportId)
-    .eq("faculty_id", faculty.id)
-    .single();
 
   if (!report) redirect(`/dashboard/${params.facultySlug}/reports`);
 

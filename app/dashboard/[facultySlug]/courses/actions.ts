@@ -96,7 +96,8 @@ export async function deleteCourseAction(courseId: string, facultyId: string) {
   const { error } = await supabase
     .from("courses")
     .delete()
-    .eq("id", courseId);
+    .eq("id", courseId)
+    .eq("faculty_id", facultyId);
 
   if (error) {
     throw new Error(error.message);

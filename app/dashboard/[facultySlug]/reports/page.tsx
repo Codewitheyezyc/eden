@@ -3,13 +3,20 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Plus, Search, FileText, Calendar } from "lucide-react";
 import { format } from "date-fns";
+import { cn } from "@/lib/utils";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Reports",
+};
+
 
 export default async function ReportsPage({
   params,
   searchParams,
 }: {
   params: { facultySlug: string };
-  searchParams: { q?: string };
+  searchParams: { q?: string; page?: string };
 }) {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -34,14 +41,18 @@ export default async function ReportsPage({
 
   const canManage = roleData?.role === "ADMIN" || roleData?.role === "COORDINATOR";
   const query = searchParams.q || "";
+  const currentPage = Number(searchParams.page) || 1;
+  const pageSize = 6;
+  const from = (currentPage - 1) * pageSize;
+  const to = from + pageSize - 1;
 
-  // Fetch reports
+  // Fetch reports with count
   let reportsQuery = supabase
     .from("reports")
     .select(`
       id, title, created_at, updated_at,
       author:users!reports_author_id_fkey(full_name, avatar_url)
-    `)
+    `, { count: "exact" })
     .eq("faculty_id", facultyData.id)
     .order("created_at", { ascending: false });
 
@@ -49,7 +60,12 @@ export default async function ReportsPage({
     reportsQuery = reportsQuery.ilike("title", `%${query}%`);
   }
 
-  const { data: reports } = await reportsQuery;
+  // Apply range pagination
+  reportsQuery = reportsQuery.range(from, to);
+
+  const { data: reports, count } = await reportsQuery;
+  const totalCount = count || 0;
+  const totalPages = Math.ceil(totalCount / pageSize);
 
   return (
     <div className="max-w-6xl mx-auto space-y-8">
@@ -94,43 +110,81 @@ export default async function ReportsPage({
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {reports.map((report: any) => (
-              <Link
-                key={report.id}
-                href={`/dashboard/${params.facultySlug}/reports/${report.id}`}
-                className="group flex flex-col justify-between p-6 rounded-2xl border border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-[#111]/50 hover:bg-white dark:hover:bg-[#1a1a1a] hover:border-emerald-500/30 hover:shadow-lg transition-all duration-300 h-full"
-              >
-                <div>
-                  <div className="flex items-center text-xs text-gray-500 dark:text-gray-400 mb-3 space-x-2">
-                    <Calendar size={14} />
-                    <span>{format(new Date(report.created_at), "MMM d, yyyy")}</span>
+          <div className="space-y-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {reports.map((report: any) => (
+                <Link
+                  key={report.id}
+                  href={`/dashboard/${params.facultySlug}/reports/${report.id}`}
+                  className="group flex flex-col justify-between p-6 rounded-2xl border border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-[#111]/50 hover:bg-white dark:hover:bg-[#1a1a1a] hover:border-emerald-500/30 hover:shadow-lg transition-all duration-300 h-full"
+                >
+                  <div>
+                    <div className="flex items-center text-xs text-gray-500 dark:text-gray-400 mb-3 space-x-2">
+                      <Calendar size={14} />
+                      <span>{format(new Date(report.created_at), "MMM d, yyyy")}</span>
+                    </div>
+                    <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors line-clamp-2">
+                      {report.title}
+                    </h3>
                   </div>
-                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors line-clamp-2">
-                    {report.title}
-                  </h3>
-                </div>
-                <div className="mt-6 flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-800">
-                  <div className="flex items-center space-x-2">
-                    {report.author?.avatar_url ? (
-                      <img src={report.author.avatar_url} alt="" className="w-6 h-6 rounded-full" />
-                    ) : (
-                      <div className="w-6 h-6 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-[10px] font-bold">
-                        {report.author?.full_name?.charAt(0) || "U"}
-                      </div>
+                  <div className="mt-6 flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-800">
+                    <div className="flex items-center space-x-2">
+                      {report.author?.avatar_url ? (
+                        <img src={report.author.avatar_url} alt="" className="w-6 h-6 rounded-full" />
+                      ) : (
+                        <div className="w-6 h-6 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-[10px] font-bold">
+                          {report.author?.full_name?.charAt(0) || "U"}
+                        </div>
+                      )}
+                      <span className="text-xs text-gray-600 dark:text-gray-400 font-medium truncate max-w-[100px]">
+                        {report.author?.full_name || "Unknown"}
+                      </span>
+                    </div>
+                    {canManage && (
+                      <span className="text-xs font-medium text-emerald-600 bg-emerald-50 dark:bg-emerald-500/10 dark:text-emerald-400 px-2.5 py-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                        Edit Report
+                      </span>
                     )}
-                    <span className="text-xs text-gray-600 dark:text-gray-400 font-medium truncate max-w-[100px]">
-                      {report.author?.full_name || "Unknown"}
-                    </span>
                   </div>
-                  {canManage && (
-                    <span className="text-xs font-medium text-emerald-600 bg-emerald-50 dark:bg-emerald-500/10 dark:text-emerald-400 px-2.5 py-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
-                      Edit Report
-                    </span>
-                  )}
+                </Link>
+              ))}
+            </div>
+
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between border-t border-gray-200 dark:border-gray-800 pt-6">
+                <div className="text-xs text-gray-500 dark:text-gray-400 font-medium">
+                  Showing <span className="font-bold text-gray-900 dark:text-white">{from + 1}</span> to{" "}
+                  <span className="font-bold text-gray-900 dark:text-white">
+                    {Math.min(from + reports.length, totalCount)}
+                  </span>{" "}
+                  of <span className="font-bold text-gray-900 dark:text-white">{totalCount}</span> reports
                 </div>
-              </Link>
-            ))}
+                <div className="flex items-center space-x-2">
+                  <Link
+                    href={`/dashboard/${params.facultySlug}/reports?page=${currentPage - 1}${query ? `&q=${query}` : ""}`}
+                    className={cn(
+                      "inline-flex items-center justify-center px-4 py-2 border border-gray-200 dark:border-white/10 rounded-xl text-xs font-bold text-gray-700 dark:text-gray-300 bg-white/50 dark:bg-transparent transition-all shadow-sm",
+                      currentPage <= 1 && "opacity-45 pointer-events-none"
+                    )}
+                  >
+                    Previous
+                  </Link>
+                  <span className="text-xs font-bold text-gray-700 dark:text-gray-300 px-2 select-none">
+                    Page {currentPage} of {totalPages}
+                  </span>
+                  <Link
+                    href={`/dashboard/${params.facultySlug}/reports?page=${currentPage + 1}${query ? `&q=${query}` : ""}`}
+                    className={cn(
+                      "inline-flex items-center justify-center px-4 py-2 border border-gray-200 dark:border-white/10 rounded-xl text-xs font-bold text-gray-700 dark:text-gray-300 bg-white/50 dark:bg-transparent transition-all shadow-sm",
+                      currentPage >= totalPages && "opacity-45 pointer-events-none"
+                    )}
+                  >
+                    Next
+                  </Link>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>

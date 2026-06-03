@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTheme } from "next-themes";
 import { toast } from "react-hot-toast";
 import { 
   User, Shield, Bell, Moon, Sun, Laptop, Users, Trash2, 
@@ -57,6 +58,7 @@ export function SettingsClient({
 }: SettingsClientProps) {
   const [activeTab, setActiveTab] = useState<TabType>("profile");
   const [members, setMembers] = useState<FacultyMember[]>(initialMembers);
+  const { setTheme } = useTheme();
   const isAdmin = role === "ADMIN";
 
   // State Profile
@@ -504,25 +506,21 @@ export function SettingsClient({
 
               <div className="grid grid-cols-3 gap-4">
                 <button 
-                  onClick={() => document.documentElement.classList.remove("dark")}
+                  onClick={() => setTheme("light")}
                   className="p-6 bg-white dark:bg-white/5 border border-emerald-500/20 rounded-2xl hover:border-emerald-500 flex flex-col items-center justify-center space-y-3 transition-all"
                 >
                   <Sun className="w-6 h-6 text-amber-500" />
                   <span className="text-xs font-bold">Light</span>
                 </button>
                 <button 
-                  onClick={() => document.documentElement.classList.add("dark")}
+                  onClick={() => setTheme("dark")}
                   className="p-6 bg-white dark:bg-white/5 border border-gray-200 dark:border-white/5 rounded-2xl hover:border-emerald-500 flex flex-col items-center justify-center space-y-3 transition-all"
                 >
                   <Moon className="w-6 h-6 text-indigo-400" />
                   <span className="text-xs font-bold">Dark</span>
                 </button>
                 <button 
-                  onClick={() => {
-                    const isDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-                    if (isDark) document.documentElement.classList.add("dark");
-                    else document.documentElement.classList.remove("dark");
-                  }}
+                  onClick={() => setTheme("system")}
                   className="p-6 bg-white dark:bg-white/5 border border-gray-200 dark:border-white/5 rounded-2xl hover:border-emerald-500 flex flex-col items-center justify-center space-y-3 transition-all"
                 >
                   <Laptop className="w-6 h-6 text-gray-500" />

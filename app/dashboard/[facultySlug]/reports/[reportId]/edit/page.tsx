@@ -16,25 +16,28 @@ export default async function EditReportPage({ params }: { params: { facultySlug
 
   if (!faculty) redirect("/dashboard");
 
-  // Verify role
-  const { data: roleData } = await supabase
-    .from("user_faculties")
-    .select("role")
-    .eq("user_id", user.id)
-    .eq("faculty_id", faculty.id)
-    .single();
+  // Fetch Viewer Role and Report in parallel
+  const [roleRes, reportRes] = await Promise.all([
+    supabase
+      .from("user_faculties")
+      .select("role")
+      .eq("user_id", user.id)
+      .eq("faculty_id", faculty.id)
+      .single(),
+    supabase
+      .from("reports")
+      .select("*")
+      .eq("id", params.reportId)
+      .eq("faculty_id", faculty.id)
+      .single()
+  ]);
+
+  const roleData = roleRes.data;
+  const report = reportRes.data;
 
   if (roleData?.role !== "ADMIN" && roleData?.role !== "COORDINATOR") {
     redirect(`/dashboard/${params.facultySlug}/reports`);
   }
-
-  // Fetch report
-  const { data: report } = await supabase
-    .from("reports")
-    .select("*")
-    .eq("id", params.reportId)
-    .eq("faculty_id", faculty.id)
-    .single();
 
   if (!report) redirect(`/dashboard/${params.facultySlug}/reports`);
 

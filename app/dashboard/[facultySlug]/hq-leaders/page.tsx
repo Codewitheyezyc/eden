@@ -21,40 +21,42 @@ export default async function HQLeadersDirectoryPage({
 
   if (!faculty) redirect("/dashboard");
 
-  // Step 2: Get the viewer's role in this faculty
-  const { data: facultyAccess } = await supabase
-    .from("user_faculties")
-    .select("role")
-    .eq("user_id", user.id)
-    .eq("faculty_id", faculty.id)
-    .single();
-
-  const viewerRole = facultyAccess?.role || "STUDENT";
-
-  // Step 3: Fetch all members associated with this faculty who have leadership roles
-  const { data: adminUsers, error } = await supabase
-    .from("user_faculties")
-    .select(`
-      user_id,
-      role,
-      users:user_id (
-        id,
-        full_name,
-        avatar_url,
-        email,
-        profiles (
-          campus_zone,
-          gender,
-          phone,
-          kingschat_handle,
-          bio,
-          is_verified,
-          leadership_role,
-          leadership_metadata
+  // Step 2: Get user's role and fetch all members in parallel
+  const [accessRes, adminUsersRes] = await Promise.all([
+    supabase
+      .from("user_faculties")
+      .select("role")
+      .eq("user_id", user.id)
+      .eq("faculty_id", faculty.id)
+      .single(),
+    supabase
+      .from("user_faculties")
+      .select(`
+        user_id,
+        role,
+        users:user_id (
+          id,
+          full_name,
+          avatar_url,
+          email,
+          profiles (
+            campus_zone,
+            gender,
+            phone,
+            kingschat_handle,
+            bio,
+            is_verified,
+            leadership_role,
+            leadership_metadata
+          )
         )
-      )
-    `)
-    .eq("faculty_id", faculty.id);
+      `)
+      .eq("faculty_id", faculty.id)
+  ]);
+
+  const facultyAccess = accessRes.data;
+  const adminUsers = adminUsersRes.data;
+  const error = adminUsersRes.error;
 
   if (error) {
     return (
@@ -65,7 +67,9 @@ export default async function HQLeadersDirectoryPage({
     );
   }
 
-  // Step 4: Map users into clean Leader profile objects
+  const viewerRole = facultyAccess?.role || "STUDENT";
+
+  // Step 3: Map users into clean Leader profile objects
   const leadersList = (adminUsers || []).map((m: any) => {
     const userObj = Array.isArray(m.users) ? m.users[0] : m.users;
     const profile = userObj?.profiles ? (Array.isArray(userObj.profiles) ? userObj.profiles[0] : userObj.profiles) : null;
@@ -89,22 +93,10 @@ export default async function HQLeadersDirectoryPage({
     };
   }).filter(l => l.profile && l.profile.leadershipRole); // Only list users with active leadership roles assigned
 
-  // Step 5: Fetch all other faculty members (used by Admins to assign a new leader!)
+  // Step 4: Map potential leaders from the already loaded members list (removes duplicate database call)
   let potentialLeaders: { id: string; fullName: string; email: string; currentRole: string }[] = [];
   if (viewerRole === "ADMIN") {
-    const { data: allFacultyUsers } = await supabase
-      .from("user_faculties")
-      .select(`
-        user_id,
-        role,
-        users:user_id (
-          full_name,
-          email
-        )
-      `)
-      .eq("faculty_id", faculty.id);
-
-    potentialLeaders = (allFacultyUsers || []).map((u: any) => {
+    potentialLeaders = (adminUsers || []).map((u: any) => {
       const userObj = Array.isArray(u.users) ? u.users[0] : u.users;
       return {
         id: u.user_id,

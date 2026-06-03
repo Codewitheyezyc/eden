@@ -95,14 +95,18 @@ export async function updateSession(request: NextRequest) {
         // Dynamic route protection and redirects
         if (user && isAuthRoute) {
           // If logged in, redirect away from login/register to dashboard
-          return NextResponse.redirect(new URL("/dashboard", request.url));
+          const redirectResponse = NextResponse.redirect(new URL("/dashboard", request.url));
+          response.cookies.getAll().forEach((cookie) => redirectResponse.cookies.set(cookie));
+          return redirectResponse;
         }
 
         if (!user && isProtectedRoute) {
           // If not logged in, redirect protected routes to login
           const redirectUrl = new URL("/login", request.url);
           redirectUrl.searchParams.set("next", pathname);
-          return NextResponse.redirect(redirectUrl);
+          const redirectResponse = NextResponse.redirect(redirectUrl);
+          response.cookies.getAll().forEach((cookie) => redirectResponse.cookies.set(cookie));
+          return redirectResponse;
         }
       }
     } catch (error) {

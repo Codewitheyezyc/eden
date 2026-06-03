@@ -28,7 +28,7 @@ export function FacultySelector({ faculties }: { faculties: FacultyOption[] }) {
     setError(null);
     
     try {
-      const result = await assignFaculty(selectedFaculty.id, selectedFaculty.slug, selectedRole);
+      const result = await assignFaculty(selectedFaculty.id, selectedFaculty.slug);
       if (result?.error) {
         setError(result.error);
         setLoading(false);

@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/services/supabase/client";
+
 import { VerifiedBadge } from "@/components/ui/verified-badge";
 
 interface UserDropdownProps {
@@ -18,7 +18,6 @@ export function UserDropdown({ userEmail, userName, avatarUrl, facultySlug, isVe
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
-  const supabase = createClient();
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -32,15 +31,14 @@ export function UserDropdown({ userEmail, userName, avatarUrl, facultySlug, isVe
 
   const handleLogout = async () => {
     try {
-      // Use Promise.race to guarantee logout redirect runs even if Supabase network call hangs
-      await Promise.race([
-        supabase.auth.signOut(),
-        new Promise((resolve) => setTimeout(resolve, 1000))
-      ]);
+      // POST to the server-side signout route so cookies are cleared on the server
+      // BEFORE the browser navigates to /login — this prevents the middleware
+      // from seeing a stale session and redirecting back to /dashboard
+      await fetch("/auth/signout", { method: "POST" });
     } catch (err: any) {
       console.error("Signout error:", err);
     } finally {
-      // Force a full browser navigation to login page to ensure cookies/caches are cleared
+      // Full page navigation after server has cleared the session cookies
       window.location.href = "/login";
     }
   };

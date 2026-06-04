@@ -31,8 +31,8 @@ export default async function DashboardLayout({
     redirect("/login");
   }
 
-  // Step 1: Fetch the faculty by slug and user's profile details in parallel
-  const [facultyRes, profileRes] = await Promise.all([
+  // Step 1: Fetch the faculty, profile details, and users table record in parallel
+  const [facultyRes, profileRes, userRecordRes] = await Promise.all([
     supabase
       .from("faculties")
       .select("id, name, slug")
@@ -42,12 +42,18 @@ export default async function DashboardLayout({
       .from("profiles")
       .select("is_verified, completed_tour")
       .eq("id", user.id)
+      .single(),
+    supabase
+      .from("users")
+      .select("full_name, avatar_url")
+      .eq("id", user.id)
       .single()
   ]);
 
   const faculty = facultyRes.data;
   const facultyError = facultyRes.error;
   const profile = profileRes.data;
+  const userRecord = userRecordRes.data;
 
   if (facultyError || !faculty) {
     return (
@@ -82,8 +88,8 @@ export default async function DashboardLayout({
       facultySlug={faculty.slug} 
       role={facultyAccess.role}
       userEmail={user.email || "User"}
-      userName={user.user_metadata?.full_name}
-      avatarUrl={user.user_metadata?.avatar_url}
+      userName={userRecord?.full_name || user.user_metadata?.full_name}
+      avatarUrl={userRecord?.avatar_url || user.user_metadata?.avatar_url}
       isVerified={profile?.is_verified || false}
       completedTour={profile?.completed_tour || false}
     >

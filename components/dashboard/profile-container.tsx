@@ -134,11 +134,6 @@ export function ProfileContainer({ userId, userEmail, initialProfile, initialFul
 
       // Save to users table immediately so overview gets it
       await supabase.from("users").update({ avatar_url: publicUrl }).eq("id", userId);
-      
-      // Update Auth session so Navbar gets it
-      await supabase.auth.updateUser({
-        data: { avatar_url: publicUrl }
-      });
 
       setMessage({ type: 'success', text: 'Avatar uploaded successfully!' });
       router.refresh();
@@ -167,11 +162,6 @@ export function ProfileContainer({ userId, userEmail, initialProfile, initialFul
         full_name: formData.fullName,
         kingschat_username: formData.kingschatUsername || null
       }).eq("id", userId);
-      
-      // Update auth user so navbar name updates
-      await supabase.auth.updateUser({
-        data: { full_name: formData.fullName }
-      });
 
       // Upsert profile info
       const { error: profileError } = await supabase.from("profiles").upsert({

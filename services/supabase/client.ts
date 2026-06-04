@@ -10,12 +10,29 @@ export function createClient() {
     console.warn("Supabase browser client initialized with missing environment variables!");
   }
 
+  // On the server side (SSR/Prerendering), always return a new client instance
+  // to avoid cross-request state pollution.
+  if (typeof window === "undefined") {
+    return createBrowserClient(url || "", anonKey || "");
+  }
+
+  // On the client side (browser), cache the instance so it acts as a singleton.
   if (!clientInstance) {
     clientInstance = createBrowserClient(
       url || "",
-      anonKey || ""
+      anonKey || "",
+      {
+        auth: {
+          // Custom no-op lock to bypass navigator.locks hanging bugs in React StrictMode
+          lock: async (_name, _acquireTimeout, fn) => {
+            return await fn();
+          },
+        },
+      }
     );
   }
 
   return clientInstance;
 }
+
+

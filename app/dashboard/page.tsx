@@ -38,45 +38,24 @@ export default async function DashboardRootPage() {
     redirect("/onboarding");
   }
 
-  // 2. Exactly One Faculty (Automatic Redirection)
-  if (userFaculties.length === 1) {
-    // Type casting because Supabase joins return array or single object depending on relation
-    const faculty = Array.isArray(userFaculties[0].faculties) 
-      ? userFaculties[0].faculties[0] 
-      : userFaculties[0].faculties;
-      
-    // Redirect to the unified dashboard for their specific faculty
-    redirect(`/dashboard/${faculty?.slug}`);
+  // 2. Direct to Dance faculty or first available
+  const danceAccess = userFaculties.find((uf: any) => {
+    const faculty = Array.isArray(uf.faculties) ? uf.faculties[0] : uf.faculties;
+    return faculty?.slug === "dance";
+  });
+
+  if (danceAccess) {
+    redirect("/dashboard/dance");
   }
 
-  // 3. Multiple Faculties (Faculty Selector)
-  return (
-    <div className="min-h-screen bg-gray-50 dark:bg-[#030303] py-20 px-6 transition-colors">
-      <div className="max-w-4xl mx-auto">
-        <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-3">Select Workspace</h1>
-        <p className="text-gray-500 dark:text-gray-400 mb-12 text-lg">You have access to multiple faculties. Where would you like to go?</p>
-        
-        <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-6">
-          {userFaculties.map((uf: any) => {
-            const faculty = Array.isArray(uf.faculties) ? uf.faculties[0] : uf.faculties;
-            return (
-              <a 
-                key={faculty.slug} 
-                href={`/dashboard/${faculty.slug}`}
-                className="bg-white dark:bg-[#0a0a0a] border border-gray-200 dark:border-gray-800 rounded-3xl p-8 hover:border-emerald-500/50 dark:hover:border-emerald-500/50 hover:shadow-lg transition-all group"
-              >
-                <div className="w-12 h-12 bg-gray-50 dark:bg-gray-900 text-gray-400 dark:text-gray-500 rounded-xl flex items-center justify-center mb-6 group-hover:bg-emerald-500 group-hover:text-white transition-colors duration-300">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                </div>
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">{faculty.name}</h2>
-                <div className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300 capitalize">
-                  {uf.role.toLowerCase()} Access
-                </div>
-              </a>
-            );
-          })}
-        </div>
-      </div>
-    </div>
-  );
+  // Fallback to first faculty or onboarding
+  const firstFaculty = Array.isArray(userFaculties[0].faculties)
+    ? userFaculties[0].faculties[0]
+    : userFaculties[0].faculties;
+
+  if (firstFaculty?.slug) {
+    redirect(`/dashboard/${firstFaculty.slug}`);
+  }
+
+  redirect("/onboarding");
 }

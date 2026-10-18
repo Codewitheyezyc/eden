@@ -20,7 +20,7 @@ export function MarketingFooter() {
               </span>
             </div>
             <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed font-light">
-              Elevating administration and learning for the Loveworld Art Academy. Pure performance, absolute isolation.
+              Elevating administration and learning for the Loveworld Arts Academy. Dance Faculty digital operations and member registers.
             </p>
           </div>
           <div>

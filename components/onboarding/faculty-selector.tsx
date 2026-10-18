@@ -1,196 +1,184 @@
 "use client";
 
 import { useState } from "react";
-import { assignFaculty } from "@/app/onboarding/actions";
+import { completeOnboarding } from "@/app/onboarding/actions";
 import { Button } from "@/components/ui/button";
+import { CAMPUSES } from "@/lib/campuses";
+import { Sparkles, MapPin, User, Phone, CheckCircle2, ShieldCheck, ArrowRight } from "lucide-react";
 
-export interface FacultyOption {
-  id: string;
-  name: string;
-  slug: string;
+interface OnboardingProps {
+  initialFullName?: string;
+  initialCampusZone?: string;
+  initialPhone?: string;
 }
 
-const ROLES = [
-  { id: "STUDENT", name: "Student", desc: "Join as a student to participate in courses and events." },
-];
-
-export function FacultySelector({ faculties }: { faculties: FacultyOption[] }) {
-  const [selectedFaculty, setSelectedFaculty] = useState<FacultyOption | null>(null);
-  const [selectedRole, setSelectedRole] = useState<string>("STUDENT");
+export function FacultySelector({
+  initialFullName = "",
+  initialCampusZone = "",
+  initialPhone = "",
+}: OnboardingProps) {
+  const [fullName, setFullName] = useState(initialFullName);
+  const [campusZone, setCampusZone] = useState(initialCampusZone || CAMPUSES[0]);
+  const [phone, setPhone] = useState(initialPhone);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [step, setStep] = useState<1 | 2>(1); // Step 1: Faculty, Step 2: Role
 
-  const handleSubmit = async () => {
-    if (!selectedFaculty || !selectedRole) return;
-    
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!campusZone) {
+      setError("Please select your campus or zone.");
+      return;
+    }
+
     setLoading(true);
     setError(null);
-    
+
     try {
-      const result = await assignFaculty(selectedFaculty.id, selectedFaculty.slug);
+      const result = await completeOnboarding({
+        fullName,
+        campusZone,
+        phone,
+      });
+
       if (result?.error) {
         setError(result.error);
         setLoading(false);
       }
-      // If successful, it redirects, so we keep loading=true to prevent double clicks
     } catch (err: any) {
-      setError(err.message || "An unexpected error occurred.");
+      setError(err?.message || "An unexpected error occurred.");
       setLoading(false);
     }
   };
 
-  if (step === 2) {
-    return (
-      <div className="w-full max-w-4xl mx-auto flex flex-col items-center animate-in fade-in zoom-in-95 duration-500">
-        <div className="text-center mb-10">
-          <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-gray-900 dark:text-white mb-4">
-            Select Your Role
-          </h1>
-          <p className="text-lg text-gray-700 dark:text-gray-300 max-w-xl mx-auto font-normal">
-            You are joining the <span className="font-bold text-emerald-600 dark:text-emerald-400">{selectedFaculty?.name}</span>. Please select your role below.
-          </p>
-        </div>
-
-        <div className="flex justify-center w-full mb-10">
-          {ROLES.map((role) => {
-            const isSelected = selectedRole === role.id;
-            return (
-              <div
-                key={role.id}
-                onClick={() => setSelectedRole(role.id)}
-                className={`relative cursor-pointer rounded-3xl p-6 border-2 transition-all duration-300 flex flex-col items-center text-center overflow-hidden max-w-sm w-full
-                  ${isSelected 
-                    ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20 shadow-xl shadow-emerald-500/10 scale-105 z-10" 
-                    : "border-gray-200 dark:border-white/10 bg-white/50 dark:bg-[#0a0a0a]/50 hover:border-emerald-300 dark:hover:border-emerald-700 hover:shadow-md hover:bg-white dark:hover:bg-[#0a0a0a]"
-                  }
-                `}
-              >
-                {isSelected && (
-                  <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-emerald-400/20 via-transparent to-transparent opacity-50 blur-xl pointer-events-none" />
-                )}
-                
-                <h3 className={`text-xl font-bold mb-2 transition-colors duration-300
-                  ${isSelected ? "text-emerald-900 dark:text-emerald-100" : "text-gray-900 dark:text-white"}
-                `}>
-                  {role.name}
-                </h3>
-                
-                <p className={`text-sm transition-colors duration-300
-                  ${isSelected ? "text-emerald-800 dark:text-emerald-300 font-medium" : "text-gray-600 dark:text-gray-400"}
-                `}>
-                  {role.desc}
-                </p>
-
-                <div className={`absolute top-4 right-4 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all duration-300
-                  ${isSelected ? "border-emerald-500 bg-emerald-500" : "border-gray-300 dark:border-gray-600"}
-                `}>
-                  {isSelected && <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>}
-                </div>
-              </div>
-            )
-          })}
-        </div>
-
-        {error && (
-          <div className="mb-6 p-4 rounded-xl bg-red-50 text-red-600 border border-red-100 w-full max-w-md text-center text-sm animate-in fade-in zoom-in duration-300">
-            {error}
-          </div>
-        )}
-
-        <div className="flex gap-4 w-full max-w-md">
-          <Button 
-            variant="outline"
-            size="lg" 
-            className="w-1/3 h-14 rounded-2xl text-base font-bold shadow-sm"
-            onClick={() => setStep(1)}
-            disabled={loading}
-          >
-            Back
-          </Button>
-          <Button 
-            size="lg" 
-            className="w-2/3 h-14 rounded-2xl text-lg font-bold bg-gray-900 hover:bg-black dark:bg-white dark:text-black dark:hover:bg-gray-200 shadow-xl"
-            onClick={handleSubmit}
-            disabled={loading || !selectedRole}
-          >
-            {loading ? "Saving..." : "Complete Setup"}
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="w-full max-w-4xl mx-auto flex flex-col items-center">
-      <div className="text-center mb-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
-        <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-gray-900 dark:text-white mb-4">
-          Choose Your Path
+    <div className="w-full max-w-2xl mx-auto flex flex-col items-center">
+      {/* Academy Header */}
+      <div className="text-center mb-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-semibold mb-4 shadow-sm">
+          <Sparkles className="w-3.5 h-3.5" />
+          <span>Loveworld Arts Academy</span>
+        </div>
+        <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-gray-900 dark:text-white mb-3">
+          Dance Faculty Enrollment
         </h1>
-        <p className="text-lg text-gray-700 dark:text-gray-300 max-w-xl mx-auto font-normal">
-          Welcome to Eden Academy! To personalize your experience, please select the faculty you are enrolling in.
+        <p className="text-base text-gray-600 dark:text-gray-400 max-w-lg mx-auto font-normal leading-relaxed">
+          Welcome to the creative digital hub of the Loveworld Arts Academy. Finalize your member profile to enter the Dance Faculty portal.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full mb-12 animate-in fade-in slide-in-from-bottom-8 duration-700 delay-150">
-        {faculties.map((faculty) => {
-          const isSelected = selectedFaculty?.id === faculty.id;
-          return (
-            <div
-              key={faculty.id}
-              onClick={() => setSelectedFaculty(faculty)}
-              className={`relative cursor-pointer rounded-3xl p-8 border-2 transition-all duration-300 flex flex-col items-center text-center overflow-hidden
-                ${isSelected 
-                  ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20 shadow-xl shadow-emerald-500/10 scale-105 z-10" 
-                  : "border-gray-200 dark:border-white/10 bg-white/50 dark:bg-[#0a0a0a]/50 hover:border-emerald-300 dark:hover:border-emerald-700 hover:shadow-md hover:bg-white dark:hover:bg-[#0a0a0a]"
-                }
-              `}
-            >
-              {isSelected && (
-                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-emerald-400/20 via-transparent to-transparent opacity-50 blur-xl pointer-events-none" />
-              )}
-              
-              <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-6 transition-colors duration-300 shadow-inner
-                ${isSelected ? "bg-emerald-500 text-white" : "bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500"}
-              `}>
-                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M12 2L2 7l10 5 10-5-10-5z" />
-                  <path d="M2 17l10 5 10-5" />
-                  <path d="M2 12l10 5 10-5" />
-                </svg>
+      {/* Main Card */}
+      <div className="w-full bg-white/80 dark:bg-[#080808]/80 backdrop-blur-xl border border-gray-200/80 dark:border-white/10 rounded-3xl p-6 sm:p-10 shadow-2xl relative overflow-hidden animate-in fade-in slide-in-from-bottom-6 duration-700 delay-100">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 blur-[90px] rounded-full pointer-events-none -z-10" />
+
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Faculty Confirmation Badge */}
+          <div className="flex items-center justify-between p-4 rounded-2xl bg-emerald-500/5 dark:bg-emerald-500/10 border border-emerald-500/20">
+            <div className="flex items-center gap-3.5">
+              <div className="w-11 h-11 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-bold shadow-md shadow-emerald-600/20">
+                <ShieldCheck className="w-6 h-6" />
               </div>
-              
-              <h3 className={`text-xl font-bold mb-2 transition-colors duration-300
-                ${isSelected ? "text-emerald-900 dark:text-emerald-100" : "text-gray-900 dark:text-white"}
-              `}>
-                {faculty.name}
-              </h3>
-              
-              <p className={`text-sm transition-colors duration-300
-                ${isSelected ? "text-emerald-800 dark:text-emerald-300 font-medium" : "text-gray-600 dark:text-gray-400"}
-              `}>
-                Join the {faculty.name} community and access specialized curriculum and resources.
-              </p>
-              
-              <div className={`absolute top-4 right-4 w-6 h-6 rounded-full flex items-center justify-center transition-all duration-300
-                ${isSelected ? "bg-emerald-500 text-white opacity-100 scale-100" : "opacity-0 scale-50"}
-              `}>
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              <div>
+                <div className="text-xs uppercase font-bold tracking-wider text-emerald-700 dark:text-emerald-400">
+                  Enrolling Faculty
+                </div>
+                <div className="text-base font-extrabold text-gray-900 dark:text-white">
+                  Dance Faculty
+                </div>
               </div>
             </div>
-          )
-        })}
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-600 text-white text-xs font-bold shadow-sm">
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              <span>Student</span>
+            </div>
+          </div>
+
+          {/* Full Name */}
+          <div className="space-y-2">
+            <label className="text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
+              <User className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+              Full Name
+            </label>
+            <input
+              type="text"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              placeholder="e.g. Brother John Doe"
+              className="w-full px-4 py-3.5 rounded-2xl border border-gray-200 dark:border-white/10 bg-white/50 dark:bg-black/30 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500 transition-all placeholder:text-gray-400 dark:placeholder:text-gray-600"
+            />
+          </div>
+
+          {/* Campus Zone Selection */}
+          <div className="space-y-2">
+            <label className="text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
+              <MapPin className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+              Campus / Zonal Location <span className="text-emerald-600 dark:text-emerald-400">*</span>
+            </label>
+            <div className="relative">
+              <select
+                value={campusZone}
+                onChange={(e) => setCampusZone(e.target.value)}
+                required
+                className="w-full px-4 py-3.5 rounded-2xl border border-gray-200 dark:border-white/10 bg-white/50 dark:bg-black/30 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500 transition-all appearance-none cursor-pointer"
+              >
+                {CAMPUSES.map((campus) => (
+                  <option key={campus} value={campus} className="bg-white dark:bg-[#121212] text-gray-900 dark:text-gray-100">
+                    {campus}
+                  </option>
+                ))}
+              </select>
+              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-400">
+                <svg className="w-4 h-4 fill-current" viewBox="0 0 20 20">
+                  <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" fillRule="evenodd"></path>
+                </svg>
+              </div>
+            </div>
+            <p className="text-[11px] text-gray-500 dark:text-gray-400">
+              Targeted announcements and attendance logs will synchronize with your selected zone.
+            </p>
+          </div>
+
+          {/* Phone / Contact */}
+          <div className="space-y-2">
+            <label className="text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
+              <Phone className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+              Phone / WhatsApp / KingsChat (Optional)
+            </label>
+            <input
+              type="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="e.g. +234 800 000 0000"
+              className="w-full px-4 py-3.5 rounded-2xl border border-gray-200 dark:border-white/10 bg-white/50 dark:bg-black/30 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500 transition-all placeholder:text-gray-400 dark:placeholder:text-gray-600"
+            />
+          </div>
+
+          {error && (
+            <div className="p-3.5 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 text-xs font-semibold text-center animate-in fade-in">
+              {error}
+            </div>
+          )}
+
+          {/* Submit */}
+          <Button
+            type="submit"
+            size="lg"
+            disabled={loading}
+            className="w-full h-14 rounded-2xl text-base font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xl shadow-emerald-600/20 transition-all hover:scale-[1.01] flex items-center justify-center gap-2 mt-4"
+          >
+            {loading ? (
+              <span>Completing Enrollment...</span>
+            ) : (
+              <>
+                <span>Enter Dance Faculty</span>
+                <ArrowRight className="w-4 h-4" />
+              </>
+            )}
+          </Button>
+        </form>
       </div>
 
-      <div className={`transition-all duration-500 w-full max-w-xs ${selectedFaculty ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8 pointer-events-none'}`}>
-        <Button 
-          size="lg" 
-          className="w-full h-14 rounded-2xl text-lg font-bold bg-gray-900 hover:bg-black dark:bg-white dark:text-black dark:hover:bg-gray-200 shadow-xl"
-          onClick={() => setStep(2)}
-          disabled={!selectedFaculty}
-        >
-          Continue
-        </Button>
+      <div className="mt-6 text-center text-xs text-gray-500 dark:text-gray-400">
+        Loveworld Arts Academy &bull; Dance Faculty &bull; Empowering Creative Excellence
       </div>
     </div>
   );

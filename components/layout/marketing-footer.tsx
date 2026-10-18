@@ -28,7 +28,6 @@ export function MarketingFooter() {
             <ul className="space-y-2 text-xs text-gray-500 dark:text-gray-400">
               <li><Link href="#features" className="hover:text-emerald-500 transition-colors">Core Features</Link></li>
               <li><Link href="#how-it-works" className="hover:text-emerald-500 transition-colors">How It Works</Link></li>
-              <li><Link href="#pricing" className="hover:text-emerald-500 transition-colors">Pricing Options</Link></li>
             </ul>
           </div>
           <div>

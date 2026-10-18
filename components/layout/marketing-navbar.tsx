@@ -50,9 +50,6 @@ export function MarketingNavbar() {
             <Link href="#how-it-works" className="text-sm font-medium text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 transition-all">
               How It Works
             </Link>
-            <Link href="#pricing" className="text-sm font-medium text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 transition-all">
-              Pricing
-            </Link>
             <Link href="#faq" className="text-sm font-medium text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 transition-all">
               FAQ
             </Link>

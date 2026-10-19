@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react";
 import { parseCampuses } from "@/lib/campuses";
 import { cn } from "@/lib/utils";
+import { exportToExcel } from "@/lib/export-excel";
 
 interface MemberProfile {
   phone: string;
@@ -168,56 +169,44 @@ export function AttendanceClient({ initialMembers, viewerRole, facultySlug }: At
     return filteredAndSortedMembers.slice(start, start + itemsPerPage);
   }, [filteredAndSortedMembers, currentPage, itemsPerPage]);
 
-  // 5. Functional client-side Export to CSV
-  const handleExportCSV = () => {
+  // 5. Functional client-side Export to Styled Excel Spreadsheet
+  const handleExportExcel = () => {
     if (filteredAndSortedMembers.length === 0) return;
 
-    // Headers
-    const headers = [
-      "Full Name",
-      "Email",
-      "Phone",
-      "Kingschat Handle",
-      "Gender",
-      "Date of Birth",
-      "Campuses",
-      "Role",
+    const columns = [
+      { header: "Full Name", key: "fullName", width: 240, isBold: true },
+      { header: "Email Address", key: "email", width: 260 },
+      { header: "Phone Number", key: "phone", width: 170 },
+      { header: "KingsChat Handle", key: "kingschat", width: 180 },
+      { header: "Gender", key: "gender", width: 110, align: "center" as const },
+      { header: "Date of Birth", key: "dateOfBirth", width: 130, align: "center" as const },
+      { header: "Campus / Zone", key: "campusZone", width: 240 },
+      { header: "Faculty Role", key: "role", width: 140, align: "center" as const, isBold: true },
     ];
 
     if (viewerRole === "ADMIN") {
-      headers.push("Leadership Role");
+      columns.push({ header: "Leadership Role", key: "leadershipRole", width: 220, isBold: false });
     }
 
-    // Rows
-    const rows = filteredAndSortedMembers.map(m => {
-      const row = [
-        m.fullName,
-        m.email,
-        m.profile?.phone || "",
-        m.profile?.kingschat ? `@${m.profile.kingschat}` : "",
-        m.profile?.gender || "",
-        m.profile?.dateOfBirth || "",
-        m.profile?.campusZone ? parseCampuses(m.profile.campusZone).join("; ") : "",
-        m.role,
-      ];
+    const data = filteredAndSortedMembers.map(m => ({
+      fullName: m.fullName,
+      email: m.email,
+      phone: m.profile?.phone || "—",
+      kingschat: m.profile?.kingschat ? `@${m.profile.kingschat}` : "—",
+      gender: m.profile?.gender || "—",
+      dateOfBirth: m.profile?.dateOfBirth || "—",
+      campusZone: m.profile?.campusZone ? parseCampuses(m.profile.campusZone).join(", ") : "—",
+      role: m.role,
+      leadershipRole: m.profile?.leadershipRole || "—",
+    }));
 
-      if (viewerRole === "ADMIN") {
-        row.push(m.profile?.leadershipRole || "");
-      }
-
-      // Escape quotes in fields
-      return row.map(field => `"${String(field).replace(/"/g, '""')}"`).join(",");
+    exportToExcel({
+      filename: `Eden_General_Attendance_${facultySlug}_${new Date().toISOString().split("T")[0]}`,
+      title: "GENERAL ATTENDANCE & MEMBER ROSTER",
+      subtitle: `Loveworld Arts Academy Dance Faculty`,
+      columns,
+      data,
     });
-
-    const csvContent = [headers.join(","), ...rows].join("\n");
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.setAttribute("href", url);
-    link.setAttribute("download", `Eden_General_Attendance_${facultySlug}_${new Date().toISOString().split("T")[0]}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
   };
 
   // Reset page when search or filters change
@@ -343,12 +332,12 @@ export function AttendanceClient({ initialMembers, viewerRole, facultySlug }: At
           {/* Export Action */}
           <div className="flex gap-2 self-end">
             <button
-              onClick={handleExportCSV}
+              onClick={handleExportExcel}
               disabled={filteredAndSortedMembers.length === 0}
               className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-4 py-2.5 rounded-xl transition-all shadow-sm shadow-emerald-600/10 hover:shadow-md disabled:opacity-40"
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-              Export CSV
+              Export Spreadsheet (.xls)
             </button>
           </div>
         </div>

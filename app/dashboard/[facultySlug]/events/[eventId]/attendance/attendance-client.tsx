@@ -2,14 +2,15 @@
 
 import { useState, useMemo } from "react";
 import { parseCampuses } from "@/lib/campuses";
-import { cn } from "@/lib/utils";
-import { exportToExcel } from "@/lib/export-excel";
+import { cn, formatBirthday } from "@/lib/utils";
+import { exportToCsv } from "@/lib/export-csv";
 
 interface AttendeeProfile {
   phone: string;
   gender: string;
   kingschat: string;
   campusZone: string;
+  dateOfBirth?: string;
   isVerified: boolean;
   leadershipRole: string;
 }
@@ -169,39 +170,37 @@ export function EventAttendanceClient({ event, initialAttendees, viewerRole, fac
     return processedAttendees.slice(start, start + itemsPerPage);
   }, [processedAttendees, currentPage, itemsPerPage]);
 
-  // Functional client-side Export to Styled Excel Spreadsheet
-  const handleExportExcel = () => {
+  // Functional client-side Export to Mobile-Friendly CSV
+  const handleExportCsv = () => {
     if (processedAttendees.length === 0) return;
 
     const columns = [
-      { header: "Full Name", key: "fullName", width: 240, isBold: true },
-      { header: "Email Address", key: "email", width: 260 },
-      { header: "Faculty Role", key: "role", width: 140, align: "center" as const, isBold: true },
-      { header: "Check-In Date/Time", key: "checkInTime", width: 200, align: "center" as const },
-      { header: "Attendance Status", key: "status", width: 140, align: "center" as const, isBold: true },
-      { header: "Campus / Zone", key: "campusZone", width: 240 },
-      { header: "KingsChat Handle", key: "kingschat", width: 180 },
+      { header: "Full Name", key: "fullName" },
+      { header: "Email Address", key: "email" },
+      { header: "KingsChat Handle", key: "kingschat" },
+      { header: "Phone Number", key: "phone" },
+      { header: "Date of Birth", key: "dateOfBirth" },
+      { header: "Campus / Zone", key: "campusZone" },
+      { header: "Role", key: "role" },
     ];
 
     if (viewerRole === "ADMIN") {
-      columns.push({ header: "Leadership Role", key: "leadershipRole", width: 220, isBold: false });
+      columns.push({ header: "Leadership Role", key: "leadershipRole" });
     }
 
     const data = processedAttendees.map(a => ({
       fullName: a.fullName,
       email: a.email,
-      role: a.role,
-      checkInTime: a.checkInTime || "—",
-      status: a.status.toUpperCase(),
-      campusZone: a.profile?.campusZone ? parseCampuses(a.profile.campusZone).join(", ") : "—",
       kingschat: a.profile?.kingschat ? `@${a.profile.kingschat}` : "—",
+      phone: a.profile?.phone || "—",
+      dateOfBirth: formatBirthday(a.profile?.dateOfBirth),
+      campusZone: a.profile?.campusZone ? parseCampuses(a.profile.campusZone).join(", ") : "—",
+      role: a.role,
       leadershipRole: a.profile?.leadershipRole || "—",
     }));
 
-    exportToExcel({
+    exportToCsv({
       filename: `Eden_Event_${event.title.replace(/\s+/g, "_")}_Attendance_${new Date().toISOString().split("T")[0]}`,
-      title: `EVENT ATTENDANCE: ${event.title.toUpperCase()}`,
-      subtitle: `Date: ${eventDateStr.full} at ${eventDateStr.time} ${event.location ? '• Location: ' + event.location : ''}`,
       columns,
       data,
     });
@@ -321,14 +320,14 @@ export function EventAttendanceClient({ event, initialAttendees, viewerRole, fac
                 />
               </div>
 
-              {/* Excel Spreadsheet Export */}
+              {/* CSV Export */}
               <button
-                onClick={handleExportExcel}
+                onClick={handleExportCsv}
                 disabled={processedAttendees.length === 0}
                 className="flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm px-4 py-3 rounded-2xl transition-all shadow-sm disabled:opacity-40"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                Export Spreadsheet (.xls)
+                Export CSV
               </button>
             </div>
 

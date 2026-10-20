@@ -20,3 +20,27 @@ export function timeAgo(dateString: string) {
   const days = Math.floor(hours / 24);
   return `${days} days ago`;
 }
+
+/**
+ * Formats a YYYY-MM-DD date of birth into day and month only (e.g. "14 May")
+ */
+export function formatBirthday(dobStr: string | null | undefined): string {
+  if (!dobStr) return "—";
+  try {
+    const parts = String(dobStr).split("-");
+    if (parts.length >= 3) {
+      const monthNames = [
+        "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+        "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+      ];
+      const monthIndex = parseInt(parts[1], 10) - 1;
+      const day = parseInt(parts[2], 10);
+      if (!isNaN(monthIndex) && !isNaN(day) && monthIndex >= 0 && monthIndex < 12) {
+        return `${day} ${monthNames[monthIndex]}`;
+      }
+    }
+  } catch (e) {
+    // fallback
+  }
+  return dobStr;
+}

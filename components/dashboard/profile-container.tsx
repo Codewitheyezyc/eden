@@ -331,6 +331,21 @@ export function ProfileContainer({ userId, userEmail, initialProfile, initialFul
               </div>
 
               <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center justify-between">
+                  <span>Email Address</span>
+                  <span className="text-[10px] bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20 px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">Account Email</span>
+                </label>
+                <input 
+                  type="email" 
+                  value={userEmail}
+                  disabled
+                  readOnly
+                  className="w-full bg-gray-50/80 dark:bg-white/[0.03] border border-gray-200 dark:border-white/10 rounded-xl px-4 py-2.5 text-sm text-gray-500 dark:text-gray-400 cursor-not-allowed select-all"
+                  title="Your primary registered account email"
+                />
+              </div>
+
+              <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Phone Number</label>
                 <input 
                   type="tel" 

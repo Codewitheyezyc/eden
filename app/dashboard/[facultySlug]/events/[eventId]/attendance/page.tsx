@@ -67,6 +67,7 @@ export default async function EventAttendancePage({
           gender,
           phone,
           kingschat_handle,
+          date_of_birth,
           is_verified,
           leadership_role
         )
@@ -102,6 +103,7 @@ export default async function EventAttendancePage({
         gender: profile.gender || "",
         kingschat: profile.kingschat_handle || "",
         campusZone: profile.campus_zone || "",
+        dateOfBirth: profile.date_of_birth || "",
         isVerified: !!profile.is_verified,
         leadershipRole: profile.leadership_role || "",
       } : null

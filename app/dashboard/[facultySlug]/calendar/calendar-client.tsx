@@ -10,8 +10,10 @@ import {
   Plus, 
   Info, 
   Check, 
-  AlertCircle 
+  AlertCircle,
+  Trash2
 } from "lucide-react";
+import { createClient } from "@/services/supabase/client";
 import { 
   format, 
   addMonths, 
@@ -63,6 +65,23 @@ export function CalendarClient({
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
 
   const canManage = role === "ADMIN" || role === "COORDINATOR";
+
+  const handleDeleteEvent = async (eventId: string, eventTitle: string) => {
+    if (!window.confirm(`Are you sure you want to permanently delete "${eventTitle}"? This cannot be undone.`)) {
+      return;
+    }
+    const supabase = createClient();
+    try {
+      const { error } = await supabase.from("events").delete().eq("id", eventId);
+      if (error) {
+        alert("Failed to delete event: " + error.message);
+        return;
+      }
+      setEvents(prev => prev.filter(e => e.id !== eventId));
+    } catch (err: any) {
+      alert("Error deleting event: " + (err.message || "Unknown error"));
+    }
+  };
 
   // Helpers to get dates
   const monthStart = startOfMonth(currentDate);
@@ -256,16 +275,25 @@ export function CalendarClient({
                           )}
                         </div>
                         {canManage && (
-                          <button
-                            onClick={() => {
-                              setEditingEvent(evt);
-                              setCreateModalOpen(true);
-                            }}
-                            className="p-2 bg-gray-50 hover:bg-emerald-500/10 text-gray-400 hover:text-emerald-500 rounded-xl transition-all shrink-0"
-                            title="Edit Event"
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
-                          </button>
+                          <div className="flex items-center gap-1 shrink-0">
+                            <button
+                              onClick={() => {
+                                setEditingEvent(evt);
+                                setCreateModalOpen(true);
+                              }}
+                              className="p-2 bg-gray-50 hover:bg-emerald-500/10 text-gray-400 hover:text-emerald-500 rounded-xl transition-all"
+                              title="Edit Event"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+                            </button>
+                            <button
+                              onClick={() => handleDeleteEvent(evt.id, evt.title)}
+                              className="p-2 bg-gray-50 hover:bg-rose-500/10 text-gray-400 hover:text-rose-500 rounded-xl transition-all"
+                              title="Delete Event"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
                         )}
                       </div>
 

@@ -1,9 +1,11 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { parseCampuses } from "@/lib/campuses";
 import { cn, formatBirthday } from "@/lib/utils";
 import { exportToCsv } from "@/lib/export-csv";
+import { createClient } from "@/services/supabase/client";
 
 interface AttendeeProfile {
   phone: string;
@@ -46,6 +48,9 @@ interface EventAttendanceClientProps {
 type TabType = "attendees" | "qr_scanner" | "history" | "analytics";
 
 export function EventAttendanceClient({ event, initialAttendees, viewerRole, facultySlug }: EventAttendanceClientProps) {
+  const router = useRouter();
+  const [isDeletingEvent, setIsDeletingEvent] = useState(false);
+
   // Tab Navigation State
   const [activeTab, setActiveTab] = useState<TabType>("attendees");
 
@@ -260,6 +265,38 @@ export function EventAttendanceClient({ event, initialAttendees, viewerRole, fac
               📍 {event.location || "No Location Specified"}
             </span>
           </div>
+
+          {viewerRole === "ADMIN" && (
+            <div className="pt-1">
+              <button
+                type="button"
+                disabled={isDeletingEvent}
+                onClick={async () => {
+                  if (!window.confirm(`Are you sure you want to permanently delete "${event.title}"? All attendance records will be erased.`)) {
+                    return;
+                  }
+                  setIsDeletingEvent(true);
+                  const supabase = createClient();
+                  try {
+                    const { error } = await supabase.from("events").delete().eq("id", event.id);
+                    if (error) {
+                      alert("Failed to delete event: " + error.message);
+                      setIsDeletingEvent(false);
+                      return;
+                    }
+                    router.push(`/dashboard/${facultySlug}/events`);
+                  } catch (err: any) {
+                    alert("Error deleting event: " + (err.message || "Unknown error"));
+                    setIsDeletingEvent(false);
+                  }
+                }}
+                className="inline-flex items-center gap-1.5 px-3 py-1 bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 text-xs font-bold rounded-lg border border-rose-500/20 transition-all disabled:opacity-50"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                {isDeletingEvent ? "Deleting Event..." : "Delete Event"}
+              </button>
+            </div>
+          )}
         </div>
 
         {/* High-Level Count Indicators */}

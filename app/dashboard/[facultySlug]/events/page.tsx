@@ -8,6 +8,9 @@ export const metadata: Metadata = {
   title: "Events",
 };
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 
 export default async function EventsPage({ params }: { params: { facultySlug: string } }) {
   const supabase = createClient();
@@ -76,6 +79,7 @@ export default async function EventsPage({ params }: { params: { facultySlug: st
               attendanceRecord={attendanceMap[event.id]}
               viewerRole={role}
               facultySlug={params.facultySlug}
+              facultyId={faculty.id}
             />
           ))}
         </div>

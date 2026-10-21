@@ -23,6 +23,7 @@ export function CreateEventModal({ facultyId, isOpen, onClose, onSuccess, editin
   const supabase = createClient();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
 
@@ -161,6 +162,32 @@ export function CreateEventModal({ facultyId, isOpen, onClose, onSuccess, editin
     }
   };
 
+  const handleDelete = async () => {
+    if (!editingEvent?.id) return;
+    if (!window.confirm(`Are you sure you want to permanently delete "${editingEvent.title}"? This cannot be undone.`)) {
+      return;
+    }
+
+    setDeleting(true);
+    setError(null);
+
+    try {
+      const { error: delError } = await supabase
+        .from("events")
+        .delete()
+        .eq("id", editingEvent.id);
+
+      if (delError) throw delError;
+
+      onSuccess();
+      router.refresh();
+      onClose();
+    } catch (err: any) {
+      setError(err.message || "Failed to delete event");
+      setDeleting(false);
+    }
+  };
+
   if (!isOpen || !mounted) return null;
 
   return createPortal(
@@ -241,21 +268,36 @@ export function CreateEventModal({ facultyId, isOpen, onClose, onSuccess, editin
               />
             </div>
 
-            <div className="pt-4 flex justify-end space-x-3">
-              <button 
-                type="button"
-                onClick={onClose}
-                className="px-6 py-2.5 rounded-xl font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors"
-              >
-                Cancel
-              </button>
-              <button 
-                type="submit" 
-                disabled={loading}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-2.5 rounded-xl font-bold transition-colors shadow-sm shadow-emerald-600/20 disabled:opacity-50 flex items-center"
-              >
-                {loading ? "Saving..." : (editingEvent ? "Save Changes" : "Publish Event")}
-              </button>
+            <div className="pt-4 flex items-center justify-between">
+              {editingEvent ? (
+                <button 
+                  type="button"
+                  disabled={loading || deleting}
+                  onClick={handleDelete}
+                  className="px-4 py-2.5 rounded-xl font-bold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/30 hover:bg-rose-100 dark:hover:bg-rose-950/60 border border-rose-200 dark:border-rose-900/40 text-sm transition-colors flex items-center gap-1.5 disabled:opacity-50"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                  {deleting ? "Deleting..." : "Delete Event"}
+                </button>
+              ) : <div />}
+
+              <div className="flex items-center space-x-3">
+                <button 
+                  type="button"
+                  onClick={onClose}
+                  disabled={loading || deleting}
+                  className="px-6 py-2.5 rounded-xl font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit" 
+                  disabled={loading || deleting}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-2.5 rounded-xl font-bold transition-colors shadow-sm shadow-emerald-600/20 disabled:opacity-50 flex items-center"
+                >
+                  {loading ? "Saving..." : (editingEvent ? "Save Changes" : "Publish Event")}
+                </button>
+              </div>
             </div>
           </form>
 

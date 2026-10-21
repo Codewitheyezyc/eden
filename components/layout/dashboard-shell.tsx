@@ -61,7 +61,7 @@ export function DashboardShell({ children, facultyName, facultySlug, role, userE
       {/* Sidebar (Glassmorphism) */}
       <aside 
         className={cn(
-          "fixed inset-y-0 left-0 z-50 w-64 bg-white/70 dark:bg-[#080808]/70 backdrop-blur-2xl border-r border-gray-200/50 dark:border-white/5 flex flex-col transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] lg:translate-x-0 lg:static lg:flex-shrink-0 shadow-2xl lg:shadow-none",
+          "fixed inset-y-0 left-0 z-50 w-64 h-full min-h-screen lg:h-screen lg:sticky lg:top-0 bg-white/95 dark:bg-[#080808]/95 backdrop-blur-2xl border-r border-gray-200/50 dark:border-white/5 flex flex-col transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] lg:translate-x-0 lg:flex-shrink-0 shadow-2xl lg:shadow-none",
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >

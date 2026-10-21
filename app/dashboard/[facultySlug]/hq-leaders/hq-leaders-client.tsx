@@ -206,7 +206,7 @@ export function HQLeadersClient({ leaders, potentialLeaders, viewerRole, faculty
     <div className="space-y-8 animate-in fade-in duration-700 slide-in-from-bottom-4">
       
       {/* Inspirational Banner */}
-      <div className="relative rounded-3xl p-8 md:p-12 overflow-hidden shadow-xl border border-black/5 dark:border-white/5 bg-gradient-to-br from-emerald-600/95 to-teal-850 backdrop-blur-xl">
+      <div className="relative rounded-3xl p-8 md:p-12 overflow-hidden shadow-xl border border-black/5 dark:border-white/5 bg-gradient-to-br from-emerald-600/95 to-teal-900 backdrop-blur-xl">
         <div className="absolute top-0 right-0 w-96 h-96 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 mix-blend-overlay pointer-events-none" />
         <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
           <div className="space-y-3 max-w-2xl">
@@ -225,7 +225,7 @@ export function HQLeadersClient({ leaders, potentialLeaders, viewerRole, faculty
           {viewerRole === "ADMIN" && (
             <button
               onClick={handleOpenPromoteModal}
-              className="px-6 py-3.5 bg-white text-emerald-850 hover:bg-emerald-50 hover:shadow-xl rounded-2xl text-xs font-extrabold transition-all shadow-md shrink-0 flex items-center gap-2 hover:scale-[1.02]"
+              className="px-6 py-3.5 bg-white text-emerald-900 hover:bg-emerald-50 hover:shadow-xl rounded-2xl text-xs font-extrabold transition-all shadow-md shrink-0 flex items-center gap-2 hover:scale-[1.02]"
             >
               <span className="text-base">👑</span>
               <span>Promote HQ Leader</span>

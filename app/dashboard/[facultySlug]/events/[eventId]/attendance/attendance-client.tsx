@@ -3,8 +3,9 @@
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { parseCampuses } from "@/lib/campuses";
-import { cn, formatBirthday } from "@/lib/utils";
+import { cn, formatBirthday, formatPhoneNumber } from "@/lib/utils";
 import { exportToCsv } from "@/lib/export-csv";
+import { exportToRealExcel } from "@/lib/export-excel";
 import { createClient } from "@/services/supabase/client";
 
 interface AttendeeProfile {
@@ -175,35 +176,52 @@ export function EventAttendanceClient({ event, initialAttendees, viewerRole, fac
     return processedAttendees.slice(start, start + itemsPerPage);
   }, [processedAttendees, currentPage, itemsPerPage]);
 
-  // Functional client-side Export to Mobile-Friendly CSV
-  const handleExportCsv = () => {
-    if (processedAttendees.length === 0) return;
-
+  // Build export rows with formatted birthday and standardized phone numbers
+  const getExportData = () => {
     const columns = [
-      { header: "Full Name", key: "fullName" },
-      { header: "Email Address", key: "email" },
-      { header: "KingsChat Handle", key: "kingschat" },
-      { header: "Phone Number", key: "phone" },
-      { header: "Date of Birth", key: "dateOfBirth" },
-      { header: "Campus / Zone", key: "campusZone" },
-      { header: "Role", key: "role" },
+      { header: "Full Name", key: "fullName", width: 24 },
+      { header: "Email Address", key: "email", width: 30 },
+      { header: "KingsChat Handle", key: "kingschat", width: 18 },
+      { header: "Phone Number", key: "phone", width: 20 },
+      { header: "Date of Birth", key: "dateOfBirth", width: 16 },
+      { header: "Campus / Zone", key: "campusZone", width: 24 },
+      { header: "Role", key: "role", width: 14 },
     ];
 
     if (viewerRole === "ADMIN") {
-      columns.push({ header: "Leadership Role", key: "leadershipRole" });
+      columns.push({ header: "Leadership Role", key: "leadershipRole", width: 26 });
     }
 
     const data = processedAttendees.map(a => ({
       fullName: a.fullName,
       email: a.email,
       kingschat: a.profile?.kingschat ? `@${a.profile.kingschat}` : "—",
-      phone: a.profile?.phone || "—",
+      phone: formatPhoneNumber(a.profile?.phone),
       dateOfBirth: formatBirthday(a.profile?.dateOfBirth),
       campusZone: a.profile?.campusZone ? parseCampuses(a.profile.campusZone).join(", ") : "—",
       role: a.role,
       leadershipRole: a.profile?.leadershipRole || "—",
     }));
 
+    return { columns, data };
+  };
+
+  // Functional client-side Export to Real OpenXML Excel Workbook (.xlsx) with wide, spacious columns
+  const handleExportExcel = () => {
+    if (processedAttendees.length === 0) return;
+    const { columns, data } = getExportData();
+    exportToRealExcel({
+      filename: `Eden_Event_${event.title.replace(/\s+/g, "_")}_Attendance_${new Date().toISOString().split("T")[0]}`,
+      columns,
+      data,
+      sheetName: "Event Attendance",
+    });
+  };
+
+  // Functional client-side Export to Mobile-Friendly CSV
+  const handleExportCsv = () => {
+    if (processedAttendees.length === 0) return;
+    const { columns, data } = getExportData();
     exportToCsv({
       filename: `Eden_Event_${event.title.replace(/\s+/g, "_")}_Attendance_${new Date().toISOString().split("T")[0]}`,
       columns,
@@ -357,15 +375,26 @@ export function EventAttendanceClient({ event, initialAttendees, viewerRole, fac
                 />
               </div>
 
-              {/* CSV Export */}
-              <button
-                onClick={handleExportCsv}
-                disabled={processedAttendees.length === 0}
-                className="flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm px-4 py-3 rounded-2xl transition-all shadow-sm disabled:opacity-40"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                Export CSV
-              </button>
+              {/* Export Buttons: Excel (.xlsx with auto-width) & CSV */}
+              <div className="flex gap-2">
+                <button
+                  onClick={handleExportExcel}
+                  disabled={processedAttendees.length === 0}
+                  className="flex-1 flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm px-4 py-3 rounded-2xl transition-all shadow-sm disabled:opacity-40"
+                  title="Download formatted Excel workbook with wide columns and text-preserved phone numbers"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                  Export Excel (.xlsx)
+                </button>
+                <button
+                  onClick={handleExportCsv}
+                  disabled={processedAttendees.length === 0}
+                  className="flex items-center justify-center gap-1.5 bg-gray-100 hover:bg-gray-200 dark:bg-white/10 dark:hover:bg-white/15 text-gray-700 dark:text-gray-200 font-bold text-sm px-3.5 py-3 rounded-2xl transition-all shadow-xs disabled:opacity-40"
+                  title="Download standard CSV"
+                >
+                  CSV
+                </button>
+              </div>
             </div>
 
             {/* Filter Dropdowns */}

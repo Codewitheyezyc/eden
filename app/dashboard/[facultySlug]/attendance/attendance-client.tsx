@@ -2,8 +2,9 @@
 
 import { useState, useMemo } from "react";
 import { parseCampuses } from "@/lib/campuses";
-import { cn, formatBirthday } from "@/lib/utils";
+import { cn, formatBirthday, formatPhoneNumber } from "@/lib/utils";
 import { exportToCsv } from "@/lib/export-csv";
+import { exportToRealExcel } from "@/lib/export-excel";
 
 interface MemberProfile {
   phone: string;
@@ -169,35 +170,52 @@ export function AttendanceClient({ initialMembers, viewerRole, facultySlug }: At
     return filteredAndSortedMembers.slice(start, start + itemsPerPage);
   }, [filteredAndSortedMembers, currentPage, itemsPerPage]);
 
-  // 5. Functional client-side Export to Mobile-Friendly CSV
-  const handleExportCsv = () => {
-    if (filteredAndSortedMembers.length === 0) return;
-
+  // Helper to extract and format data for both Excel and CSV exports
+  const getExportData = () => {
     const columns = [
-      { header: "Full Name", key: "fullName" },
-      { header: "Email Address", key: "email" },
-      { header: "KingsChat Handle", key: "kingschat" },
-      { header: "Phone Number", key: "phone" },
-      { header: "Date of Birth", key: "dateOfBirth" },
-      { header: "Campus / Zone", key: "campusZone" },
-      { header: "Role", key: "role" },
+      { header: "Full Name", key: "fullName", width: 24 },
+      { header: "Email Address", key: "email", width: 30 },
+      { header: "KingsChat Handle", key: "kingschat", width: 18 },
+      { header: "Phone Number", key: "phone", width: 20 },
+      { header: "Date of Birth", key: "dateOfBirth", width: 16 },
+      { header: "Campus / Zone", key: "campusZone", width: 24 },
+      { header: "Role", key: "role", width: 14 },
     ];
 
     if (viewerRole === "ADMIN") {
-      columns.push({ header: "Leadership Role", key: "leadershipRole" });
+      columns.push({ header: "Leadership Role", key: "leadershipRole", width: 26 });
     }
 
     const data = filteredAndSortedMembers.map(m => ({
       fullName: m.fullName,
       email: m.email,
       kingschat: m.profile?.kingschat ? `@${m.profile.kingschat}` : "—",
-      phone: m.profile?.phone || "—",
+      phone: formatPhoneNumber(m.profile?.phone),
       dateOfBirth: formatBirthday(m.profile?.dateOfBirth),
       campusZone: m.profile?.campusZone ? parseCampuses(m.profile.campusZone).join(", ") : "—",
       role: m.role,
       leadershipRole: m.profile?.leadershipRole || "—",
     }));
 
+    return { columns, data };
+  };
+
+  // Functional client-side Export to Real OpenXML Excel Workbook (.xlsx) with wide, spacious columns
+  const handleExportExcel = () => {
+    if (filteredAndSortedMembers.length === 0) return;
+    const { columns, data } = getExportData();
+    exportToRealExcel({
+      filename: `Eden_General_Attendance_${facultySlug}_${new Date().toISOString().split("T")[0]}`,
+      columns,
+      data,
+      sheetName: "General Attendance",
+    });
+  };
+
+  // Functional client-side Export to Mobile-Friendly CSV
+  const handleExportCsv = () => {
+    if (filteredAndSortedMembers.length === 0) return;
+    const { columns, data } = getExportData();
     exportToCsv({
       filename: `Eden_General_Attendance_${facultySlug}_${new Date().toISOString().split("T")[0]}`,
       columns,
@@ -325,15 +343,24 @@ export function AttendanceClient({ initialMembers, viewerRole, facultySlug }: At
             </div>
           </div>
 
-          {/* Export Action */}
+          {/* Export Actions: Excel (.xlsx with auto-width) & CSV */}
           <div className="flex gap-2 self-end">
+            <button
+              onClick={handleExportExcel}
+              disabled={filteredAndSortedMembers.length === 0}
+              className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-3.5 py-2.5 rounded-xl transition-all shadow-sm shadow-emerald-600/10 hover:shadow-md disabled:opacity-40"
+              title="Download formatted Excel workbook with wide columns and text-preserved phone numbers"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Export Excel (.xlsx)
+            </button>
             <button
               onClick={handleExportCsv}
               disabled={filteredAndSortedMembers.length === 0}
-              className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-4 py-2.5 rounded-xl transition-all shadow-sm shadow-emerald-600/10 hover:shadow-md disabled:opacity-40"
+              className="flex items-center gap-1 bg-gray-100 hover:bg-gray-200 dark:bg-white/10 dark:hover:bg-white/15 text-gray-700 dark:text-gray-200 font-bold text-xs px-3 py-2.5 rounded-xl transition-all disabled:opacity-40"
+              title="Download standard CSV"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-              Export CSV
+              CSV
             </button>
           </div>
         </div>

@@ -1,6 +1,6 @@
 /**
  * Utility to export data to a pure, mobile-friendly RFC-4180 CSV (.csv) file.
- * Opens natively and seamlessly on 100% of devices: iOS, Android, Excel, Google Sheets, Numbers.
+ * Handles Excel compatibility so phone numbers are preserved as text without scientific notation (9.02E+09).
  */
 
 export interface CsvColumn {
@@ -14,9 +14,15 @@ export interface CsvExportOptions {
   data: Record<string, any>[];
 }
 
-function escapeCsvCell(value: any): string {
+function escapeCsvCell(value: any, key: string = ""): string {
   if (value === null || value === undefined) return "";
   const str = String(value);
+
+  // If this is a phone number column, wrap as Excel text formula ="..." so Excel NEVER parses as scientific notation (e.g. 9.02E+09)
+  if (key.toLowerCase().includes("phone") && str && str !== "—") {
+    return `="${str.replace(/"/g, '""')}"`;
+  }
+
   // If the cell contains comma, double quote, newline, or carriage return, enclose in quotes and escape internal quotes
   if (/[",\n\r]/.test(str)) {
     return `"${str.replace(/"/g, '""')}"`;
@@ -29,7 +35,7 @@ export function exportToCsv({ filename, columns, data }: CsvExportOptions) {
 
   const headerRow = columns.map(c => escapeCsvCell(c.header)).join(",");
   const rows = data.map(row => 
-    columns.map(c => escapeCsvCell(row[c.key] ?? "")).join(",")
+    columns.map(c => escapeCsvCell(row[c.key] ?? "", c.key)).join(",")
   );
 
   // Prepend UTF-8 BOM (\uFEFF) so Excel and mobile spreadsheet viewers render characters flawlessly

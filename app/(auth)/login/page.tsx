@@ -127,6 +127,7 @@ export default function LoginPage() {
         </Button>
       </form>
       
+      {/* Google Sign-In temporarily disabled - uncomment when ready to re-enable
       <div className="relative">
         <div className="absolute inset-0 flex items-center">
           <span className="w-full border-t border-gray-200 dark:border-gray-800" />
@@ -165,6 +166,7 @@ export default function LoginPage() {
         </svg>
         Google
       </Button>
+      */}
       <div className="text-center text-sm text-gray-500 dark:text-gray-400">
         Don&apos;t have an account?{" "}
         <Link href="/register" className="font-medium text-emerald-600 hover:text-emerald-500 dark:text-emerald-500 dark:hover:text-emerald-400 transition-colors">

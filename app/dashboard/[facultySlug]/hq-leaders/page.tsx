@@ -94,15 +94,30 @@ export default async function HQLeadersDirectoryPage({
   }).filter(l => l.profile && l.profile.leadershipRole); // Only list users with active leadership roles assigned
 
   // Step 4: Map potential leaders from the already loaded members list (removes duplicate database call)
-  let potentialLeaders: { id: string; fullName: string; email: string; currentRole: string }[] = [];
+  let potentialLeaders: {
+    id: string;
+    fullName: string;
+    email: string;
+    avatarUrl: string | null;
+    campusZone: string;
+    currentRole: string;
+    isCurrentLeader: boolean;
+    leadershipRole?: string;
+  }[] = [];
+
   if (viewerRole === "ADMIN") {
     potentialLeaders = (adminUsers || []).map((u: any) => {
       const userObj = Array.isArray(u.users) ? u.users[0] : u.users;
+      const profile = userObj?.profiles ? (Array.isArray(userObj.profiles) ? userObj.profiles[0] : userObj.profiles) : null;
       return {
         id: u.user_id,
         fullName: userObj?.full_name || "Unknown Member",
         email: userObj?.email || "",
-        currentRole: u.role || "STUDENT"
+        avatarUrl: userObj?.avatar_url || null,
+        campusZone: profile?.campus_zone || "",
+        currentRole: u.role || "STUDENT",
+        isCurrentLeader: !!profile?.leadership_role,
+        leadershipRole: profile?.leadership_role || "",
       };
     });
   }

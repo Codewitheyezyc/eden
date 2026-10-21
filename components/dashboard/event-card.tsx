@@ -81,16 +81,19 @@ export function EventCard({
         // RSVP / Register to Attend
         const { error } = await supabase
           .from("event_attendance")
-          .upsert({
-            event_id: event.id,
-            user_id: userId,
-            status: "PRESENT",
-            proof_image_url: null,
-          });
+          .upsert(
+            {
+              event_id: event.id,
+              user_id: userId,
+              status: "PRESENT",
+              proof_image_url: null,
+            },
+            { onConflict: "event_id,user_id" }
+          );
 
         if (error) {
           console.error("Failed to mark attendance:", error);
-          alert("Could not register RSVP. Please try again.");
+          alert("Could not register RSVP: " + (error.message || "Please try again."));
           return;
         }
 

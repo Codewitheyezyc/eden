@@ -42,12 +42,12 @@ export default async function DashboardLayout({
       .from("profiles")
       .select("is_verified, completed_tour")
       .eq("id", user.id)
-      .single(),
+      .maybeSingle(),
     supabase
       .from("users")
       .select("full_name, avatar_url")
       .eq("id", user.id)
-      .single()
+      .maybeSingle()
   ]);
 
   const faculty = facultyRes.data;

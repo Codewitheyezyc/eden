@@ -63,7 +63,7 @@ export default async function FacultyDashboardPage({
     supabase.from("announcements").select("*", { count: "exact", head: true }).eq("faculty_id", faculty.id),
     supabase.from("events").select("*", { count: "exact", head: true }).eq("faculty_id", faculty.id),
     supabase.from("courses").select("*", { count: "exact", head: true }).eq("faculty_id", faculty.id),
-    supabase.from("profiles").select("campus_zone, is_verified").eq("id", user.id).single(),
+    supabase.from("profiles").select("campus_zone, is_verified").eq("id", user.id).maybeSingle(),
     supabase.from("announcements").select(`
       id,
       title,

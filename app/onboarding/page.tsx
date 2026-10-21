@@ -36,8 +36,8 @@ export default async function OnboardingPage() {
 
   // Fetch existing user record and profile for pre-filling
   const [userRecordRes, profileRes] = await Promise.all([
-    supabase.from("users").select("full_name").eq("id", user.id).single(),
-    supabase.from("profiles").select("campus_zone, phone").eq("id", user.id).single(),
+    supabase.from("users").select("full_name").eq("id", user.id).maybeSingle(),
+    supabase.from("profiles").select("campus_zone, phone").eq("id", user.id).maybeSingle(),
   ]);
 
   const initialFullName = userRecordRes.data?.full_name || "";

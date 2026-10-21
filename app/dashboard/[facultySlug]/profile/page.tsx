@@ -19,12 +19,12 @@ export default async function ProfilePage({ params }: { params: { facultySlug: s
       .from("users")
       .select("full_name, avatar_url, kingschat_username")
       .eq("id", user.id)
-      .single(),
+      .maybeSingle(),
     supabase
       .from("profiles")
       .select("*")
       .eq("id", user.id)
-      .single()
+      .maybeSingle()
   ]);
 
   const faculty = facultyRes.data;

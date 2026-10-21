@@ -8,6 +8,7 @@ import { VerifiedBadge } from "@/components/ui/verified-badge";
 import { CAMPUSES, parseCampuses, formatCampusesForDb } from "@/lib/campuses";
 import { LEADERSHIP_ROLES } from "@/lib/leadership-roles";
 import { cn } from "@/lib/utils";
+import { compressImage } from "@/lib/image-compress";
 
 interface ProfileData {
   id: string;
@@ -109,39 +110,50 @@ export function ProfileContainer({ userId, userEmail, initialProfile, initialFul
   }, [progress, hasCelebrated, supabase, userId]);
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
     try {
       setUploadingAvatar(true);
       setMessage(null);
-      const file = e.target.files?.[0];
-      if (!file) return;
 
-      const fileExt = file.name.split('.').pop();
-      const filePath = `${userId}-${Math.random()}.${fileExt}`;
+      // 1. Client-side compression: resizes large camera photos (<150KB) in milliseconds
+      const compressedBlob = await compressImage(file, 800, 0.85);
 
-      // Upload to storage
+      const filePath = `${userId}-${Date.now()}.jpg`;
+
+      // 2. Upload to Supabase avatars storage bucket
       const { error: uploadError } = await supabase.storage
         .from('avatars')
-        .upload(filePath, file);
+        .upload(filePath, compressedBlob, {
+          contentType: 'image/jpeg',
+          upsert: true,
+        });
 
       if (uploadError) throw uploadError;
 
-      // Get public URL
+      // 3. Get public URL
       const { data: { publicUrl } } = supabase.storage
         .from('avatars')
         .getPublicUrl(filePath);
 
       setAvatarUrl(publicUrl);
 
-      // Save to users table immediately so overview gets it
+      // 4. Save to users table immediately so sidebar and overview update
       await supabase.from("users").update({ avatar_url: publicUrl }).eq("id", userId);
 
       setMessage({ type: 'success', text: 'Avatar uploaded successfully!' });
       router.refresh();
 
     } catch (error: any) {
+      console.error("Avatar upload error:", error);
       setMessage({ type: 'error', text: error.message || 'Error uploading avatar' });
     } finally {
       setUploadingAvatar(false);
+      // Reset input value so user can upload another image or retry with the same file
+      if (e.target) {
+        e.target.value = "";
+      }
     }
   };
 

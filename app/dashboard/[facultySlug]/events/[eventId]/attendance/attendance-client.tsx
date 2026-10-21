@@ -179,27 +179,29 @@ export function EventAttendanceClient({ event, initialAttendees, viewerRole, fac
   // Build export rows with formatted birthday and standardized phone numbers
   const getExportData = () => {
     const columns = [
+      { header: "S/N", key: "sn", width: 8 },
       { header: "Full Name", key: "fullName", width: 24 },
       { header: "Email Address", key: "email", width: 30 },
       { header: "KingsChat Handle", key: "kingschat", width: 18 },
       { header: "Phone Number", key: "phone", width: 20 },
       { header: "Date of Birth", key: "dateOfBirth", width: 16 },
       { header: "Campus / Zone", key: "campusZone", width: 24 },
-      { header: "Role", key: "role", width: 14 },
+      { header: "Role", key: "role", width: 16 },
     ];
 
     if (viewerRole === "ADMIN") {
-      columns.push({ header: "Leadership Role", key: "leadershipRole", width: 26 });
+      columns.push({ header: "HQ Leadership Role", key: "leadershipRole", width: 26 });
     }
 
-    const data = processedAttendees.map(a => ({
+    const data = processedAttendees.map((a, idx) => ({
+      sn: idx + 1,
       fullName: a.fullName,
       email: a.email,
       kingschat: a.profile?.kingschat ? `@${a.profile.kingschat}` : "—",
       phone: formatPhoneNumber(a.profile?.phone),
       dateOfBirth: formatBirthday(a.profile?.dateOfBirth),
       campusZone: a.profile?.campusZone ? parseCampuses(a.profile.campusZone).join(", ") : "—",
-      role: a.role,
+      role: a.role === "ADMIN" ? "Admin" : (a.profile?.leadershipRole ? "HQ Leader" : (a.role === "COORDINATOR" ? "Zonal Leader" : "Student")),
       leadershipRole: a.profile?.leadershipRole || "—",
     }));
 
@@ -234,21 +236,41 @@ export function EventAttendanceClient({ event, initialAttendees, viewerRole, fac
     setCurrentPage(1);
   };
 
-  const renderRoleBadge = (role: "ADMIN" | "COORDINATOR" | "STUDENT") => {
-    const styles = {
-      ADMIN: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20",
-      COORDINATOR: "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20",
-      STUDENT: "bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20",
-    };
+  const renderRoleBadge = (role: "ADMIN" | "COORDINATOR" | "STUDENT", leadershipRole?: string) => {
+    if (role === "ADMIN") {
+      return (
+        <span className="px-2 py-0.5 rounded-md text-[10px] font-bold border capitalize tracking-wide shrink-0 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20">
+          Admin
+        </span>
+      );
+    }
+
+    if (leadershipRole) {
+      return (
+        <span className="px-2 py-0.5 rounded-md text-[10px] font-bold border tracking-wide shrink-0 bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-500/25 flex items-center gap-1 w-fit shadow-xs">
+          <span>👑</span>
+          <span>HQ Leader</span>
+        </span>
+      );
+    }
+
+    if (role === "COORDINATOR") {
+      return (
+        <span className="px-2 py-0.5 rounded-md text-[10px] font-bold border tracking-wide shrink-0 bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20">
+          Zonal Leader
+        </span>
+      );
+    }
+
     return (
-      <span className={cn("px-2 py-0.5 rounded-md text-[10px] font-bold border capitalize tracking-wide shrink-0", styles[role])}>
-        {role.toLowerCase()}
+      <span className="px-2 py-0.5 rounded-md text-[10px] font-bold border capitalize tracking-wide shrink-0 bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20">
+        Student
       </span>
     );
   };
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500">
+    <div className="space-y-8 animate-in fade-in duration-500 pb-24">
       {/* SECTION 1: Event Summary Banner & Analytics */}
       <div className="bg-gradient-to-br from-emerald-500/5 via-teal-500/5 to-transparent backdrop-blur-xl border border-emerald-500/10 dark:border-white/5 rounded-3xl p-6 md:p-8 shadow-sm flex flex-col md:flex-row items-start gap-6 relative overflow-hidden">
         {/* Glowing Decorative Backgrounds */}
@@ -453,7 +475,8 @@ export function EventAttendanceClient({ event, initialAttendees, viewerRole, fac
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="sticky top-0 bg-white/95 dark:bg-[#0a0a0a]/95 backdrop-blur-xl border-b border-gray-200/60 dark:border-white/5 text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest select-none z-10">
-                    <th className="py-4 px-6 w-16">Selfie</th>
+                    <th className="py-4 pl-6 pr-2 w-10 text-gray-400">#</th>
+                    <th className="py-4 px-4 w-16">Selfie</th>
                     <th className="py-4 px-4 cursor-pointer hover:text-emerald-500 transition-colors" onClick={() => {
                       setSortDirection(sortField === "name" && sortDirection === "asc" ? "desc" : "asc");
                       setSortField("name");
@@ -489,7 +512,7 @@ export function EventAttendanceClient({ event, initialAttendees, viewerRole, fac
                 <tbody className="divide-y divide-gray-200/30 dark:divide-white/5 text-sm text-gray-700 dark:text-gray-300">
                   {paginatedAttendees.length === 0 ? (
                     <tr>
-                      <td colSpan={viewerRole === "ADMIN" ? 7 : 6} className="py-16 text-center">
+                      <td colSpan={viewerRole === "ADMIN" ? 8 : 7} className="py-16 text-center">
                         <div className="flex flex-col items-center justify-center">
                           <span className="text-3xl mb-3">👻</span>
                           <h4 className="font-bold text-gray-900 dark:text-white">No Attendees Present</h4>
@@ -498,9 +521,12 @@ export function EventAttendanceClient({ event, initialAttendees, viewerRole, fac
                       </td>
                     </tr>
                   ) : (
-                    paginatedAttendees.map(a => (
+                    paginatedAttendees.map((a, idx) => (
                       <tr key={a.userId} className="hover:bg-gray-50/40 dark:hover:bg-white/[0.02] transition-colors">
-                        <td className="py-3 px-6">
+                        <td className="py-3 pl-6 pr-2 text-xs font-mono text-gray-400 select-none">
+                          {(currentPage - 1) * itemsPerPage + idx + 1}
+                        </td>
+                        <td className="py-3 px-4">
                           <div 
                             onClick={() => a.proofImageUrl && setSelectedSelfie(a.proofImageUrl)}
                             className={cn(
@@ -544,7 +570,7 @@ export function EventAttendanceClient({ event, initialAttendees, viewerRole, fac
                             )}
                           </div>
                         </td>
-                        <td className="py-3 px-4">{renderRoleBadge(a.role)}</td>
+                        <td className="py-3 px-4">{renderRoleBadge(a.role, a.profile?.leadershipRole)}</td>
                         <td className="py-3 px-4 font-mono text-xs whitespace-nowrap text-gray-500">
                           {new Date(a.checkInTime).toLocaleString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
                         </td>
@@ -553,8 +579,10 @@ export function EventAttendanceClient({ event, initialAttendees, viewerRole, fac
                         </td>
                         {viewerRole === "ADMIN" && (
                           <td className="py-3 px-6 text-emerald-700 dark:text-emerald-300 font-bold whitespace-nowrap">
-                            {a.role === "ADMIN" && a.profile?.leadershipRole ? (
-                              a.profile.leadershipRole
+                            {a.profile?.leadershipRole ? (
+                              <span className="inline-flex items-center gap-1.5 font-bold">
+                                <span>{a.profile.leadershipRole}</span>
+                              </span>
                             ) : (
                               <span className="text-gray-400 font-normal italic">—</span>
                             )}
@@ -569,7 +597,7 @@ export function EventAttendanceClient({ event, initialAttendees, viewerRole, fac
 
             {/* Pagination block */}
             {totalItems > 0 && (
-              <div className="flex items-center justify-between px-6 py-4 bg-white/40 dark:bg-black/20 backdrop-blur-md border-t border-gray-200/50 dark:border-white/5">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-6 py-4 bg-white/40 dark:bg-black/20 backdrop-blur-md border-t border-gray-200/50 dark:border-white/5 sm:pr-28">
                 <span className="text-xs text-gray-400 font-medium">
                   Showing {Math.min((currentPage - 1) * itemsPerPage + 1, totalItems)} to {Math.min(currentPage * itemsPerPage, totalItems)} of {totalItems} attendees
                 </span>

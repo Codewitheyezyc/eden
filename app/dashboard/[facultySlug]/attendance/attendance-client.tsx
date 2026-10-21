@@ -173,27 +173,29 @@ export function AttendanceClient({ initialMembers, viewerRole, facultySlug }: At
   // Helper to extract and format data for both Excel and CSV exports
   const getExportData = () => {
     const columns = [
+      { header: "S/N", key: "sn", width: 8 },
       { header: "Full Name", key: "fullName", width: 24 },
       { header: "Email Address", key: "email", width: 30 },
       { header: "KingsChat Handle", key: "kingschat", width: 18 },
       { header: "Phone Number", key: "phone", width: 20 },
       { header: "Date of Birth", key: "dateOfBirth", width: 16 },
       { header: "Campus / Zone", key: "campusZone", width: 24 },
-      { header: "Role", key: "role", width: 14 },
+      { header: "Role", key: "role", width: 16 },
     ];
 
     if (viewerRole === "ADMIN") {
-      columns.push({ header: "Leadership Role", key: "leadershipRole", width: 26 });
+      columns.push({ header: "HQ Leadership Role", key: "leadershipRole", width: 26 });
     }
 
-    const data = filteredAndSortedMembers.map(m => ({
+    const data = filteredAndSortedMembers.map((m, idx) => ({
+      sn: idx + 1,
       fullName: m.fullName,
       email: m.email,
       kingschat: m.profile?.kingschat ? `@${m.profile.kingschat}` : "—",
       phone: formatPhoneNumber(m.profile?.phone),
       dateOfBirth: formatBirthday(m.profile?.dateOfBirth),
       campusZone: m.profile?.campusZone ? parseCampuses(m.profile.campusZone).join(", ") : "—",
-      role: m.role,
+      role: m.role === "ADMIN" ? "Admin" : (m.profile?.leadershipRole ? "HQ Leader" : (m.role === "COORDINATOR" ? "Zonal Leader" : "Student")),
       leadershipRole: m.profile?.leadershipRole || "—",
     }));
 
@@ -230,21 +232,41 @@ export function AttendanceClient({ initialMembers, viewerRole, facultySlug }: At
   };
 
   // Render Role Badge helper
-  const renderRoleBadge = (role: "ADMIN" | "COORDINATOR" | "STUDENT") => {
-    const styles = {
-      ADMIN: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20",
-      COORDINATOR: "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20",
-      STUDENT: "bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20",
-    };
+  const renderRoleBadge = (role: "ADMIN" | "COORDINATOR" | "STUDENT", leadershipRole?: string) => {
+    if (role === "ADMIN") {
+      return (
+        <span className="px-2 py-0.5 rounded-md text-[10px] font-bold border capitalize tracking-wide shrink-0 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20">
+          Admin
+        </span>
+      );
+    }
+
+    if (leadershipRole) {
+      return (
+        <span className="px-2 py-0.5 rounded-md text-[10px] font-bold border tracking-wide shrink-0 bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-500/25 flex items-center gap-1 w-fit shadow-xs">
+          <span>👑</span>
+          <span>HQ Leader</span>
+        </span>
+      );
+    }
+
+    if (role === "COORDINATOR") {
+      return (
+        <span className="px-2 py-0.5 rounded-md text-[10px] font-bold border tracking-wide shrink-0 bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20">
+          Zonal Leader
+        </span>
+      );
+    }
+
     return (
-      <span className={cn("px-2 py-0.5 rounded-md text-[10px] font-bold border capitalize tracking-wide shrink-0", styles[role])}>
-        {role.toLowerCase()}
+      <span className="px-2 py-0.5 rounded-md text-[10px] font-bold border capitalize tracking-wide shrink-0 bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20">
+        Student
       </span>
     );
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-24">
       {/* 1. Control Panel: Search & Filters (Glassmorphic) */}
       <div className="bg-white/60 dark:bg-[#0a0a0a]/60 backdrop-blur-xl border border-gray-200/50 dark:border-white/5 rounded-3xl p-6 shadow-sm space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -375,7 +397,8 @@ export function AttendanceClient({ initialMembers, viewerRole, facultySlug }: At
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="sticky top-0 bg-white/95 dark:bg-[#0a0a0a]/95 backdrop-blur-xl border-b border-gray-200/60 dark:border-white/5 text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest select-none z-10">
-                  <th className="py-4 px-6">Avatar</th>
+                  <th className="py-4 pl-6 pr-2 w-10 text-gray-400">#</th>
+                  <th className="py-4 px-4">Avatar</th>
                   <th className="py-4 px-4 cursor-pointer hover:text-emerald-500 transition-colors" onClick={() => {
                     setSortDirection(sortField === "name" && sortDirection === "asc" ? "desc" : "asc");
                     setSortField("name");
@@ -413,14 +436,17 @@ export function AttendanceClient({ initialMembers, viewerRole, facultySlug }: At
               <tbody className="divide-y divide-gray-200/30 dark:divide-white/5 text-sm text-gray-700 dark:text-gray-300">
                 {paginatedMembers.length === 0 ? (
                   <tr>
-                    <td colSpan={viewerRole === "ADMIN" ? 9 : 8} className="py-16 text-center">
+                    <td colSpan={viewerRole === "ADMIN" ? 10 : 9} className="py-16 text-center">
                       {renderEmptyState()}
                     </td>
                   </tr>
                 ) : (
-                  paginatedMembers.map(m => (
+                  paginatedMembers.map((m, idx) => (
                     <tr key={m.id} className="hover:bg-gray-50/40 dark:hover:bg-white/[0.02] transition-colors">
-                      <td className="py-3 px-6">
+                      <td className="py-3 pl-6 pr-2 text-xs font-mono text-gray-400 select-none">
+                        {(currentPage - 1) * itemsPerPage + idx + 1}
+                      </td>
+                      <td className="py-3 px-4">
                         <div className="w-9 h-9 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold text-xs shrink-0 border border-emerald-500/10 overflow-hidden shadow-inner">
                           {m.avatarUrl ? (
                             <img src={m.avatarUrl} className="w-full h-full object-cover" alt="" />
@@ -449,7 +475,7 @@ export function AttendanceClient({ initialMembers, viewerRole, facultySlug }: At
                           )}
                         </div>
                       </td>
-                      <td className="py-3 px-4">{renderRoleBadge(m.role)}</td>
+                      <td className="py-3 px-4">{renderRoleBadge(m.role, m.profile?.leadershipRole)}</td>
                       {viewerRole === "ADMIN" && (
                         <td className="py-3 px-6 text-emerald-700 dark:text-emerald-300 font-bold whitespace-nowrap">
                           {m.profile?.leadershipRole || <span className="text-gray-400 dark:text-gray-500 font-normal italic">None</span>}
@@ -540,7 +566,7 @@ export function AttendanceClient({ initialMembers, viewerRole, facultySlug }: At
 
       {/* 3. Flat View Pagination Controls (Only flat view) */}
       {viewMode === "flat" && totalItems > 0 && (
-        <div className="flex items-center justify-between px-4 py-1.5 bg-white/40 dark:bg-black/20 backdrop-blur-md rounded-2xl border border-gray-200/30 dark:border-white/5">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-4 py-2 bg-white/40 dark:bg-black/20 backdrop-blur-md rounded-2xl border border-gray-200/30 dark:border-white/5 sm:pr-28">
           <div className="text-xs text-gray-600 dark:text-gray-400 font-medium">
             Showing <span className="font-bold text-gray-800 dark:text-gray-200">{Math.min((currentPage - 1) * itemsPerPage + 1, totalItems)}</span> to{" "}
             <span className="font-bold text-gray-800 dark:text-gray-200">{Math.min(currentPage * itemsPerPage, totalItems)}</span> of{" "}

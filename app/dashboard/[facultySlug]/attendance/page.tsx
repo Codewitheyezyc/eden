@@ -49,6 +49,7 @@ export default async function GeneralAttendancePage({
         full_name,
         avatar_url,
         email,
+        kingschat_username,
         profiles (
           phone,
           gender,
@@ -87,7 +88,7 @@ export default async function GeneralAttendancePage({
       profile: profile ? {
         phone: profile.phone || "",
         gender: profile.gender || "",
-        kingschat: profile.kingschat_handle || "",
+        kingschat: profile.kingschat_handle || userObj?.kingschat_username || "",
         campusZone: profile.campus_zone || "",
         dateOfBirth: profile.date_of_birth || "",
         bio: profile.bio || "",

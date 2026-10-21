@@ -44,7 +44,7 @@ export function ProfileContainer({ userId, userEmail, initialProfile, initialFul
     fullName: initialFullName || "",
     phone: initialProfile?.phone || "",
     gender: initialProfile?.gender || "",
-    kingschatUsername: initialKingschatUsername || "",
+    kingschatUsername: initialKingschatUsername || initialProfile?.kingschat_handle || "",
     campus: initialProfile?.campus_zone || "",
     dob: initialProfile?.date_of_birth || "",
     bio: initialProfile?.bio || "",
@@ -171,6 +171,7 @@ export function ProfileContainer({ userId, userEmail, initialProfile, initialFul
         campus_zone: formatCampusesForDb(selectedCampuses),
         date_of_birth: formData.dob || null,
         bio: formData.bio,
+        kingschat_handle: formData.kingschatUsername ? formData.kingschatUsername.trim() : null,
         is_verified: progress === 100,
         leadership_role: role === "ADMIN" ? formData.leadershipRole : null,
       });

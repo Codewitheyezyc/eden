@@ -62,6 +62,7 @@ export default async function EventAttendancePage({
         full_name,
         avatar_url,
         email,
+        kingschat_username,
         profiles (
           campus_zone,
           gender,
@@ -101,12 +102,20 @@ export default async function EventAttendancePage({
       profile: profile ? {
         phone: profile.phone || "",
         gender: profile.gender || "",
-        kingschat: profile.kingschat_handle || "",
+        kingschat: profile.kingschat_handle || userObj?.kingschat_username || "",
         campusZone: profile.campus_zone || "",
         dateOfBirth: profile.date_of_birth || "",
         isVerified: !!profile.is_verified,
         leadershipRole: profile.leadership_role || "",
-      } : null
+      } : (userObj?.kingschat_username ? {
+        phone: "",
+        gender: "",
+        kingschat: userObj.kingschat_username,
+        campusZone: "",
+        dateOfBirth: "",
+        isVerified: false,
+        leadershipRole: "",
+      } : null)
     };
   });
 

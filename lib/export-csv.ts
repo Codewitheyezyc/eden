@@ -14,9 +14,27 @@ export interface CsvExportOptions {
   data: Record<string, any>[];
 }
 
+// Helper to thoroughly strip all emojis and pictographs from text for clean spreadsheets
+export function stripEmojis(val: string): string {
+  if (!val) return "";
+  try {
+    return val
+      .replace(new RegExp("\\p{Extended_Pictographic}", "gu"), "")
+      .replace(new RegExp("[\\u{1F300}-\\u{1F9FF}\\u{1FA00}-\\u{1FAFF}\\u{2600}-\\u{26FF}\\u{2700}-\\u{27BF}]", "gu"), "")
+      .replace(/\s{2,}/g, " ")
+      .trim();
+  } catch {
+    // Fallback if Unicode property escapes aren't supported
+    return val
+      .replace(/[\uD83C-\uDBFF\uDC00-\uDFFF]+/g, "")
+      .replace(/\s{2,}/g, " ")
+      .trim();
+  }
+}
+
 function escapeCsvCell(value: any, key: string = ""): string {
   if (value === null || value === undefined) return "";
-  const str = String(value);
+  let str = stripEmojis(String(value));
 
   // If this is a phone number column, wrap as Excel text formula ="..." so Excel NEVER parses as scientific notation (e.g. 9.02E+09)
   if (key.toLowerCase().includes("phone") && str && str !== "—") {

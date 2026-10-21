@@ -239,7 +239,7 @@ export function EventAttendanceClient({ event, initialAttendees, viewerRole, fac
   const renderRoleBadge = (role: "ADMIN" | "COORDINATOR" | "STUDENT", leadershipRole?: string) => {
     if (role === "ADMIN") {
       return (
-        <span className="px-2 py-0.5 rounded-md text-[10px] font-bold border capitalize tracking-wide shrink-0 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20">
+        <span className="px-3 py-1 rounded-lg text-xs font-bold border capitalize tracking-wide shrink-0 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20 whitespace-nowrap">
           Admin
         </span>
       );
@@ -247,7 +247,7 @@ export function EventAttendanceClient({ event, initialAttendees, viewerRole, fac
 
     if (leadershipRole) {
       return (
-        <span className="px-2 py-0.5 rounded-md text-[10px] font-bold border tracking-wide shrink-0 bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-500/25 flex items-center gap-1 w-fit shadow-xs">
+        <span className="px-3 py-1 rounded-lg text-xs font-bold border tracking-wide shrink-0 bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-500/25 flex items-center gap-1.5 w-fit shadow-xs whitespace-nowrap">
           <span>👑</span>
           <span>HQ Leader</span>
         </span>
@@ -256,14 +256,14 @@ export function EventAttendanceClient({ event, initialAttendees, viewerRole, fac
 
     if (role === "COORDINATOR") {
       return (
-        <span className="px-2 py-0.5 rounded-md text-[10px] font-bold border tracking-wide shrink-0 bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20">
+        <span className="px-3 py-1 rounded-lg text-xs font-bold border tracking-wide shrink-0 bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20 whitespace-nowrap">
           Zonal Leader
         </span>
       );
     }
 
     return (
-      <span className="px-2 py-0.5 rounded-md text-[10px] font-bold border capitalize tracking-wide shrink-0 bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20">
+      <span className="px-3 py-1 rounded-lg text-xs font-bold border capitalize tracking-wide shrink-0 bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20 whitespace-nowrap">
         Student
       </span>
     );
@@ -472,12 +472,12 @@ export function EventAttendanceClient({ event, initialAttendees, viewerRole, fac
           {/* Attendees Table Card */}
           <div className="bg-white/60 dark:bg-[#0a0a0a]/60 backdrop-blur-xl border border-gray-200/50 dark:border-white/5 rounded-3xl overflow-hidden shadow-sm">
             <div className="overflow-x-auto relative">
-              <table className="w-full text-left border-collapse">
+              <table className="w-full min-w-[1120px] text-left border-collapse">
                 <thead>
                   <tr className="sticky top-0 bg-white/95 dark:bg-[#0a0a0a]/95 backdrop-blur-xl border-b border-gray-200/60 dark:border-white/5 text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest select-none z-10">
-                    <th className="py-4 pl-6 pr-2 w-10 text-gray-400">#</th>
-                    <th className="py-4 px-4 w-16">Selfie</th>
-                    <th className="py-4 px-4 cursor-pointer hover:text-emerald-500 transition-colors" onClick={() => {
+                    <th className="py-4 pl-6 pr-2 w-12 text-center text-gray-400">#</th>
+                    <th className="py-4 px-3 w-16 text-center">Selfie</th>
+                    <th className="py-4 px-5 min-w-[240px] cursor-pointer hover:text-emerald-500 transition-colors whitespace-nowrap" onClick={() => {
                       setSortDirection(sortField === "name" && sortDirection === "asc" ? "desc" : "asc");
                       setSortField("name");
                     }}>
@@ -486,7 +486,7 @@ export function EventAttendanceClient({ event, initialAttendees, viewerRole, fac
                         {sortField === "name" && (sortDirection === "asc" ? "▲" : "▼")}
                       </div>
                     </th>
-                    <th className="py-4 px-4 cursor-pointer hover:text-emerald-500 transition-colors" onClick={() => {
+                    <th className="py-4 px-5 min-w-[220px] cursor-pointer hover:text-emerald-500 transition-colors whitespace-nowrap" onClick={() => {
                       setSortDirection(sortField === "campus" && sortDirection === "asc" ? "desc" : "asc");
                       setSortField("campus");
                     }}>
@@ -495,8 +495,8 @@ export function EventAttendanceClient({ event, initialAttendees, viewerRole, fac
                         {sortField === "campus" && (sortDirection === "asc" ? "▲" : "▼")}
                       </div>
                     </th>
-                    <th className="py-4 px-4">Role</th>
-                    <th className="py-4 px-4 cursor-pointer hover:text-emerald-500 transition-colors" onClick={() => {
+                    <th className="py-4 px-5 min-w-[150px] whitespace-nowrap">Role</th>
+                    <th className="py-4 px-5 min-w-[160px] cursor-pointer hover:text-emerald-500 transition-colors whitespace-nowrap" onClick={() => {
                       setSortDirection(sortField === "time" && sortDirection === "asc" ? "desc" : "asc");
                       setSortField("time");
                     }}>
@@ -505,8 +505,8 @@ export function EventAttendanceClient({ event, initialAttendees, viewerRole, fac
                         {sortField === "time" && (sortDirection === "asc" ? "▲" : "▼")}
                       </div>
                     </th>
-                    <th className="py-4 px-4">KingsChat</th>
-                    {viewerRole === "ADMIN" && <th className="py-4 px-6 text-emerald-600 dark:text-emerald-400">HQ Leadership Role</th>}
+                    <th className="py-4 px-5 min-w-[150px] whitespace-nowrap">KingsChat</th>
+                    {viewerRole === "ADMIN" && <th className="py-4 px-6 min-w-[230px] text-emerald-600 dark:text-emerald-400 whitespace-nowrap">HQ Leadership Role</th>}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200/30 dark:divide-white/5 text-sm text-gray-700 dark:text-gray-300">
@@ -523,14 +523,14 @@ export function EventAttendanceClient({ event, initialAttendees, viewerRole, fac
                   ) : (
                     paginatedAttendees.map((a, idx) => (
                       <tr key={a.userId} className="hover:bg-gray-50/40 dark:hover:bg-white/[0.02] transition-colors">
-                        <td className="py-3 pl-6 pr-2 text-xs font-mono text-gray-400 select-none">
+                        <td className="py-4 pl-6 pr-2 text-center text-xs font-mono text-gray-400 select-none">
                           {(currentPage - 1) * itemsPerPage + idx + 1}
                         </td>
-                        <td className="py-3 px-4">
+                        <td className="py-4 px-3 text-center">
                           <div 
                             onClick={() => a.proofImageUrl && setSelectedSelfie(a.proofImageUrl)}
                             className={cn(
-                              "w-10 h-10 rounded-xl overflow-hidden border bg-gray-105 border-gray-200/50 dark:border-white/5 shrink-0 shadow-inner flex items-center justify-center text-lg cursor-pointer transition-transform hover:scale-105 active:scale-95 relative group",
+                              "w-10 h-10 rounded-xl overflow-hidden border bg-gray-105 border-gray-200/50 dark:border-white/5 shrink-0 shadow-inner flex items-center justify-center text-lg cursor-pointer transition-transform hover:scale-105 active:scale-95 relative group mx-auto",
                               !a.proofImageUrl && "cursor-default hover:scale-100"
                             )}
                           >
@@ -546,22 +546,22 @@ export function EventAttendanceClient({ event, initialAttendees, viewerRole, fac
                             )}
                           </div>
                         </td>
-                        <td className="py-3 px-4">
+                        <td className="py-4 px-5 whitespace-nowrap">
                           <div className="flex items-center">
-                            <div className="w-8 h-8 rounded-full bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold text-xs shrink-0 mr-3 border border-emerald-500/10 overflow-hidden">
+                            <div className="w-9 h-9 rounded-full bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold text-xs shrink-0 mr-3 border border-emerald-500/10 overflow-hidden shadow-inner">
                               {a.avatarUrl ? <img src={a.avatarUrl} className="w-full h-full object-cover" /> : a.fullName.charAt(0).toUpperCase()}
                             </div>
                             <div className="min-w-0">
-                              <p className="font-semibold text-gray-950 dark:text-white truncate max-w-[150px]">{a.fullName}</p>
-                              <p className="text-[10px] text-gray-400 truncate max-w-[150px] mt-0.5">{a.email}</p>
+                              <p className="font-semibold text-gray-950 dark:text-white whitespace-nowrap">{a.fullName}</p>
+                              <p className="text-xs text-gray-400 whitespace-nowrap mt-0.5">{a.email}</p>
                             </div>
                           </div>
                         </td>
-                        <td className="py-3 px-4">
-                          <div className="flex flex-wrap gap-1">
+                        <td className="py-4 px-5 whitespace-nowrap">
+                          <div className="flex flex-wrap gap-1.5 items-center">
                             {a.profile?.campusZone ? (
                               parseCampuses(a.profile.campusZone).map(c => (
-                                <span key={c} className="bg-gray-100 dark:bg-white/5 px-2 py-0.5 rounded text-[10px] font-semibold text-gray-650 dark:text-gray-300 border border-gray-200 dark:border-white/5">
+                                <span key={c} className="inline-flex items-center bg-gray-100 dark:bg-white/5 border border-gray-200/60 dark:border-white/10 px-2.5 py-1 rounded-lg text-xs font-semibold text-gray-700 dark:text-gray-300 whitespace-nowrap">
                                   {c}
                                 </span>
                               ))
@@ -570,15 +570,15 @@ export function EventAttendanceClient({ event, initialAttendees, viewerRole, fac
                             )}
                           </div>
                         </td>
-                        <td className="py-3 px-4">{renderRoleBadge(a.role, a.profile?.leadershipRole)}</td>
-                        <td className="py-3 px-4 font-mono text-xs whitespace-nowrap text-gray-500">
+                        <td className="py-4 px-5 whitespace-nowrap">{renderRoleBadge(a.role, a.profile?.leadershipRole)}</td>
+                        <td className="py-4 px-5 font-mono text-xs whitespace-nowrap text-gray-500">
                           {new Date(a.checkInTime).toLocaleString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
                         </td>
-                        <td className="py-3 px-4 text-emerald-600 dark:text-emerald-400 font-semibold">
+                        <td className="py-4 px-5 text-emerald-600 dark:text-emerald-400 font-semibold whitespace-nowrap">
                           {a.profile?.kingschat ? `@${a.profile.kingschat}` : "—"}
                         </td>
                         {viewerRole === "ADMIN" && (
-                          <td className="py-3 px-6 text-emerald-700 dark:text-emerald-300 font-bold whitespace-nowrap">
+                          <td className="py-4 px-6 text-emerald-600 dark:text-emerald-400 font-bold whitespace-nowrap">
                             {a.profile?.leadershipRole ? (
                               <span className="inline-flex items-center gap-1.5 font-bold">
                                 <span>{a.profile.leadershipRole}</span>

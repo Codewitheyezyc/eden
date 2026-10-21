@@ -235,7 +235,7 @@ export function AttendanceClient({ initialMembers, viewerRole, facultySlug }: At
   const renderRoleBadge = (role: "ADMIN" | "COORDINATOR" | "STUDENT", leadershipRole?: string) => {
     if (role === "ADMIN") {
       return (
-        <span className="px-2 py-0.5 rounded-md text-[10px] font-bold border capitalize tracking-wide shrink-0 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20">
+        <span className="px-3 py-1 rounded-lg text-xs font-bold border capitalize tracking-wide shrink-0 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20 whitespace-nowrap">
           Admin
         </span>
       );
@@ -243,7 +243,7 @@ export function AttendanceClient({ initialMembers, viewerRole, facultySlug }: At
 
     if (leadershipRole) {
       return (
-        <span className="px-2 py-0.5 rounded-md text-[10px] font-bold border tracking-wide shrink-0 bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-500/25 flex items-center gap-1 w-fit shadow-xs">
+        <span className="px-3 py-1 rounded-lg text-xs font-bold border tracking-wide shrink-0 bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-500/25 flex items-center gap-1.5 w-fit shadow-xs whitespace-nowrap">
           <span>👑</span>
           <span>HQ Leader</span>
         </span>
@@ -252,14 +252,14 @@ export function AttendanceClient({ initialMembers, viewerRole, facultySlug }: At
 
     if (role === "COORDINATOR") {
       return (
-        <span className="px-2 py-0.5 rounded-md text-[10px] font-bold border tracking-wide shrink-0 bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20">
+        <span className="px-3 py-1 rounded-lg text-xs font-bold border tracking-wide shrink-0 bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20 whitespace-nowrap">
           Zonal Leader
         </span>
       );
     }
 
     return (
-      <span className="px-2 py-0.5 rounded-md text-[10px] font-bold border capitalize tracking-wide shrink-0 bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20">
+      <span className="px-3 py-1 rounded-lg text-xs font-bold border capitalize tracking-wide shrink-0 bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20 whitespace-nowrap">
         Student
       </span>
     );
@@ -394,12 +394,12 @@ export function AttendanceClient({ initialMembers, viewerRole, facultySlug }: At
         {/* Flat View Table Rendering */}
         {viewMode === "flat" && (
           <div className="overflow-x-auto relative min-h-[300px]">
-            <table className="w-full text-left border-collapse">
+            <table className="w-full min-w-[1250px] text-left border-collapse">
               <thead>
                 <tr className="sticky top-0 bg-white/95 dark:bg-[#0a0a0a]/95 backdrop-blur-xl border-b border-gray-200/60 dark:border-white/5 text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest select-none z-10">
-                  <th className="py-4 pl-6 pr-2 w-10 text-gray-400">#</th>
-                  <th className="py-4 px-4">Avatar</th>
-                  <th className="py-4 px-4 cursor-pointer hover:text-emerald-500 transition-colors" onClick={() => {
+                  <th className="py-4 pl-6 pr-3 w-12 text-gray-400 whitespace-nowrap">#</th>
+                  <th className="py-4 px-4 w-14 whitespace-nowrap">Avatar</th>
+                  <th className="py-4 px-4 min-w-[200px] whitespace-nowrap cursor-pointer hover:text-emerald-500 transition-colors" onClick={() => {
                     setSortDirection(sortField === "name" && sortDirection === "asc" ? "desc" : "asc");
                     setSortField("name");
                   }}>
@@ -408,11 +408,11 @@ export function AttendanceClient({ initialMembers, viewerRole, facultySlug }: At
                       {sortField === "name" && (sortDirection === "asc" ? "▲" : "▼")}
                     </div>
                   </th>
-                  <th className="py-4 px-4">Email</th>
-                  <th className="py-4 px-4">Phone</th>
-                  <th className="py-4 px-4">KingsChat</th>
-                  <th className="py-4 px-4">Gender</th>
-                  <th className="py-4 px-4 cursor-pointer hover:text-emerald-500 transition-colors" onClick={() => {
+                  <th className="py-4 px-4 min-w-[220px] whitespace-nowrap">Email</th>
+                  <th className="py-4 px-4 min-w-[140px] whitespace-nowrap">Phone</th>
+                  <th className="py-4 px-4 min-w-[140px] whitespace-nowrap">KingsChat</th>
+                  <th className="py-4 px-4 min-w-[90px] whitespace-nowrap">Gender</th>
+                  <th className="py-4 px-4 min-w-[220px] whitespace-nowrap cursor-pointer hover:text-emerald-500 transition-colors" onClick={() => {
                     setSortDirection(sortField === "campus" && sortDirection === "asc" ? "desc" : "asc");
                     setSortField("campus");
                   }}>
@@ -421,7 +421,7 @@ export function AttendanceClient({ initialMembers, viewerRole, facultySlug }: At
                       {sortField === "campus" && (sortDirection === "asc" ? "▲" : "▼")}
                     </div>
                   </th>
-                  <th className="py-4 px-4 cursor-pointer hover:text-emerald-500 transition-colors" onClick={() => {
+                  <th className="py-4 px-4 min-w-[140px] whitespace-nowrap cursor-pointer hover:text-emerald-500 transition-colors" onClick={() => {
                     setSortDirection(sortField === "role" && sortDirection === "asc" ? "desc" : "asc");
                     setSortField("role");
                   }}>
@@ -430,7 +430,7 @@ export function AttendanceClient({ initialMembers, viewerRole, facultySlug }: At
                       {sortField === "role" && (sortDirection === "asc" ? "▲" : "▼")}
                     </div>
                   </th>
-                  {viewerRole === "ADMIN" && <th className="py-4 px-6 text-emerald-600 dark:text-emerald-400">HQ Leadership Role</th>}
+                  {viewerRole === "ADMIN" && <th className="py-4 px-6 min-w-[220px] whitespace-nowrap text-emerald-600 dark:text-emerald-400">HQ Leadership Role</th>}
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200/30 dark:divide-white/5 text-sm text-gray-700 dark:text-gray-300">
@@ -443,10 +443,10 @@ export function AttendanceClient({ initialMembers, viewerRole, facultySlug }: At
                 ) : (
                   paginatedMembers.map((m, idx) => (
                     <tr key={m.id} className="hover:bg-gray-50/40 dark:hover:bg-white/[0.02] transition-colors">
-                      <td className="py-3 pl-6 pr-2 text-xs font-mono text-gray-400 select-none">
+                      <td className="py-4 pl-6 pr-3 text-xs font-mono text-gray-400 select-none whitespace-nowrap">
                         {(currentPage - 1) * itemsPerPage + idx + 1}
                       </td>
-                      <td className="py-3 px-4">
+                      <td className="py-4 px-4">
                         <div className="w-9 h-9 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold text-xs shrink-0 border border-emerald-500/10 overflow-hidden shadow-inner">
                           {m.avatarUrl ? (
                             <img src={m.avatarUrl} className="w-full h-full object-cover" alt="" />
@@ -455,30 +455,30 @@ export function AttendanceClient({ initialMembers, viewerRole, facultySlug }: At
                           )}
                         </div>
                       </td>
-                      <td className="py-3 px-4 font-semibold text-gray-950 dark:text-white whitespace-nowrap">{m.fullName}</td>
-                      <td className="py-3 px-4 text-gray-500 dark:text-gray-450">{m.email}</td>
-                      <td className="py-3 px-4 whitespace-nowrap font-mono text-xs">{m.profile?.phone || "—"}</td>
-                      <td className="py-3 px-4 text-emerald-600 dark:text-emerald-400 font-medium">
+                      <td className="py-4 px-4 font-semibold text-gray-950 dark:text-white whitespace-nowrap">{m.fullName}</td>
+                      <td className="py-4 px-4 text-gray-500 dark:text-gray-450 whitespace-nowrap">{m.email}</td>
+                      <td className="py-4 px-4 whitespace-nowrap font-mono text-xs">{m.profile?.phone || "—"}</td>
+                      <td className="py-4 px-4 text-emerald-600 dark:text-emerald-400 font-medium whitespace-nowrap">
                         {m.profile?.kingschat ? `@${m.profile.kingschat}` : "—"}
                       </td>
-                      <td className="py-3 px-4">{m.profile?.gender || "—"}</td>
-                      <td className="py-3 px-4">
-                        <div className="flex flex-wrap gap-1">
+                      <td className="py-4 px-4 whitespace-nowrap">{m.profile?.gender || "—"}</td>
+                      <td className="py-4 px-4">
+                        <div className="flex flex-wrap gap-1.5">
                           {m.profile?.campusZone ? (
                             parseCampuses(m.profile.campusZone).map(c => (
-                              <span key={c} className="inline-flex bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/5 px-2 py-0.5 rounded text-[10px] font-semibold text-gray-650 dark:text-gray-300">
+                              <span key={c} className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold whitespace-nowrap bg-gray-100 dark:bg-white/5 border border-gray-200/60 dark:border-white/10 text-gray-700 dark:text-gray-300">
                                 {c}
                               </span>
                             ))
                           ) : (
-                            <span className="text-gray-400 text-xs">Unassigned</span>
+                            <span className="text-gray-400 text-xs italic">Unassigned</span>
                           )}
                         </div>
                       </td>
-                      <td className="py-3 px-4">{renderRoleBadge(m.role, m.profile?.leadershipRole)}</td>
+                      <td className="py-4 px-4 whitespace-nowrap">{renderRoleBadge(m.role, m.profile?.leadershipRole)}</td>
                       {viewerRole === "ADMIN" && (
-                        <td className="py-3 px-6 text-emerald-700 dark:text-emerald-300 font-bold whitespace-nowrap">
-                          {m.profile?.leadershipRole || <span className="text-gray-400 dark:text-gray-500 font-normal italic">None</span>}
+                        <td className="py-4 px-6 text-emerald-700 dark:text-emerald-300 font-bold whitespace-nowrap">
+                          {m.profile?.leadershipRole || <span className="text-gray-400 dark:text-gray-500 font-normal italic">—</span>}
                         </td>
                       )}
                     </tr>

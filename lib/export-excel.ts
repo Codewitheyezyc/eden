@@ -7,6 +7,7 @@
  */
 
 import * as XLSX from "xlsx";
+import { stripEmojis } from "./export-csv";
 
 export interface ExcelColumn {
   header: string;
@@ -29,12 +30,12 @@ export function exportToRealExcel({
 }: ExcelExportOptions) {
   if (typeof window === "undefined") return;
 
-  // 1. Build table rows (Header row + Data rows)
-  const headers = columns.map(c => c.header);
+  // 1. Build table rows (Header row + Data rows) with emojis stripped
+  const headers = columns.map(c => stripEmojis(c.header));
   const rows = data.map(item =>
     columns.map(c => {
       const val = item[c.key];
-      return val === null || val === undefined ? "" : String(val);
+      return val === null || val === undefined ? "" : stripEmojis(String(val));
     })
   );
 

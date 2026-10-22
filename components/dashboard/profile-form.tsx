@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { createClient } from "@/services/supabase/client";
+import { saveProfileAction } from "@/app/dashboard/[facultySlug]/profile/actions";
+import { parseCampuses } from "@/lib/campuses";
 
 interface ProfileData {
   id: string;
@@ -42,25 +44,36 @@ export function ProfileForm({ userId, initialProfile, initialFullName, initialAv
     setLoading(true);
     setMessage(null);
 
+    const timeoutPromise = new Promise<{ error: string }>((resolve) =>
+      setTimeout(
+        () => resolve({ error: "Network request timed out. Please check your internet connection and try again." }),
+        15000
+      )
+    );
+
     try {
-      // Update basic user info (full_name)
-      await supabase.from("users").update({ full_name: formData.fullName }).eq("id", userId);
+      const campusList = parseCampuses(formData.campus);
+      const res = await Promise.race([
+        saveProfileAction({
+          fullName: formData.fullName,
+          phone: formData.phone,
+          gender: formData.gender,
+          kingschatUsername: formData.kingschat,
+          campusZone: campusList,
+          dob: formData.dob,
+          bio: formData.bio,
+        }),
+        timeoutPromise,
+      ]);
 
-      // Upsert profile info
-      const { error: profileError } = await supabase.from("profiles").upsert({
-        id: userId,
-        phone: formData.phone,
-        gender: formData.gender,
-        kingschat_handle: formData.kingschat,
-        campus_zone: formData.campus,
-        date_of_birth: formData.dob || null,
-        bio: formData.bio,
-      });
-
-      if (profileError) throw profileError;
+      if ("error" in res && res.error) {
+        setMessage({ type: 'error', text: res.error });
+        return;
+      }
 
       setMessage({ type: 'success', text: 'Profile updated successfully!' });
     } catch (error: any) {
+      console.error("ProfileForm save error:", error);
       setMessage({ type: 'error', text: error.message || 'Failed to update profile.' });
     } finally {
       setLoading(false);
@@ -168,7 +181,10 @@ export function ProfileForm({ userId, initialProfile, initialFullName, initialAv
           className="bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-2.5 rounded-xl font-medium transition-colors shadow-sm shadow-emerald-600/20 disabled:opacity-50 flex items-center"
         >
           {loading ? (
-            <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+            <>
+              <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+              <span>Saving Profile...</span>
+            </>
           ) : "Save Profile"}
         </button>
       </div>

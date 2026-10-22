@@ -9,6 +9,7 @@ import { CAMPUSES, parseCampuses, formatCampusesForDb } from "@/lib/campuses";
 import { LEADERSHIP_ROLES } from "@/lib/leadership-roles";
 import { cn } from "@/lib/utils";
 import { compressImage } from "@/lib/image-compress";
+import { saveProfileAction } from "@/app/dashboard/[facultySlug]/profile/actions";
 
 interface ProfileData {
   id: string;
@@ -168,31 +169,39 @@ export function ProfileContainer({ userId, userEmail, initialProfile, initialFul
       return;
     }
 
+    // Safety timeout: 15 seconds max so spinner never spins indefinitely
+    const timeoutPromise = new Promise<{ error: string }>((resolve) =>
+      setTimeout(
+        () => resolve({ error: "Network request timed out. Please check your internet connection and try again." }),
+        15000
+      )
+    );
+
     try {
-      // Update basic user info (full_name & kingschat_username)
-      await supabase.from("users").update({ 
-        full_name: formData.fullName,
-        kingschat_username: formData.kingschatUsername || null
-      }).eq("id", userId);
+      const res = await Promise.race([
+        saveProfileAction({
+          fullName: formData.fullName,
+          phone: formData.phone,
+          gender: formData.gender,
+          kingschatUsername: formData.kingschatUsername,
+          campusZone: selectedCampuses,
+          dob: formData.dob,
+          bio: formData.bio,
+          leadershipRole: role === "ADMIN" ? formData.leadershipRole : null,
+          isVerified: progress === 100,
+        }),
+        timeoutPromise,
+      ]);
 
-      // Upsert profile info
-      const { error: profileError } = await supabase.from("profiles").upsert({
-        id: userId,
-        phone: formData.phone,
-        gender: formData.gender,
-        campus_zone: formatCampusesForDb(selectedCampuses),
-        date_of_birth: formData.dob || null,
-        bio: formData.bio,
-        kingschat_handle: formData.kingschatUsername ? formData.kingschatUsername.trim() : null,
-        is_verified: progress === 100,
-        leadership_role: role === "ADMIN" ? formData.leadershipRole : null,
-      });
-
-      if (profileError) throw profileError;
+      if ("error" in res && res.error) {
+        setMessage({ type: 'error', text: res.error });
+        return;
+      }
 
       setMessage({ type: 'success', text: 'Profile updated successfully!' });
       router.refresh();
     } catch (error: any) {
+      console.error("Profile save error:", error);
       setMessage({ type: 'error', text: error.message || 'Failed to update profile.' });
     } finally {
       setLoading(false);
@@ -561,7 +570,10 @@ export function ProfileContainer({ userId, userEmail, initialProfile, initialFul
                 className="bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-2.5 rounded-xl font-medium transition-colors shadow-sm shadow-emerald-600/20 disabled:opacity-50 flex items-center"
               >
                 {loading ? (
-                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                  <>
+                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                    <span>Saving Profile...</span>
+                  </>
                 ) : "Save Profile"}
               </button>
             </div>

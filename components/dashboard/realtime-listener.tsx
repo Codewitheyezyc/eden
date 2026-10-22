@@ -6,9 +6,10 @@ import { createClient } from "@/services/supabase/client";
 
 export function RealtimeDashboardListener({ facultyId }: { facultyId: string }) {
   const router = useRouter();
-  const supabase = createClient();
 
   useEffect(() => {
+    if (!facultyId) return;
+    const supabase = createClient();
     // We want to listen to changes in the database that affect the dashboard.
     // Specially user_faculties (new students joining, role changes), reports, and events.
     
@@ -85,7 +86,7 @@ export function RealtimeDashboardListener({ facultyId }: { facultyId: string }) 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [facultyId, router, supabase]);
+  }, [facultyId, router]);
 
   return null; // This component doesn't render anything visually
 }

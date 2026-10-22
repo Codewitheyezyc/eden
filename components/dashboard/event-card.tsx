@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/services/supabase/client";
 import { CreateEventModal } from "./create-event-modal";
+import { toggleEventAttendanceAction } from "@/app/dashboard/[facultySlug]/events/actions";
 
 interface EventCardProps {
   event: {
@@ -60,49 +61,32 @@ export function EventCard({
     if (loading) return;
     setLoading(true);
 
+    // Timeout safety fallback: guarantee spinner resets within 15 seconds even on unstable mobile network
+    const timeoutPromise = new Promise<{ error: string }>((resolve) =>
+      setTimeout(
+        () => resolve({ error: "Network request timed out. Please check your connection and try again." }),
+        15000
+      )
+    );
+
     try {
-      if (isPresent) {
-        // Unmark attendance / Cancel RSVP
-        const { error } = await supabase
-          .from("event_attendance")
-          .delete()
-          .eq("event_id", event.id)
-          .eq("user_id", userId);
+      const nextPresent = !isPresent;
+      const res = await Promise.race([
+        toggleEventAttendanceAction(event.id, nextPresent, facultySlug),
+        timeoutPromise,
+      ]);
 
-        if (error) {
-          console.error("Failed to cancel attendance:", error);
-          alert("Could not cancel RSVP. Please try again.");
-          return;
-        }
-
-        setIsPresent(false);
-        router.refresh();
-      } else {
-        // RSVP / Register to Attend
-        const { error } = await supabase
-          .from("event_attendance")
-          .upsert(
-            {
-              event_id: event.id,
-              user_id: userId,
-              status: "PRESENT",
-              proof_image_url: null,
-            },
-            { onConflict: "event_id,user_id" }
-          );
-
-        if (error) {
-          console.error("Failed to mark attendance:", error);
-          alert("Could not register RSVP: " + (error.message || "Please try again."));
-          return;
-        }
-
-        setIsPresent(true);
-        router.refresh();
+      if ("error" in res && res.error) {
+        console.error("Failed to toggle RSVP:", res.error);
+        alert(res.error);
+        return;
       }
-    } catch (error) {
+
+      setIsPresent(nextPresent);
+      router.refresh();
+    } catch (error: any) {
       console.error("Failed to toggle RSVP:", error);
-      alert("An unexpected error occurred while updating attendance.");
+      alert(error?.message || "An unexpected error occurred while updating attendance.");
     } finally {
       setLoading(false);
     }

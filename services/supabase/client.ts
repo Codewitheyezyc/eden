@@ -10,9 +10,27 @@ export function createClient() {
     console.warn("Supabase browser client initialized with missing environment variables!");
   }
 
-  // createBrowserClient from @supabase/ssr automatically manages the browser-side
-  // singleton instance, cookie synchronization, and robust auth locking without deadlocks.
-  return createBrowserClient(url || "", anonKey || "");
+  // On the server side (SSR/Prerendering), return a fresh client instance
+  if (typeof window === "undefined") {
+    return createBrowserClient(url || "", anonKey || "");
+  }
+
+  // On the client side (browser), cache the instance so it acts as a true singleton.
+  // We use a custom no-op lock to bypass navigator.locks hanging bugs on mobile browsers
+  // (Android Chrome, Samsung Internet, WebViews, etc.) when tabs are backgrounded or multiple components mount.
+  if (!clientInstance) {
+    clientInstance = createBrowserClient(
+      url || "",
+      anonKey || "",
+      {
+        auth: {
+          lock: async (_name, _acquireTimeout, fn) => {
+            return await fn();
+          },
+        },
+      }
+    );
+  }
+
+  return clientInstance;
 }
-
-

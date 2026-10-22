@@ -48,20 +48,31 @@ export function SupportProvider({ children }: { children: ReactNode }) {
     fetchSessionUser();
 
     // Listen for auth state changes to update support info dynamically
+    // Avoid running async database queries inside onAuthStateChange callback
+    // as it creates deadlocks in @supabase/auth-js while holding the internal lock.
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event: any, session: any) => {
+      (event: any, session: any) => {
         try {
           if (session?.user) {
             setUserEmail(session.user.email || "");
-            const { data: userData } = await supabase
-              .from("users")
-              .select("full_name")
-              .eq("id", session.user.id)
-              .maybeSingle();
-            if (userData?.full_name) {
-              setUserName(userData.full_name);
+            const metaName = (session.user.user_metadata as any)?.full_name;
+            if (metaName) {
+              setUserName(metaName);
             } else {
-              setUserName("");
+              // Defer asynchronous query so it runs outside the synchronous lock callback
+              setTimeout(() => {
+                supabase
+                  .from("users")
+                  .select("full_name")
+                  .eq("id", session.user.id)
+                  .maybeSingle()
+                  .then((res: any) => {
+                    if (res?.data?.full_name) {
+                      setUserName(res.data.full_name);
+                    }
+                  })
+                  .catch(() => {});
+              }, 0);
             }
           } else {
             setUserEmail("");

@@ -13,7 +13,8 @@ import {
   MapPin, 
   CreditCard,
   Ruler,
-  Footprints
+  Footprints,
+  Lock
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { saveMyCostumeSizes } from "./actions";
@@ -33,6 +34,7 @@ export interface CostumeMember {
   shoeSize: string | null;
   trouserSize: string | null;
   topSize: string | null;
+  isVerified?: boolean;
   updatedAt: string | null;
 }
 
@@ -400,13 +402,23 @@ export function CostumesClient({
                         )}
                       </td>
                       <td className="py-3 px-4 text-right">
-                        <button
-                          onClick={() => setSelectedMemberForId(m)}
-                          className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 hover:text-emerald-500 dark:text-emerald-400 px-2.5 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 transition-colors"
-                        >
-                          <CreditCard className="w-3.5 h-3.5" />
-                          <span>ID Card</span>
-                        </button>
+                        {m.isVerified || m.role === "ADMIN" ? (
+                          <button
+                            onClick={() => setSelectedMemberForId(m)}
+                            className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 hover:text-emerald-500 dark:text-emerald-400 px-2.5 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 transition-colors"
+                          >
+                            <CreditCard className="w-3.5 h-3.5" />
+                            <span>ID Card</span>
+                          </button>
+                        ) : (
+                          <span 
+                            title="Profile incomplete / unverified"
+                            className="inline-flex items-center gap-1 text-[10px] font-bold text-gray-400 dark:text-gray-500 px-2 py-1 rounded bg-gray-100 dark:bg-white/5 cursor-not-allowed"
+                          >
+                            <Lock className="w-3 h-3 text-amber-500/70" />
+                            <span>Locked</span>
+                          </span>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -435,6 +447,7 @@ export function CostumesClient({
             campusZone: selectedMemberForId.campusZone,
             avatarUrl: selectedMemberForId.avatarUrl,
             role: selectedMemberForId.role,
+            isVerified: selectedMemberForId.isVerified,
           }}
         />
       )}

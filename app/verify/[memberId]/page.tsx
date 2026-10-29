@@ -78,16 +78,25 @@ export default async function MemberVerificationPage({ params }: VerifyPageProps
         </div>
 
         {isValid ? (
-          /* Valid Member Card */
-          <div className="bg-[#0e1216] border border-emerald-500/30 rounded-3xl p-6 sm:p-8 shadow-2xl relative overflow-hidden backdrop-blur-xl">
+          /* Member Card */
+          <div className={`bg-[#0e1216] border ${profile.is_verified ? "border-emerald-500/30" : "border-amber-500/40"} rounded-3xl p-6 sm:p-8 shadow-2xl relative overflow-hidden backdrop-blur-xl`}>
             {/* Top Verification Ribbon */}
             <div className="flex items-center justify-between pb-6 border-b border-white/10 mb-6">
-              <div className="flex items-center gap-2 text-emerald-400">
-                <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
-                <span className="text-xs uppercase font-extrabold tracking-wider">
-                  Verified Active Member
-                </span>
-              </div>
+              {profile.is_verified ? (
+                <div className="flex items-center gap-2 text-emerald-400">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
+                  <span className="text-xs uppercase font-extrabold tracking-wider">
+                    Verified Active Member
+                  </span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 text-amber-400">
+                  <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0" />
+                  <span className="text-xs uppercase font-extrabold tracking-wider">
+                    Profile Incomplete • Unverified
+                  </span>
+                </div>
+              )}
               <span className="text-[10px] font-mono text-gray-400 bg-white/5 px-2.5 py-1 rounded-md border border-white/10">
                 LAA-REGISTRY
               </span>
@@ -96,7 +105,7 @@ export default async function MemberVerificationPage({ params }: VerifyPageProps
             {/* Avatar & Main Info */}
             <div className="flex flex-col items-center text-center mb-6">
               <div className="relative mb-4">
-                <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl overflow-hidden border-2 border-emerald-400/50 bg-[#161c22] flex items-center justify-center shadow-lg shadow-emerald-500/10">
+                <div className={`w-24 h-24 sm:w-28 sm:h-28 rounded-2xl overflow-hidden border-2 ${profile.is_verified ? "border-emerald-400/50 shadow-emerald-500/10" : "border-amber-400/50 shadow-amber-500/10"} bg-[#161c22] flex items-center justify-center shadow-lg`}>
                   {avatarUrl ? (
                     <Image
                       src={avatarUrl}
@@ -107,13 +116,13 @@ export default async function MemberVerificationPage({ params }: VerifyPageProps
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <div className="w-full h-full flex flex-col items-center justify-center text-emerald-400 font-bold text-2xl">
+                    <div className={`w-full h-full flex flex-col items-center justify-center ${profile.is_verified ? "text-emerald-400" : "text-amber-400"} font-bold text-2xl`}>
                       {fullName.charAt(0)}
                     </div>
                   )}
                 </div>
-                <div className="absolute -bottom-2 -right-2 bg-emerald-500 text-[#060809] p-1.5 rounded-full shadow-md">
-                  <ShieldCheck className="w-4 h-4" />
+                <div className={`absolute -bottom-2 -right-2 ${profile.is_verified ? "bg-emerald-500 text-[#060809]" : "bg-amber-500 text-black"} p-1.5 rounded-full shadow-md`}>
+                  {profile.is_verified ? <ShieldCheck className="w-4 h-4" /> : <AlertTriangle className="w-4 h-4" />}
                 </div>
               </div>
 
@@ -157,12 +166,25 @@ export default async function MemberVerificationPage({ params }: VerifyPageProps
 
               <div className="flex justify-between items-center py-1">
                 <span className="text-gray-400">Membership Status</span>
-                <span className="inline-flex items-center gap-1 text-emerald-400 font-bold">
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                  Active & Authenticated
-                </span>
+                {profile.is_verified ? (
+                  <span className="inline-flex items-center gap-1 text-emerald-400 font-bold">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                    Active & Authenticated
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 text-amber-400 font-bold">
+                    <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+                    Pending Profile Completion
+                  </span>
+                )}
               </div>
             </div>
+
+            {!profile.is_verified && (
+              <div className="mt-4 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs leading-relaxed text-center">
+                This member is registered in Eden but has not yet completed full profile verification. Official ID badges are only valid for verified profiles.
+              </div>
+            )}
 
             {/* Official Footer Note */}
             <div className="mt-6 text-center text-[11px] text-gray-500 leading-relaxed">

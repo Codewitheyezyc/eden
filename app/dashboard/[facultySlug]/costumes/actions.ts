@@ -117,6 +117,7 @@ export async function enrollMemberByCoordinator(data: EnrollMemberInput) {
         top_size: data.topSize?.trim() || null,
         avatar_url: data.avatarUrl || null,
         is_assisted_enrollment: true,
+        is_verified: true,
         enrolled_by: user.id,
       })
       .select("member_id")

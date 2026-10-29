@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
 import { compressImage } from "@/lib/image-compress";
 import { saveProfileAction } from "@/app/dashboard/[facultySlug]/profile/actions";
 import { IdCardModal } from "./id-card-modal";
-import { CreditCard } from "lucide-react";
+import { CreditCard, Lock } from "lucide-react";
 
 interface ProfileData {
   id: string;
@@ -330,14 +330,32 @@ export function ProfileContainer({ userId, userEmail, initialProfile, initialFul
             </div>
           )}
           
-          <button
-            type="button"
-            onClick={() => setShowIdCard(true)}
-            className="w-full mt-4 flex items-center justify-center gap-2 py-2.5 px-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-emerald-600/20"
-          >
-            <CreditCard className="w-4 h-4" />
-            <span>View My Official ID Card</span>
-          </button>
+          {(() => {
+            const isProfileComplete = progress === 100 || !!initialProfile?.is_verified;
+            if (isProfileComplete) {
+              return (
+                <button
+                  type="button"
+                  onClick={() => setShowIdCard(true)}
+                  className="w-full mt-4 flex items-center justify-center gap-2 py-2.5 px-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-emerald-600/20"
+                >
+                  <CreditCard className="w-4 h-4" />
+                  <span>View My Official ID Card</span>
+                </button>
+              );
+            }
+            return (
+              <div className="w-full mt-4 p-3.5 bg-amber-500/10 dark:bg-amber-500/5 rounded-2xl border border-amber-500/20 text-center">
+                <div className="flex items-center justify-center gap-1.5 text-amber-600 dark:text-amber-400 font-bold text-xs mb-1">
+                  <Lock className="w-3.5 h-3.5" />
+                  <span>Official ID Card Locked</span>
+                </div>
+                <p className="text-[11px] text-gray-600 dark:text-gray-400 font-medium">
+                  Complete all profile fields ({progress}% completed) to get verified and unlock your official ID card.
+                </p>
+              </div>
+            );
+          })()}
 
           <div className="mt-6 w-full p-4 bg-emerald-50 dark:bg-emerald-900/10 rounded-2xl border border-emerald-100 dark:border-emerald-900/20">
             <p className="text-xs text-emerald-800 dark:text-emerald-400 font-medium">Keep your profile updated to help zonal leaders assign you to the right events and classes.</p>
@@ -603,6 +621,7 @@ export function ProfileContainer({ userId, userEmail, initialProfile, initialFul
             campusZone: formData.campus || (selectedCampuses.length > 0 ? selectedCampuses.join(", ") : undefined),
             avatarUrl: avatarUrl,
             role: role,
+            isVerified: progress === 100 || !!initialProfile?.is_verified,
           }}
         />
       )}

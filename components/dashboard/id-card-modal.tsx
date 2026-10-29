@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { QRCodeCanvas } from "qrcode.react";
-import { ShieldCheck, Download, Printer, X, Sparkles, Award, Loader2 } from "lucide-react";
+import { ShieldCheck, Download, Printer, X, Sparkles, Award, Loader2, Lock } from "lucide-react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { saveAs } from "file-saver";
@@ -18,6 +18,7 @@ interface IdCardModalProps {
     campusZone?: string | null;
     avatarUrl?: string | null;
     role?: string;
+    isVerified?: boolean;
   };
 }
 
@@ -305,6 +306,56 @@ export function IdCardModal({ isOpen, onClose, member }: IdCardModalProps) {
       setIsDownloading(false);
     }
   };
+
+  if (member.isVerified === false) {
+    return createPortal(
+      <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-200">
+        <div className="relative w-full max-w-sm bg-[#0e1216] border border-amber-500/30 rounded-3xl p-6 sm:p-7 shadow-2xl text-center flex flex-col items-center text-white">
+          <button
+            onClick={onClose}
+            className="absolute top-4 right-4 p-2 rounded-full bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-all"
+          >
+            <X className="w-5 h-5" />
+          </button>
+
+          <div className="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-400 flex items-center justify-center mb-4 mt-2">
+            <Lock className="w-7 h-7" />
+          </div>
+
+          <span className="text-[10px] font-bold uppercase tracking-widest text-amber-400 mb-1">
+            Verification Required
+          </span>
+
+          <h3 className="text-lg font-extrabold text-white mb-2">
+            ID Card Not Available
+          </h3>
+
+          <p className="text-xs text-gray-400 leading-relaxed mb-6">
+            Official identity badges are only issued to members with a <span className="text-white font-semibold">100% completed and verified profile</span>.
+          </p>
+
+          <div className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-left mb-6 space-y-1 text-xs">
+            <div className="flex justify-between items-center text-[11px]">
+              <span className="text-gray-400">Member:</span>
+              <span className="text-white font-bold">{displayName}</span>
+            </div>
+            <div className="flex justify-between items-center text-[11px]">
+              <span className="text-gray-400">Status:</span>
+              <span className="text-amber-400 font-bold">Profile Incomplete</span>
+            </div>
+          </div>
+
+          <Button
+            onClick={onClose}
+            className="w-full bg-white/10 hover:bg-white/15 text-white font-bold rounded-xl py-2.5 text-xs"
+          >
+            Close
+          </Button>
+        </div>
+      </div>,
+      document.body
+    );
+  }
 
   return createPortal(
     <>

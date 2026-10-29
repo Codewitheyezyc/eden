@@ -82,6 +82,7 @@ export default async function CostumesPage({ params }: CostumesPageProps) {
             trouser_size,
             top_size,
             leadership_role,
+            is_verified,
             updated_at
           )
         )
@@ -108,6 +109,7 @@ export default async function CostumesPage({ params }: CostumesPageProps) {
         shoeSize: p?.shoe_size || null,
         trouserSize: p?.trouser_size || null,
         topSize: p?.top_size || null,
+        isVerified: !!p?.is_verified,
         updatedAt: p?.updated_at || null,
       };
     });

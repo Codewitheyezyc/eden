@@ -30,7 +30,7 @@ import { parseCampuses } from "@/lib/campuses";
 import { cn } from "@/lib/utils";
 import { IdCardModal } from "./id-card-modal";
 import { EnrollMemberModal } from "./enroll-member-modal";
-import { CreditCard, UserPlus } from "lucide-react";
+import { CreditCard, UserPlus, Lock } from "lucide-react";
 
 export interface DirectoryUser {
   id: string;
@@ -935,26 +935,46 @@ export function DirectoryGrid({ title, users, currentUserRole, facultyId, facult
                             <span>Delete Account</span>
                           </button>
 
-                          <button
-                            onClick={() => setSelectedUserForId(selectedUser)}
-                            className="inline-flex items-center space-x-1.5 px-3 py-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-xs font-bold rounded-lg border border-emerald-500/20 transition-all shadow-sm"
-                          >
-                            <CreditCard className="w-3.5 h-3.5" />
-                            <span>ID Card</span>
-                          </button>
+                          {selectedUser.profile?.is_verified || selectedUser.role === "ADMIN" ? (
+                            <button
+                              onClick={() => setSelectedUserForId(selectedUser)}
+                              className="inline-flex items-center space-x-1.5 px-3 py-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-xs font-bold rounded-lg border border-emerald-500/20 transition-all shadow-sm"
+                            >
+                              <CreditCard className="w-3.5 h-3.5" />
+                              <span>ID Card</span>
+                            </button>
+                          ) : (
+                            <div 
+                              title="Member profile is incomplete/unverified"
+                              className="inline-flex items-center space-x-1.5 px-2.5 py-1.5 bg-gray-100 dark:bg-white/5 text-gray-400 dark:text-gray-500 text-xs font-bold rounded-lg border border-gray-200 dark:border-white/5 cursor-not-allowed"
+                            >
+                              <Lock className="w-3 h-3 text-amber-500/70" />
+                              <span>ID Card (Unverified)</span>
+                            </div>
+                          )}
                         </div>
                       ) : (
                         <div className="flex items-center gap-3">
                           <p className="text-sm font-medium text-emerald-600 dark:text-emerald-400 tracking-widest uppercase">
                             {selectedUser.role === "COORDINATOR" ? "Zonal Leader" : selectedUser.role}
                           </p>
-                          <button
-                            onClick={() => setSelectedUserForId(selectedUser)}
-                            className="inline-flex items-center space-x-1.5 px-3 py-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-xs font-bold rounded-lg border border-emerald-500/20 transition-all shadow-sm"
-                          >
-                            <CreditCard className="w-3.5 h-3.5" />
-                            <span>ID Card</span>
-                          </button>
+                          {selectedUser.profile?.is_verified || selectedUser.role === "ADMIN" ? (
+                            <button
+                              onClick={() => setSelectedUserForId(selectedUser)}
+                              className="inline-flex items-center space-x-1.5 px-3 py-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-xs font-bold rounded-lg border border-emerald-500/20 transition-all shadow-sm"
+                            >
+                              <CreditCard className="w-3.5 h-3.5" />
+                              <span>ID Card</span>
+                            </button>
+                          ) : (
+                            <div 
+                              title="Member profile is incomplete/unverified"
+                              className="inline-flex items-center space-x-1.5 px-2.5 py-1.5 bg-gray-100 dark:bg-white/5 text-gray-400 dark:text-gray-500 text-xs font-bold rounded-lg border border-gray-200 dark:border-white/5 cursor-not-allowed"
+                            >
+                              <Lock className="w-3 h-3 text-amber-500/70" />
+                              <span>ID Card (Unverified)</span>
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
@@ -1240,6 +1260,7 @@ export function DirectoryGrid({ title, users, currentUserRole, facultyId, facult
             campusZone: selectedUserForId.profile?.campus_zone,
             avatarUrl: selectedUserForId.avatar_url,
             role: selectedUserForId.role,
+            isVerified: selectedUserForId.profile?.is_verified ?? false,
           }}
         />
       )}

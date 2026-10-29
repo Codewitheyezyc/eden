@@ -3,9 +3,12 @@
 import { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { QRCodeSVG } from "qrcode.react";
-import { ShieldCheck, Download, Printer, X, Sparkles, Award, User, Building2 } from "lucide-react";
+import { ShieldCheck, Download, Printer, X, Sparkles, Award, User, Loader2 } from "lucide-react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
+import { toPng } from "html-to-image";
+import { saveAs } from "file-saver";
+import { toast } from "react-hot-toast";
 
 interface IdCardModalProps {
   isOpen: boolean;
@@ -22,6 +25,7 @@ interface IdCardModalProps {
 export function IdCardModal({ isOpen, onClose, member }: IdCardModalProps) {
   const cardRef = useRef<HTMLDivElement>(null);
   const [verificationUrl, setVerificationUrl] = useState("");
+  const [isDownloading, setIsDownloading] = useState(false);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -47,6 +51,57 @@ export function IdCardModal({ isOpen, onClose, member }: IdCardModalProps) {
 
   const handlePrint = () => {
     window.print();
+  };
+
+  const handleDownloadImage = async () => {
+    if (!cardRef.current) return;
+    setIsDownloading(true);
+
+    try {
+      // Capture element as high-definition PNG
+      const dataUrl = await toPng(cardRef.current, {
+        cacheBust: true,
+        pixelRatio: 2.5,
+        skipFonts: true,
+      });
+
+      const cleanName = (member.fullName || "Member").replace(/[^a-zA-Z0-9]/g, "_");
+      const cleanId = (member.memberId || "ID").replace(/[^a-zA-Z0-9]/g, "-");
+      const filename = `LAA_ID_${cleanName}_${cleanId}.png`;
+
+      const response = await fetch(dataUrl);
+      const blob = await response.blob();
+      const file = new File([blob], filename, { type: "image/png" });
+
+      // If mobile supports native Web Share API with images (iOS Safari / Android Chrome)
+      if (typeof navigator !== "undefined" && navigator.canShare && navigator.canShare({ files: [file] })) {
+        try {
+          await navigator.share({
+            files: [file],
+            title: `${member.fullName} ID Card`,
+            text: `Loveworld Arts Academy Official Member ID Card for ${member.fullName}`,
+          });
+          toast.success("Ready! Saved or shared to gallery.");
+          setIsDownloading(false);
+          return;
+        } catch (shareErr: any) {
+          // If user cancels the share drawer, don't show error
+          if (shareErr?.name === "AbortError") {
+            setIsDownloading(false);
+            return;
+          }
+        }
+      }
+
+      // Direct download to Gallery / Downloads
+      saveAs(blob, filename);
+      toast.success("ID card downloaded to your device gallery!");
+    } catch (err) {
+      console.error("Failed to generate image:", err);
+      toast.error("Could not capture image. Please use 'Print / Save PDF' instead.");
+    } finally {
+      setIsDownloading(false);
+    }
   };
 
   return createPortal(
@@ -88,7 +143,7 @@ export function IdCardModal({ isOpen, onClose, member }: IdCardModalProps) {
         id="official-id-card-print-container"
         className="fixed inset-0 z-[150] flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-200 overflow-y-auto"
       >
-        <div className="relative w-full max-w-md bg-[#0b0e12] border border-white/10 rounded-3xl p-6 sm:p-8 shadow-2xl text-white flex flex-col items-center my-auto max-h-[92vh] overflow-y-auto">
+        <div className="relative w-full max-w-md bg-[#0b0e12] border border-white/10 rounded-3xl p-5 sm:p-7 shadow-2xl text-white flex flex-col items-center my-auto max-h-[92vh] overflow-y-auto">
           {/* Close Button */}
           <button
             onClick={onClose}
@@ -97,7 +152,7 @@ export function IdCardModal({ isOpen, onClose, member }: IdCardModalProps) {
             <X className="w-5 h-5" />
           </button>
 
-          <div className="text-center mb-5 print:hidden">
+          <div className="text-center mb-4 print:hidden">
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold">
               <Sparkles className="w-3 h-3" />
               <span>Official Identity Badge</span>
@@ -134,6 +189,7 @@ export function IdCardModal({ isOpen, onClose, member }: IdCardModalProps) {
                     width={96}
                     height={96}
                     unoptimized
+                    crossOrigin="anonymous"
                     className="w-full h-full object-cover"
                   />
                 ) : (
@@ -201,21 +257,44 @@ export function IdCardModal({ isOpen, onClose, member }: IdCardModalProps) {
           </div>
 
           {/* Modal Actions */}
-          <div className="w-full flex gap-3 mt-6 print:hidden">
+          <div className="w-full flex flex-col gap-2 mt-5 print:hidden">
+            {/* Primary Action: Save to Gallery */}
             <Button
-              onClick={handlePrint}
-              className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl py-2.5 flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20"
+              onClick={handleDownloadImage}
+              disabled={isDownloading}
+              className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl py-3 flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20 text-xs sm:text-sm"
             >
-              <Printer className="w-4 h-4" />
-              Print / Save PDF
+              {isDownloading ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Saving to Gallery...</span>
+                </>
+              ) : (
+                <>
+                  <Download className="w-4 h-4" />
+                  <span>Save to Gallery (Image)</span>
+                </>
+              )}
             </Button>
-            <Button
-              onClick={onClose}
-              variant="outline"
-              className="px-5 border-white/10 hover:bg-white/5 text-gray-300 rounded-xl"
-            >
-              Close
-            </Button>
+
+            {/* Secondary Actions Row */}
+            <div className="flex gap-2 w-full">
+              <Button
+                onClick={handlePrint}
+                variant="outline"
+                className="flex-1 border-white/10 hover:bg-white/5 text-gray-200 rounded-xl py-2 flex items-center justify-center gap-2 text-xs"
+              >
+                <Printer className="w-3.5 h-3.5 text-emerald-400" />
+                <span>Print / PDF</span>
+              </Button>
+              <Button
+                onClick={onClose}
+                variant="ghost"
+                className="px-4 hover:bg-white/5 text-gray-400 hover:text-white rounded-xl text-xs"
+              >
+                Close
+              </Button>
+            </div>
           </div>
         </div>
       </div>

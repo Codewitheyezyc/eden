@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { QRCodeSVG } from "qrcode.react";
+import { QRCodeCanvas } from "qrcode.react";
 import { ShieldCheck, Download, Printer, X, Sparkles, Award, Loader2 } from "lucide-react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
@@ -246,8 +246,8 @@ export function IdCardModal({ isOpen, onClose, member }: IdCardModalProps) {
         campusDisplay.length > 25 ? campusDisplay.substring(0, 23) + "..." : campusDisplay;
       ctx.fillText(displayCampusTrimmed, boxX + boxW - 14, boxY + 52);
 
-      // 7. QR Code
-      const qrContainerSize = 100;
+      // 7. QR Code from the rendered QRCodeCanvas
+      const qrContainerSize = 104;
       const qrBoxX = (w - qrContainerSize) / 2;
       const qrBoxY = boxY + boxH + 12;
 
@@ -255,28 +255,9 @@ export function IdCardModal({ isOpen, onClose, member }: IdCardModalProps) {
       ctx.fillStyle = "#ffffff";
       ctx.fill();
 
-      // Render QR code from SVG element
-      const qrSvgEl = document.getElementById("official-id-card-qr-svg");
-      if (qrSvgEl) {
-        try {
-          const svgData = new XMLSerializer().serializeToString(qrSvgEl);
-          const svgBlob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
-          const DOMURL = window.URL || window.webkitURL || window;
-          const url = DOMURL.createObjectURL(svgBlob);
-          const qrImg = new window.Image();
-          await new Promise((resolve, reject) => {
-            qrImg.onload = resolve;
-            qrImg.onerror = reject;
-            qrImg.src = url;
-          });
-          ctx.drawImage(qrImg, qrBoxX + 8, qrBoxY + 8, qrContainerSize - 16, qrContainerSize - 16);
-          DOMURL.revokeObjectURL(url);
-        } catch {
-          ctx.fillStyle = "#000000";
-          ctx.font = "bold 9px sans-serif";
-          ctx.textAlign = "center";
-          ctx.fillText("SCAN TO VERIFY", w / 2, qrBoxY + 55);
-        }
+      const qrCanvasEl = document.getElementById("official-id-card-qr-canvas") as HTMLCanvasElement | null;
+      if (qrCanvasEl) {
+        ctx.drawImage(qrCanvasEl, qrBoxX + 8, qrBoxY + 8, qrContainerSize - 16, qrContainerSize - 16);
       }
 
       // 8. Scan text
@@ -313,33 +294,13 @@ export function IdCardModal({ isOpen, onClose, member }: IdCardModalProps) {
       const cleanName = displayName.replace(/[^a-zA-Z0-9]/g, "_");
       const cleanId = (member.memberId || "ID").replace(/[^a-zA-Z0-9]/g, "-");
       const filename = `LAA_ID_${cleanName}_${cleanId}.png`;
-      const file = new File([blob], filename, { type: "image/png" });
 
-      // If mobile supports native Web Share API with images (iOS Safari / Android Chrome)
-      if (typeof navigator !== "undefined" && navigator.canShare && navigator.canShare({ files: [file] })) {
-        try {
-          await navigator.share({
-            files: [file],
-            title: `${displayName} ID Card`,
-            text: `Loveworld Arts Academy Official Member ID Card for ${displayName}`,
-          });
-          toast.success("Ready! Saved or shared to gallery.");
-          setIsDownloading(false);
-          return;
-        } catch (shareErr: any) {
-          if (shareErr?.name === "AbortError") {
-            setIsDownloading(false);
-            return;
-          }
-        }
-      }
-
-      // Direct download to Gallery / Downloads
+      // Direct file download (no social media share drawer)
       saveAs(blob, filename);
-      toast.success("ID card downloaded to your device gallery!");
+      toast.success("ID card downloaded successfully!");
     } catch (err) {
       console.error("Failed to generate image:", err);
-      toast.error("Could not capture image. Please use 'Print / Save PDF' instead.");
+      toast.error("Could not download ID card. Please use 'Print / Save PDF' instead.");
     } finally {
       setIsDownloading(false);
     }
@@ -474,12 +435,13 @@ export function IdCardModal({ isOpen, onClose, member }: IdCardModalProps) {
             {/* QR Code Section */}
             <div className="flex flex-col items-center justify-center bg-white p-3 rounded-2xl shadow-md mb-2">
               {verificationUrl ? (
-                <QRCodeSVG
-                  id="official-id-card-qr-svg"
+                <QRCodeCanvas
+                  id="official-id-card-qr-canvas"
                   value={verificationUrl}
-                  size={92}
+                  size={120}
                   level="M"
                   includeMargin={false}
+                  className="w-[92px] h-[92px]"
                 />
               ) : (
                 <div className="w-[92px] h-[92px] bg-gray-100 flex items-center justify-center text-[10px] text-gray-500">
@@ -500,7 +462,7 @@ export function IdCardModal({ isOpen, onClose, member }: IdCardModalProps) {
 
           {/* Modal Actions */}
           <div className="w-full max-w-[360px] flex flex-col gap-2.5 mt-6 print:hidden">
-            {/* Primary Action: Save to Gallery */}
+            {/* Primary Action: Direct Download */}
             <Button
               onClick={handleDownloadImage}
               disabled={isDownloading}
@@ -509,12 +471,12 @@ export function IdCardModal({ isOpen, onClose, member }: IdCardModalProps) {
               {isDownloading ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Generating High-Res Image...</span>
+                  <span>Preparing Download...</span>
                 </>
               ) : (
                 <>
                   <Download className="w-4 h-4" />
-                  <span>Save to Gallery (Image)</span>
+                  <span>Download ID Card</span>
                 </>
               )}
             </Button>

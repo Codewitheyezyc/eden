@@ -185,6 +185,7 @@ export default async function EventAttendancePage({
         initialAttendees={attendees}
         viewerRole={userRole}
         facultySlug={params.facultySlug}
+        facultyId={faculty.id}
       />
     </div>
   );

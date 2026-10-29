@@ -28,6 +28,9 @@ import {
 } from "@/app/dashboard/[facultySlug]/directory-actions";
 import { parseCampuses } from "@/lib/campuses";
 import { cn } from "@/lib/utils";
+import { IdCardModal } from "./id-card-modal";
+import { EnrollMemberModal } from "./enroll-member-modal";
+import { CreditCard, UserPlus } from "lucide-react";
 
 export interface DirectoryUser {
   id: string;
@@ -37,6 +40,7 @@ export interface DirectoryUser {
   kingschat_username: string | null;
   role: string;
   profile: {
+    member_id?: string | null;
     phone: string | null;
     gender: string | null;
     kingschat_handle: string | null;
@@ -78,6 +82,8 @@ export function DirectoryGrid({ title, users, currentUserRole, facultyId, facult
   const [deleteConfirmClear, setDeleteConfirmClear] = useState<boolean>(false);
   const [confirmText, setConfirmText] = useState("");
   const [isRemoving, setIsRemoving] = useState(false);
+  const [showEnrollModal, setShowEnrollModal] = useState(false);
+  const [selectedUserForId, setSelectedUserForId] = useState<DirectoryUser | null>(null);
 
   // Available unique campuses
   const availableCampuses = useMemo(() => {
@@ -290,8 +296,20 @@ export function DirectoryGrid({ title, users, currentUserRole, facultyId, facult
           </p>
         </div>
 
-        {/* View Mode Toggle */}
-        <div className="flex items-center gap-1.5 p-1 bg-gray-100 dark:bg-white/5 rounded-2xl border border-gray-200/60 dark:border-white/5 w-fit">
+        {/* Actions & View Mode Toggle */}
+        <div className="flex items-center gap-3">
+          {(currentUserRole === "ADMIN" || currentUserRole === "COORDINATOR") && facultyId && (
+            <button
+              onClick={() => setShowEnrollModal(true)}
+              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md shadow-emerald-600/20 transition-all"
+            >
+              <UserPlus className="w-3.5 h-3.5" />
+              <span>Enroll Member</span>
+            </button>
+          )}
+
+          {/* View Mode Toggle */}
+          <div className="flex items-center gap-1.5 p-1 bg-gray-100 dark:bg-white/5 rounded-2xl border border-gray-200/60 dark:border-white/5 w-fit">
           <button
             onClick={() => setViewMode("grid")}
             className={cn(
@@ -320,6 +338,7 @@ export function DirectoryGrid({ title, users, currentUserRole, facultyId, facult
           </button>
         </div>
       </div>
+    </div>
 
       {/* 2. Search & Filter Toolbar */}
       <div className="bg-white/60 dark:bg-[#0a0a0a]/60 backdrop-blur-xl border border-gray-200/50 dark:border-white/5 rounded-3xl p-4 md:p-5 shadow-sm space-y-4">
@@ -915,11 +934,28 @@ export function DirectoryGrid({ title, users, currentUserRole, facultyId, facult
                             <Trash2 className="w-3.5 h-3.5" />
                             <span>Delete Account</span>
                           </button>
+
+                          <button
+                            onClick={() => setSelectedUserForId(selectedUser)}
+                            className="inline-flex items-center space-x-1.5 px-3 py-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-xs font-bold rounded-lg border border-emerald-500/20 transition-all shadow-sm"
+                          >
+                            <CreditCard className="w-3.5 h-3.5" />
+                            <span>ID Card</span>
+                          </button>
                         </div>
                       ) : (
-                        <p className="text-sm font-medium text-emerald-600 dark:text-emerald-400 tracking-widest uppercase">
-                          {selectedUser.role === "COORDINATOR" ? "Zonal Leader" : selectedUser.role}
-                        </p>
+                        <div className="flex items-center gap-3">
+                          <p className="text-sm font-medium text-emerald-600 dark:text-emerald-400 tracking-widest uppercase">
+                            {selectedUser.role === "COORDINATOR" ? "Zonal Leader" : selectedUser.role}
+                          </p>
+                          <button
+                            onClick={() => setSelectedUserForId(selectedUser)}
+                            className="inline-flex items-center space-x-1.5 px-3 py-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-xs font-bold rounded-lg border border-emerald-500/20 transition-all shadow-sm"
+                          >
+                            <CreditCard className="w-3.5 h-3.5" />
+                            <span>ID Card</span>
+                          </button>
+                        </div>
                       )}
                     </div>
                     {selectedUser.profile?.leadership_role && (
@@ -1182,6 +1218,30 @@ export function DirectoryGrid({ title, users, currentUserRole, facultyId, facult
           </div>
         </div>,
         document.body
+      )}
+
+      {/* Enroll Member Modal */}
+      {showEnrollModal && facultyId && (
+        <EnrollMemberModal
+          isOpen={showEnrollModal}
+          onClose={() => setShowEnrollModal(false)}
+          facultyId={facultyId}
+        />
+      )}
+
+      {/* ID Card Modal */}
+      {selectedUserForId && (
+        <IdCardModal
+          isOpen={!!selectedUserForId}
+          onClose={() => setSelectedUserForId(null)}
+          member={{
+            fullName: selectedUserForId.full_name || "Member",
+            memberId: selectedUserForId.profile?.member_id || "LAA-DNC-PENDING",
+            campusZone: selectedUserForId.profile?.campus_zone,
+            avatarUrl: selectedUserForId.avatar_url,
+            role: selectedUserForId.role,
+          }}
+        />
       )}
     </div>
   );

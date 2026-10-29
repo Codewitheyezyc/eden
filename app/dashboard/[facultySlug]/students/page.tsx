@@ -33,6 +33,7 @@ export default async function StudentsDirectoryPage({
         email,
         kingschat_username,
         profiles (
+          member_id,
           phone,
           gender,
           kingschat_handle,

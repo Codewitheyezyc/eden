@@ -10,9 +10,12 @@ import { LEADERSHIP_ROLES } from "@/lib/leadership-roles";
 import { cn } from "@/lib/utils";
 import { compressImage } from "@/lib/image-compress";
 import { saveProfileAction } from "@/app/dashboard/[facultySlug]/profile/actions";
+import { IdCardModal } from "./id-card-modal";
+import { CreditCard } from "lucide-react";
 
 interface ProfileData {
   id: string;
+  member_id?: string | null;
   phone: string | null;
   gender: string | null;
   kingschat_handle: string | null;
@@ -40,6 +43,7 @@ export function ProfileContainer({ userId, userEmail, initialProfile, initialFul
 
   const [loading, setLoading] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [showIdCard, setShowIdCard] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
 
   const [formData, setFormData] = useState({
@@ -326,6 +330,15 @@ export function ProfileContainer({ userId, userEmail, initialProfile, initialFul
             </div>
           )}
           
+          <button
+            type="button"
+            onClick={() => setShowIdCard(true)}
+            className="w-full mt-4 flex items-center justify-center gap-2 py-2.5 px-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-emerald-600/20"
+          >
+            <CreditCard className="w-4 h-4" />
+            <span>View My Official ID Card</span>
+          </button>
+
           <div className="mt-6 w-full p-4 bg-emerald-50 dark:bg-emerald-900/10 rounded-2xl border border-emerald-100 dark:border-emerald-900/20">
             <p className="text-xs text-emerald-800 dark:text-emerald-400 font-medium">Keep your profile updated to help zonal leaders assign you to the right events and classes.</p>
           </div>
@@ -580,6 +593,19 @@ export function ProfileContainer({ userId, userEmail, initialProfile, initialFul
           </form>
         </div>
       </div>
+      {showIdCard && (
+        <IdCardModal
+          isOpen={showIdCard}
+          onClose={() => setShowIdCard(false)}
+          member={{
+            fullName: formData.fullName || "Member",
+            memberId: initialProfile?.member_id || "LAA-DNC-PENDING",
+            campusZone: formData.campus,
+            avatarUrl: avatarUrl,
+            role: role,
+          }}
+        />
+      )}
     </div>
   );
 }

@@ -6,6 +6,9 @@ import { parseCampuses } from "@/lib/campuses";
 import { cn, formatBirthday, formatPhoneNumber } from "@/lib/utils";
 import { exportToCsv } from "@/lib/export-csv";
 import { exportToRealExcel } from "@/lib/export-excel";
+import { exportAttendanceToWord } from "@/lib/export-word";
+import { EnrollMemberModal } from "@/components/dashboard/enroll-member-modal";
+import { FileText, UserPlus } from "lucide-react";
 import { createClient } from "@/services/supabase/client";
 
 interface AttendeeProfile {
@@ -44,13 +47,15 @@ interface EventAttendanceClientProps {
   initialAttendees: EventAttendee[];
   viewerRole: string;
   facultySlug: string;
+  facultyId?: string;
 }
 
 type TabType = "attendees" | "qr_scanner" | "history" | "analytics";
 
-export function EventAttendanceClient({ event, initialAttendees, viewerRole, facultySlug }: EventAttendanceClientProps) {
+export function EventAttendanceClient({ event, initialAttendees, viewerRole, facultySlug, facultyId }: EventAttendanceClientProps) {
   const router = useRouter();
   const [isDeletingEvent, setIsDeletingEvent] = useState(false);
+  const [showEnrollModal, setShowEnrollModal] = useState(false);
 
   // Tab Navigation State
   const [activeTab, setActiveTab] = useState<TabType>("attendees");
@@ -231,6 +236,28 @@ export function EventAttendanceClient({ event, initialAttendees, viewerRole, fac
     });
   };
 
+  // Functional client-side Export to Word Document (.docx)
+  const handleExportWord = async () => {
+    if (processedAttendees.length === 0) return;
+    const attendees = processedAttendees.map((a) => ({
+      fullName: a.fullName,
+      role: a.role === "ADMIN" ? "Admin" : (a.profile?.leadershipRole ? "HQ Leader" : (a.role === "COORDINATOR" ? "Zonal Leader" : "Student")),
+      campus: a.profile?.campusZone ? parseCampuses(a.profile.campusZone).join(", ") : "—",
+      phone: formatPhoneNumber(a.profile?.phone) || "—",
+      gender: a.profile?.gender || "—",
+      status: a.status,
+      checkInTime: a.checkInTime ? new Date(a.checkInTime).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }) : "—",
+    }));
+
+    await exportAttendanceToWord({
+      filename: `Eden_Event_${event.title.replace(/\s+/g, "_")}_Attendance_${new Date().toISOString().split("T")[0]}`,
+      eventTitle: event.title,
+      eventDate: eventDateStr.full,
+      location: event.location,
+      attendees,
+    });
+  };
+
   const handleFilterChange = (filterSetter: (val: string) => void, val: string) => {
     filterSetter(val);
     setCurrentPage(1);
@@ -384,7 +411,7 @@ export function EventAttendanceClient({ event, initialAttendees, viewerRole, fac
           <div className="bg-white/60 dark:bg-[#0a0a0a]/60 backdrop-blur-xl border border-gray-200/50 dark:border-white/5 rounded-3xl p-6 shadow-sm space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {/* Search */}
-              <div className="relative md:col-span-2">
+              <div className="relative md:col-span-1">
                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500">
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
                 </span>
@@ -397,24 +424,46 @@ export function EventAttendanceClient({ event, initialAttendees, viewerRole, fac
                 />
               </div>
 
-              {/* Export Buttons: Excel (.xlsx with auto-width) & CSV */}
-              <div className="flex gap-2">
+              {/* Action Buttons: Register Member & Exports */}
+              <div className="md:col-span-2 flex flex-wrap gap-2 justify-end items-center">
+                {(viewerRole === "ADMIN" || viewerRole === "COORDINATOR") && facultyId && (
+                  <button
+                    onClick={() => setShowEnrollModal(true)}
+                    className="flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs px-3.5 py-3 rounded-2xl transition-all shadow-md shadow-emerald-600/20"
+                    title="Enroll and register a member who does not have a phone"
+                  >
+                    <UserPlus className="w-4 h-4" />
+                    <span>Register Member</span>
+                  </button>
+                )}
+
+                <button
+                  onClick={handleExportWord}
+                  disabled={processedAttendees.length === 0}
+                  className="flex items-center justify-center gap-1.5 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs px-3.5 py-3 rounded-2xl transition-all shadow-xs disabled:opacity-40"
+                  title="Download formatted Word document (.docx)"
+                >
+                  <FileText className="w-4 h-4" />
+                  <span>Word (.docx)</span>
+                </button>
+
                 <button
                   onClick={handleExportExcel}
                   disabled={processedAttendees.length === 0}
-                  className="flex-1 flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm px-4 py-3 rounded-2xl transition-all shadow-sm disabled:opacity-40"
-                  title="Download formatted Excel workbook with wide columns and text-preserved phone numbers"
+                  className="flex items-center justify-center gap-1.5 bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs px-3.5 py-3 rounded-2xl transition-all shadow-sm disabled:opacity-40"
+                  title="Download formatted Excel workbook"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                  Export Excel (.xlsx)
+                  <span>Excel (.xlsx)</span>
                 </button>
+
                 <button
                   onClick={handleExportCsv}
                   disabled={processedAttendees.length === 0}
-                  className="flex items-center justify-center gap-1.5 bg-gray-100 hover:bg-gray-200 dark:bg-white/10 dark:hover:bg-white/15 text-gray-700 dark:text-gray-200 font-bold text-sm px-3.5 py-3 rounded-2xl transition-all shadow-xs disabled:opacity-40"
+                  className="flex items-center justify-center gap-1.5 bg-gray-100 hover:bg-gray-200 dark:bg-white/10 dark:hover:bg-white/15 text-gray-700 dark:text-gray-200 font-bold text-xs px-3 py-3 rounded-2xl transition-all shadow-xs disabled:opacity-40"
                   title="Download standard CSV"
                 >
-                  CSV
+                  <span>CSV</span>
                 </button>
               </div>
             </div>
@@ -794,6 +843,19 @@ export function EventAttendanceClient({ event, initialAttendees, viewerRole, fac
             </div>
           </div>
         </div>
+      )}
+
+      {/* Coordinator Enroll & Register Modal */}
+      {showEnrollModal && facultyId && (
+        <EnrollMemberModal
+          isOpen={showEnrollModal}
+          onClose={() => setShowEnrollModal(false)}
+          facultyId={facultyId}
+          eventId={event.id}
+          onSuccess={() => {
+            router.refresh();
+          }}
+        />
       )}
     </div>
   );

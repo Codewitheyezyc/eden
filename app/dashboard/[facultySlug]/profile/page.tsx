@@ -52,8 +52,8 @@ export default async function ProfilePage({ params }: { params: { facultySlug: s
         userId={user.id} 
         userEmail={user.email || ""}
         initialProfile={profile} 
-        initialFullName={userRecord?.full_name} 
-        initialAvatar={userRecord?.avatar_url}
+        initialFullName={userRecord?.full_name || (user.user_metadata as any)?.full_name || (user.user_metadata as any)?.name || ""} 
+        initialAvatar={userRecord?.avatar_url || profile?.avatar_url || (user.user_metadata as any)?.avatar_url || null}
         initialKingschatUsername={userRecord?.kingschat_username}
         role={facultyAccess?.role || "STUDENT"}
       />

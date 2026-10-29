@@ -598,9 +598,9 @@ export function ProfileContainer({ userId, userEmail, initialProfile, initialFul
           isOpen={showIdCard}
           onClose={() => setShowIdCard(false)}
           member={{
-            fullName: formData.fullName || "Member",
+            fullName: formData.fullName?.trim() || initialFullName?.trim() || "Official Member",
             memberId: initialProfile?.member_id || "LAA-DNC-PENDING",
-            campusZone: formData.campus,
+            campusZone: formData.campus || (selectedCampuses.length > 0 ? selectedCampuses.join(", ") : undefined),
             avatarUrl: avatarUrl,
             role: role,
           }}

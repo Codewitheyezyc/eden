@@ -278,7 +278,7 @@ export function DirectoryGrid({ title, users, currentUserRole, facultyId, facult
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-28 lg:pb-12">
       {/* 1. Header Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white/60 dark:bg-[#0a0a0a]/60 backdrop-blur-xl border border-gray-200/50 dark:border-white/5 p-6 md:p-8 rounded-3xl shadow-sm">
         <div>
@@ -449,8 +449,8 @@ export function DirectoryGrid({ title, users, currentUserRole, facultyId, facult
 
       {/* 3. Admin Actions Bar */}
       {currentUserRole === "ADMIN" && filteredUsers.length > 0 && (
-        <div className="bg-white/40 dark:bg-[#0c0c0c]/40 backdrop-blur-md border border-gray-200/50 dark:border-white/5 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm animate-in fade-in duration-300">
-          <div className="flex items-center space-x-3 w-full sm:w-auto">
+        <div className="bg-white/60 dark:bg-[#0c0c0c]/60 backdrop-blur-md border border-gray-200/50 dark:border-white/5 rounded-2xl p-3.5 sm:p-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 shadow-sm animate-in fade-in duration-300">
+          <div className="flex flex-wrap items-center gap-3">
             <button
               onClick={handleToggleSelectPage}
               className="inline-flex items-center space-x-2 text-xs font-bold text-gray-700 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
@@ -487,12 +487,12 @@ export function DirectoryGrid({ title, users, currentUserRole, facultyId, facult
             )}
           </div>
 
-          <div className="flex items-center space-x-2 w-full sm:w-auto justify-end">
+          <div className="flex flex-wrap items-center gap-2 justify-end">
             {selectedUserIds.length > 0 && (
               <button
                 onClick={() => setDeleteConfirmBulk(true)}
                 disabled={isRemoving}
-                className="w-full sm:w-auto inline-flex items-center justify-center space-x-1.5 px-4 py-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 text-xs font-bold rounded-xl transition-all border border-rose-500/20 shadow-xs"
+                className="flex-1 sm:flex-initial inline-flex items-center justify-center space-x-1.5 px-4 py-2.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 text-xs font-bold rounded-xl transition-all border border-rose-500/20 shadow-xs"
               >
                 <Trash2 className="w-3.5 h-3.5" />
                 <span>Delete Selected ({selectedUserIds.length})</span>
@@ -504,7 +504,7 @@ export function DirectoryGrid({ title, users, currentUserRole, facultyId, facult
                 setDeleteConfirmClear(true);
               }}
               disabled={isRemoving}
-              className="w-full sm:w-auto inline-flex items-center justify-center space-x-1.5 px-4 py-2 bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 text-xs font-bold rounded-xl transition-all border border-amber-500/20"
+              className="flex-1 sm:flex-initial inline-flex items-center justify-center space-x-1.5 px-4 py-2.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 text-xs font-bold rounded-xl transition-all border border-amber-500/20"
             >
               <UserMinus className="w-3.5 h-3.5" />
               <span>Delete All {title.toLowerCase().includes("student") ? "Students" : "Zonal Leaders"}</span>

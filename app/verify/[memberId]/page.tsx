@@ -31,7 +31,8 @@ export default async function MemberVerificationPage({ params }: VerifyPageProps
       updated_at,
       users:id (
         full_name,
-        email
+        email,
+        avatar_url
       )
     `)
     .eq("member_id", memberIdClean)
@@ -39,6 +40,7 @@ export default async function MemberVerificationPage({ params }: VerifyPageProps
 
   const user = Array.isArray(profile?.users) ? profile.users[0] : profile?.users;
   const fullName = user?.full_name || "Official Member";
+  const avatarUrl = profile?.avatar_url || user?.avatar_url || null;
   const isValid = !!profile;
 
   // Format campus zone nicely if stored as JSON array string or plain text
@@ -95,12 +97,13 @@ export default async function MemberVerificationPage({ params }: VerifyPageProps
             <div className="flex flex-col items-center text-center mb-6">
               <div className="relative mb-4">
                 <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl overflow-hidden border-2 border-emerald-400/50 bg-[#161c22] flex items-center justify-center shadow-lg shadow-emerald-500/10">
-                  {profile.avatar_url ? (
+                  {avatarUrl ? (
                     <Image
-                      src={profile.avatar_url}
+                      src={avatarUrl}
                       alt={fullName}
                       width={112}
                       height={112}
+                      unoptimized
                       className="w-full h-full object-cover"
                     />
                   ) : (

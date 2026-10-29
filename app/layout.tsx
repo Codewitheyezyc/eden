@@ -4,7 +4,7 @@ import "./globals.css";
 import { ThemeProvider } from "@/providers/theme-provider";
 import QueryProvider from "@/providers/query-provider";
 import { SupportProvider } from "@/providers/support-provider";
-import { FloatingSupport, SupportModal } from "@/components/shared";
+import { SupportModal } from "@/components/shared";
 import { Toaster } from "react-hot-toast";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -68,7 +68,6 @@ export default function RootLayout({
               disableTransitionOnChange
             >
               {children}
-              <FloatingSupport />
               <SupportModal />
               <Toaster
                 position="top-right"

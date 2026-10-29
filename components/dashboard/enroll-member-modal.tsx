@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { X, Sparkles, User, MapPin, Phone, Shirt, CheckCircle2, Loader2, Award } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CAMPUSES } from "@/lib/campuses";
@@ -100,9 +101,11 @@ export function EnrollMemberModal({
     );
   }
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200 overflow-y-auto">
-      <div className="relative w-full max-w-lg bg-[#0e1216] border border-white/10 rounded-3xl p-6 sm:p-8 shadow-2xl text-white my-8">
+  if (typeof window === "undefined") return null;
+
+  return createPortal(
+    <div className="fixed inset-0 z-[150] flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-200 overflow-y-auto">
+      <div className="relative w-full max-w-lg bg-[#0e1216] border border-white/10 rounded-3xl p-5 sm:p-8 shadow-2xl text-white my-auto max-h-[90vh] overflow-y-auto pb-10">
         {/* Close Button */}
         <button
           onClick={onClose}
@@ -278,6 +281,7 @@ export function EnrollMemberModal({
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

@@ -35,6 +35,7 @@ import { parseCampuses } from "@/lib/campuses";
 import { cn } from "@/lib/utils";
 import { IdCardModal } from "./id-card-modal";
 import { EnrollMemberModal } from "./enroll-member-modal";
+import { TablePagination } from "@/components/ui/table-pagination";
 import { compressImage } from "@/lib/image-compress";
 import { createClient } from "@/services/supabase/client";
 
@@ -318,30 +319,30 @@ export function DirectoryGrid({ title, users, currentUserRole, facultyId, facult
   };
 
   return (
-    <div className="space-y-6 pb-28 lg:pb-12">
+    <div className="space-y-6 pb-40 lg:pb-16">
       {/* 1. Header Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white/60 dark:bg-[#0a0a0a]/60 backdrop-blur-xl border border-gray-200/50 dark:border-white/5 p-6 md:p-8 rounded-3xl shadow-sm">
-        <div>
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl md:text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white/60 dark:bg-[#0a0a0a]/60 backdrop-blur-xl border border-gray-200/50 dark:border-white/5 p-4 sm:p-6 md:p-8 rounded-3xl shadow-sm">
+        <div className="flex-1 min-w-0">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">
               {title}
             </h1>
-            <span className="px-3 py-1 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 rounded-full text-xs font-bold border border-emerald-500/20 shadow-xs">
+            <span className="inline-flex items-center px-2.5 py-1 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 rounded-full text-xs font-bold border border-emerald-500/20 whitespace-nowrap">
               {filteredUsers.length} {filteredUsers.length === 1 ? "Member" : "Members"}
               {filteredUsers.length !== users.length && ` (of ${users.length})`}
             </span>
           </div>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+          <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">
             Browse, manage, and inspect all enrolled members in this faculty.
           </p>
         </div>
 
         {/* Actions & View Mode Toggle */}
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 shrink-0">
           {(currentUserRole === "ADMIN" || currentUserRole === "COORDINATOR") && facultyId && (
             <button
               onClick={() => setShowEnrollModal(true)}
-              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md shadow-emerald-600/20 transition-all"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md shadow-emerald-600/20 transition-all"
             >
               <UserPlus className="w-3.5 h-3.5" />
               <span>Enroll Member</span>
@@ -349,36 +350,36 @@ export function DirectoryGrid({ title, users, currentUserRole, facultyId, facult
           )}
 
           {/* View Mode Toggle */}
-          <div className="flex items-center gap-1.5 p-1 bg-gray-100 dark:bg-white/5 rounded-2xl border border-gray-200/60 dark:border-white/5 w-fit">
-          <button
-            onClick={() => setViewMode("grid")}
-            className={cn(
-              "flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition-all",
-              viewMode === "grid"
-                ? "bg-white dark:bg-white/10 text-gray-900 dark:text-white shadow-xs"
-                : "text-gray-500 hover:text-gray-900 dark:hover:text-white"
-            )}
-            title="Card Grid View"
-          >
-            <LayoutGrid className="w-3.5 h-3.5" />
-            <span>Grid</span>
-          </button>
-          <button
-            onClick={() => setViewMode("table")}
-            className={cn(
-              "flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition-all",
-              viewMode === "table"
-                ? "bg-white dark:bg-white/10 text-gray-900 dark:text-white shadow-xs"
-                : "text-gray-500 hover:text-gray-900 dark:hover:text-white"
-            )}
-            title="Compact Table View"
-          >
-            <List className="w-3.5 h-3.5" />
-            <span>Table</span>
-          </button>
+          <div className="flex items-center gap-1 p-1 bg-gray-100 dark:bg-white/5 rounded-2xl border border-gray-200/60 dark:border-white/5">
+            <button
+              onClick={() => setViewMode("grid")}
+              className={cn(
+                "flex items-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-xs font-bold transition-all",
+                viewMode === "grid"
+                  ? "bg-white dark:bg-white/10 text-gray-900 dark:text-white shadow-xs"
+                  : "text-gray-500 hover:text-gray-900 dark:hover:text-white"
+              )}
+              title="Card Grid View"
+            >
+              <LayoutGrid className="w-3.5 h-3.5" />
+              <span>Grid</span>
+            </button>
+            <button
+              onClick={() => setViewMode("table")}
+              className={cn(
+                "flex items-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-xs font-bold transition-all",
+                viewMode === "table"
+                  ? "bg-white dark:bg-white/10 text-gray-900 dark:text-white shadow-xs"
+                  : "text-gray-500 hover:text-gray-900 dark:hover:text-white"
+              )}
+              title="Compact Table View"
+            >
+              <List className="w-3.5 h-3.5" />
+              <span>Table</span>
+            </button>
+          </div>
         </div>
       </div>
-    </div>
 
       {/* 2. Search & Filter Toolbar */}
       <div className="bg-white/60 dark:bg-[#0a0a0a]/60 backdrop-blur-xl border border-gray-200/50 dark:border-white/5 rounded-3xl p-4 md:p-5 shadow-sm space-y-4">
@@ -828,66 +829,18 @@ export function DirectoryGrid({ title, users, currentUserRole, facultyId, facult
 
       {/* 6. Pagination Footer Controls */}
       {filteredUsers.length > 0 && (
-        <div className="bg-white/60 dark:bg-[#0a0a0a]/60 backdrop-blur-xl border border-gray-200/50 dark:border-white/5 rounded-3xl p-4 md:p-5 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
-          {/* Summary */}
-          <p className="text-xs font-medium text-gray-500 dark:text-gray-400">
-            Showing <strong className="text-gray-900 dark:text-white font-bold">{startIndex + 1}</strong> to{" "}
-            <strong className="text-gray-900 dark:text-white font-bold">{endIndex}</strong> of{" "}
-            <strong className="text-gray-900 dark:text-white font-bold">{filteredUsers.length}</strong> {title.toLowerCase()}
-          </p>
-
-          {/* Page Buttons */}
-          <div className="flex items-center gap-1.5">
-            {/* Prev Button */}
-            <button
-              onClick={() => handlePageChange(validCurrentPage - 1)}
-              disabled={validCurrentPage === 1}
-              className="p-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-gray-700 dark:text-gray-300 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-white/10 transition-all"
-              title="Previous Page"
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </button>
-
-            {/* Page Numbers */}
-            <div className="flex items-center gap-1">
-              {getPageNumbers().map((pageNum, i) => {
-                if (pageNum === "...") {
-                  return (
-                    <span key={`ellipsis-${i}`} className="px-2 py-1 text-xs text-gray-400 select-none">
-                      ...
-                    </span>
-                  );
-                }
-                const pageNumber = Number(pageNum);
-                const isActive = pageNumber === validCurrentPage;
-                return (
-                  <button
-                    key={pageNumber}
-                    onClick={() => handlePageChange(pageNumber)}
-                    className={cn(
-                      "w-8 h-8 rounded-xl text-xs font-bold transition-all flex items-center justify-center",
-                      isActive
-                        ? "bg-emerald-600 text-white shadow-sm shadow-emerald-600/30 font-extrabold"
-                        : "border border-gray-200/80 dark:border-white/10 bg-white/70 dark:bg-white/5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/10"
-                    )}
-                  >
-                    {pageNumber}
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Next Button */}
-            <button
-              onClick={() => handlePageChange(validCurrentPage + 1)}
-              disabled={validCurrentPage === totalPages}
-              className="p-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-gray-700 dark:text-gray-300 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-white/10 transition-all"
-              title="Next Page"
-            >
-              <ChevronRight className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
+        <TablePagination
+          currentPage={validCurrentPage}
+          totalItems={filteredUsers.length}
+          itemsPerPage={itemsPerPage}
+          onPageChange={handlePageChange}
+          onItemsPerPageChange={(size) => {
+            setItemsPerPage(size);
+            setCurrentPage(1);
+          }}
+          pageSizeOptions={[16, 32, 64, 100]}
+          itemLabel={title.toLowerCase()}
+        />
       )}
 
       {/* User Detail Modal (React Portal) */}

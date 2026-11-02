@@ -5,9 +5,16 @@ import { useTheme } from "next-themes";
 import { toast } from "react-hot-toast";
 import { 
   User, Shield, Bell, Moon, Sun, Laptop, Users, Trash2, 
-  HelpCircle, Settings, Check, Save, Sparkles, RefreshCw, Volume2 
+  HelpCircle, Settings, Check, Save, Sparkles, RefreshCw, Volume2,
+  MapPin, Award, Plus, Edit3, Search, X, AlertTriangle, Loader2
 } from "lucide-react";
-import { updateProfile, updateFaculty, updateUserRoleInFaculty } from "./actions";
+import { 
+  updateProfile, 
+  updateFaculty, 
+  updateUserRoleInFaculty, 
+  manageCampusAction, 
+  manageLeadershipRoleAction 
+} from "./actions";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
@@ -19,6 +26,22 @@ interface FacultyMember {
     avatar_url: string | null;
     email: string | null;
   } | null;
+}
+
+export interface CampusItem {
+  id: string;
+  name: string;
+  isActive: boolean;
+  memberCount: number;
+  createdAt: string;
+}
+
+export interface LeadershipRoleItem {
+  id: string;
+  title: string;
+  isActive: boolean;
+  leaderCount: number;
+  createdAt: string;
 }
 
 interface SettingsClientProps {
@@ -37,11 +60,15 @@ interface SettingsClientProps {
     bio: string;
   };
   members: FacultyMember[];
+  campuses: CampusItem[];
+  leadershipRoles: LeadershipRoleItem[];
 }
 
 type TabType = 
   | "profile" 
   | "faculty" 
+  | "campuses"
+  | "leadership"
   | "notifications" 
   | "appearance" 
   | "security" 
@@ -54,7 +81,9 @@ export function SettingsClient({
   facultySlug, 
   role, 
   currentUser, 
-  members: initialMembers 
+  members: initialMembers,
+  campuses: initialCampuses,
+  leadershipRoles: initialRoles
 }: SettingsClientProps) {
   const [activeTab, setActiveTab] = useState<TabType>("profile");
   const [members, setMembers] = useState<FacultyMember[]>(initialMembers);
@@ -83,9 +112,27 @@ export function SettingsClient({
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
 
+  // Campuses Management State
+  const [campuses, setCampuses] = useState<CampusItem[]>(initialCampuses || []);
+  const [campusSearch, setCampusSearch] = useState("");
+  const [newCampusName, setNewCampusName] = useState("");
+  const [isAddingCampus, setIsAddingCampus] = useState(false);
+  const [editingCampus, setEditingCampus] = useState<{ id: string; name: string; oldName: string } | null>(null);
+  const [isCampusLoading, setIsCampusLoading] = useState(false);
+
+  // Leadership Roles Management State
+  const [leadershipRoles, setLeadershipRoles] = useState<LeadershipRoleItem[]>(initialRoles || []);
+  const [roleSearch, setRoleSearch] = useState("");
+  const [newRoleTitle, setNewRoleTitle] = useState("");
+  const [isAddingRole, setIsAddingRole] = useState(false);
+  const [editingRole, setEditingRole] = useState<{ id: string; title: string; oldTitle: string } | null>(null);
+  const [isRoleLoading, setIsRoleLoading] = useState(false);
+
   const tabs: { id: TabType; label: string; icon: any; roles?: string[] }[] = [
     { id: "profile", label: "My Profile", icon: User },
     { id: "faculty", label: "Faculty Settings", icon: Settings, roles: ["ADMIN"] },
+    { id: "campuses", label: "Campuses & Zones", icon: MapPin, roles: ["ADMIN"] },
+    { id: "leadership", label: "Leadership Positions", icon: Award, roles: ["ADMIN"] },
     { id: "notifications", label: "Notifications", icon: Bell },
     { id: "appearance", label: "Appearance", icon: Moon },
     { id: "security", label: "Security & 2FA", icon: Shield },
@@ -143,234 +190,336 @@ export function SettingsClient({
   };
 
   const handleRoleChange = async (targetUserId: string, newRole: "ADMIN" | "COORDINATOR" | "STUDENT") => {
+    if (!isAdmin) return;
     try {
       await updateUserRoleInFaculty(facultyId, targetUserId, newRole);
-      setMembers((prev) =>
-        prev.map((m) => (m.user_id === targetUserId ? { ...m, role: newRole } : m))
-      );
+      setMembers(prev => prev.map(m => m.user_id === targetUserId ? { ...m, role: newRole } : m));
       toast.success("Role updated successfully!");
     } catch (err: any) {
-      toast.error(err.message || "Failed to update user role");
+      toast.error(err.message || "Failed to update member role");
     }
   };
 
-  // Notification Sound Generator (Web Audio API)
-  const testNotificationSound = () => {
-    try {
-      const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
-      if (!AudioContext) return;
-      const ctx = new AudioContext();
-      
-      const masterGain = ctx.createGain();
-      masterGain.gain.setValueAtTime(0.06, ctx.currentTime);
-      masterGain.connect(ctx.destination);
+  // -------------------------------------------------------------
+  // CAMPUS MANAGEMENT HANDLERS
+  // -------------------------------------------------------------
+  const handleAddCampus = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newCampusName.trim()) return;
 
-      const osc1 = ctx.createOscillator();
-      osc1.type = "sine";
-      osc1.frequency.setValueAtTime(1318.51, ctx.currentTime); // E6
-      osc1.frequency.exponentialRampToValueAtTime(1567.98, ctx.currentTime + 0.08); // G6
-      osc1.connect(masterGain);
+    setIsCampusLoading(true);
+    const res = await manageCampusAction({
+      action: "add",
+      name: newCampusName.trim(),
+    });
+    setIsCampusLoading(false);
 
-      const osc2 = ctx.createOscillator();
-      osc2.type = "triangle";
-      osc2.frequency.setValueAtTime(659.25, ctx.currentTime); // E5
-      osc2.connect(masterGain);
-
-      masterGain.gain.setValueAtTime(0.06, ctx.currentTime);
-      masterGain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.3);
-
-      osc1.start();
-      osc2.start();
-      osc1.stop(ctx.currentTime + 0.35);
-      osc2.stop(ctx.currentTime + 0.35);
-    } catch (e) {
-      console.warn(e);
+    if (res.error) {
+      toast.error(res.error);
+    } else {
+      toast.success(`Campus "${newCampusName.trim()}" added successfully!`);
+      setCampuses(prev => [
+        ...prev,
+        {
+          id: res.data?.id || String(Date.now()),
+          name: newCampusName.trim(),
+          isActive: true,
+          memberCount: 0,
+          createdAt: new Date().toISOString(),
+        }
+      ].sort((a, b) => a.name.localeCompare(b.name)));
+      setNewCampusName("");
+      setIsAddingCampus(false);
     }
   };
+
+  const handleUpdateCampus = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingCampus || !editingCampus.name.trim()) return;
+
+    setIsCampusLoading(true);
+    const res = await manageCampusAction({
+      action: "update",
+      id: editingCampus.id,
+      name: editingCampus.name.trim(),
+      oldName: editingCampus.oldName,
+    });
+    setIsCampusLoading(false);
+
+    if (res.error) {
+      toast.error(res.error);
+    } else {
+      toast.success(`Campus renamed to "${editingCampus.name.trim()}"!`);
+      setCampuses(prev =>
+        prev.map(c =>
+          c.id === editingCampus.id
+            ? { ...c, name: editingCampus.name.trim() }
+            : c
+        ).sort((a, b) => a.name.localeCompare(b.name))
+      );
+      setEditingCampus(null);
+    }
+  };
+
+  const handleDeleteCampus = async (campus: CampusItem) => {
+    if (campus.memberCount > 0) {
+      if (!window.confirm(
+        `Warning: There are currently ${campus.memberCount} member(s) assigned to "${campus.name}". Deleting this campus will remove it from future selection. Continue?`
+      )) {
+        return;
+      }
+    } else {
+      if (!window.confirm(`Are you sure you want to delete "${campus.name}"?`)) {
+        return;
+      }
+    }
+
+    setIsCampusLoading(true);
+    const res = await manageCampusAction({
+      action: "delete",
+      id: campus.id,
+    });
+    setIsCampusLoading(false);
+
+    if (res.error) {
+      toast.error(res.error);
+    } else {
+      toast.success(`Campus "${campus.name}" deleted.`);
+      setCampuses(prev => prev.filter(c => c.id !== campus.id));
+    }
+  };
+
+  // -------------------------------------------------------------
+  // LEADERSHIP ROLES MANAGEMENT HANDLERS
+  // -------------------------------------------------------------
+  const handleAddRole = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newRoleTitle.trim()) return;
+
+    setIsRoleLoading(true);
+    const res = await manageLeadershipRoleAction({
+      action: "add",
+      title: newRoleTitle.trim(),
+    });
+    setIsRoleLoading(false);
+
+    if (res.error) {
+      toast.error(res.error);
+    } else {
+      toast.success(`Leadership position "${newRoleTitle.trim()}" added!`);
+      setLeadershipRoles(prev => [
+        ...prev,
+        {
+          id: res.data?.id || String(Date.now()),
+          title: newRoleTitle.trim(),
+          isActive: true,
+          leaderCount: 0,
+          createdAt: new Date().toISOString(),
+        }
+      ].sort((a, b) => a.title.localeCompare(b.title)));
+      setNewRoleTitle("");
+      setIsAddingRole(false);
+    }
+  };
+
+  const handleUpdateRole = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingRole || !editingRole.title.trim()) return;
+
+    setIsRoleLoading(true);
+    const res = await manageLeadershipRoleAction({
+      action: "update",
+      id: editingRole.id,
+      title: editingRole.title.trim(),
+      oldTitle: editingRole.oldTitle,
+    });
+    setIsRoleLoading(false);
+
+    if (res.error) {
+      toast.error(res.error);
+    } else {
+      toast.success(`Leadership position renamed to "${editingRole.title.trim()}"!`);
+      setLeadershipRoles(prev =>
+        prev.map(r =>
+          r.id === editingRole.id
+            ? { ...r, title: editingRole.title.trim() }
+            : r
+        ).sort((a, b) => a.title.localeCompare(b.title))
+      );
+      setEditingRole(null);
+    }
+  };
+
+  const handleDeleteRole = async (roleItem: LeadershipRoleItem) => {
+    if (roleItem.leaderCount > 0) {
+      if (!window.confirm(
+        `Warning: There are currently ${roleItem.leaderCount} leader(s) holding the title "${roleItem.title}". Are you sure you want to delete this position?`
+      )) {
+        return;
+      }
+    } else {
+      if (!window.confirm(`Are you sure you want to delete "${roleItem.title}"?`)) {
+        return;
+      }
+    }
+
+    setIsRoleLoading(true);
+    const res = await manageLeadershipRoleAction({
+      action: "delete",
+      id: roleItem.id,
+    });
+    setIsRoleLoading(false);
+
+    if (res.error) {
+      toast.error(res.error);
+    } else {
+      toast.success(`Leadership position "${roleItem.title}" deleted.`);
+      setLeadershipRoles(prev => prev.filter(r => r.id !== roleItem.id));
+    }
+  };
+
+  // Filtered lists
+  const filteredCampuses = campuses.filter(c =>
+    c.name.toLowerCase().includes(campusSearch.toLowerCase().trim())
+  );
+
+  const filteredRoles = leadershipRoles.filter(r =>
+    r.title.toLowerCase().includes(roleSearch.toLowerCase().trim())
+  );
 
   return (
-    <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in duration-700 slide-in-from-bottom-4 relative">
-      {/* Header */}
+    <div className="space-y-8 animate-in fade-in duration-500 pb-40 lg:pb-16 max-w-6xl mx-auto">
+      {/* Settings Header */}
       <div>
-        <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">Admin & Portal Settings</h1>
-        <p className="text-gray-500 dark:text-gray-400 mt-1 font-light leading-relaxed">
-          Manage your personal profile, customize notifications, tweak themes, and manage faculty roles.
+        <h1 className="text-2xl md:text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight flex items-center gap-3">
+          <Settings className="w-8 h-8 text-emerald-500" /> Settings & Administration
+        </h1>
+        <p className="text-sm font-light text-gray-500 dark:text-gray-400 mt-1">
+          Manage your personal preferences, faculty configuration, campuses, and leadership roles.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 items-start">
-        
-        {/* Left Side: Frosted Glass Tab Sidebar */}
-        <div className="col-span-1 bg-white/40 dark:bg-[#080808]/40 backdrop-blur-2xl border border-gray-200/50 dark:border-white/5 p-4 rounded-3xl space-y-1 shadow-lg">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 items-start">
+        {/* Navigation Tabs (Sidebar style) */}
+        <div className="bg-white/60 dark:bg-[#0a0a0a]/60 backdrop-blur-xl border border-gray-200/50 dark:border-white/5 p-2 rounded-3xl shadow-sm flex md:flex-col overflow-x-auto gap-1">
           {tabs.map((tab) => {
-            // Render only if tab doesn't specify roles OR if user matches specified roles
             if (tab.roles && !tab.roles.includes(role)) return null;
-            
             const Icon = tab.icon;
-            const isTabActive = activeTab === tab.id;
-
+            const isActive = activeTab === tab.id;
             return (
               <button
                 key={tab.id}
-                onClick={() => {
-                  setActiveTab(tab.id);
-                  setSaveSuccess(false);
-                  setSaveError(null);
-                }}
+                onClick={() => setActiveTab(tab.id)}
                 className={cn(
-                  "w-full flex items-center space-x-3 px-4 py-3.5 rounded-2xl text-sm font-bold transition-all duration-300",
-                  isTabActive 
-                    ? "bg-emerald-600 text-white shadow-lg shadow-emerald-500/20" 
-                    : "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5"
+                  "flex items-center gap-3 px-4 py-3 rounded-2xl text-xs font-bold transition-all text-left whitespace-nowrap md:w-full",
+                  isActive
+                    ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/20"
+                    : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5"
                 )}
               >
-                <Icon size={18} className={cn("shrink-0", isTabActive ? "text-white" : "text-gray-400 dark:text-gray-500")} />
-                <span className="truncate">{tab.label}</span>
+                <Icon className={cn("w-4 h-4 shrink-0", isActive ? "text-white" : "text-gray-400")} />
+                <span>{tab.label}</span>
               </button>
             );
           })}
         </div>
 
-        {/* Right Side: Tab Panel Content (Glassmorphic Container) */}
-        <div className="col-span-1 lg:col-span-3 bg-white/60 dark:bg-[#080808]/60 backdrop-blur-3xl border border-gray-200/50 dark:border-white/5 p-8 md:p-10 rounded-[2rem] shadow-2xl relative">
+        {/* Tab Content Panes */}
+        <div className="md:col-span-3 bg-white/60 dark:bg-[#0a0a0a]/60 backdrop-blur-xl border border-gray-200/50 dark:border-white/5 p-6 md:p-8 rounded-3xl shadow-sm">
           
-          {/* Ornamental corner gradient */}
-          <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 rounded-full blur-2xl pointer-events-none" />
-
-          {/* Feedback states */}
+          {/* Notifications banner */}
           {saveSuccess && (
-            <div className="mb-6 p-4 bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 rounded-2xl text-xs font-semibold flex items-center animate-in fade-in duration-300">
-              <Check className="w-4 h-4 mr-2" />
-              <span>Settings updated successfully!</span>
+            <div className="mb-6 p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 dark:bg-emerald-950/20 dark:border-emerald-500/20 dark:text-emerald-400 text-xs font-bold flex items-center gap-2 animate-in slide-in-from-top-2">
+              <Check className="w-4 h-4" /> Changes saved successfully!
             </div>
           )}
           {saveError && (
-            <div className="mb-6 p-4 bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 rounded-2xl text-xs font-semibold flex items-center animate-in fade-in duration-300">
-              <HelpCircle className="w-4 h-4 mr-2" />
-              <span>{saveError}</span>
+            <div className="mb-6 p-4 rounded-2xl bg-red-50 border border-red-200 text-red-800 dark:bg-red-950/20 dark:border-red-500/20 dark:text-red-400 text-xs font-bold flex items-center gap-2 animate-in slide-in-from-top-2">
+              <Shield className="w-4 h-4" /> {saveError}
             </div>
           )}
 
-          {/* 1. MY PROFILE */}
+          {/* 1. PROFILE SETTINGS */}
           {activeTab === "profile" && (
             <form onSubmit={handleProfileSave} className="space-y-6">
-              <h2 className="text-xl font-extrabold text-gray-900 dark:text-white flex items-center gap-2">
-                <User className="text-emerald-500" /> Personal Information
-              </h2>
+              <div>
+                <h2 className="text-xl font-extrabold text-gray-900 dark:text-white flex items-center gap-2">
+                  <User className="text-emerald-500" /> Personal Profile
+                </h2>
+                <p className="text-xs text-gray-500 mt-1">
+                  Update your contact details, KingsChat handle, and public bio.
+                </p>
+              </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Full Name</label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold uppercase tracking-wider text-gray-500">Full Name</label>
                   <input
                     type="text"
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
-                    className="w-full bg-gray-50/50 dark:bg-white/5 border border-gray-200 dark:border-white/5 rounded-2xl p-4 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 text-sm font-semibold text-gray-800 dark:text-white"
                     required
+                    className="w-full bg-gray-50 dark:bg-[#141920] border border-gray-200 dark:border-white/10 rounded-xl px-4 py-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Phone Number</label>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold uppercase tracking-wider text-gray-500">KingsChat Handle</label>
+                  <div className="relative">
+                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 font-bold text-xs">@</span>
+                    <input
+                      type="text"
+                      value={kingschatUsername}
+                      onChange={(e) => setKingschatUsername(e.target.value)}
+                      placeholder="username"
+                      className="w-full bg-gray-50 dark:bg-[#141920] border border-gray-200 dark:border-white/10 rounded-xl pl-8 pr-4 py-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold uppercase tracking-wider text-gray-500">Phone Number</label>
                   <input
                     type="tel"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
-                    className="w-full bg-gray-50/50 dark:bg-white/5 border border-gray-200 dark:border-white/5 rounded-2xl p-4 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 text-sm font-light text-gray-800 dark:text-white"
+                    placeholder="+234..."
+                    className="w-full bg-gray-50 dark:bg-[#141920] border border-gray-200 dark:border-white/10 rounded-xl px-4 py-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Gender</label>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold uppercase tracking-wider text-gray-500">Gender</label>
                   <select
                     value={gender}
                     onChange={(e) => setGender(e.target.value)}
-                    className="w-full bg-gray-50/50 dark:bg-white/5 border border-gray-200 dark:border-white/5 rounded-2xl p-4 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 text-sm text-gray-800 dark:text-white"
+                    className="w-full bg-gray-50 dark:bg-[#141920] border border-gray-200 dark:border-white/10 rounded-xl px-3 py-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
                   >
                     <option value="">Select Gender</option>
                     <option value="Male">Male</option>
                     <option value="Female">Female</option>
-                    <option value="Prefer not to say">Prefer not to say</option>
                   </select>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-1.5">
-                    <img src="/kingschat.png" alt="" className="w-3.5 h-3.5 shrink-0 rounded-sm" />
-                    <span>KingsChat Username</span>
-                  </label>
-                  <div className="relative">
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm">@</span>
-                    <input
-                      type="text"
-                      value={kingschatUsername}
-                      onChange={(e) => {
-                        const val = e.target.value.replace(/\s+/g, "");
-                        setKingschatUsername(val);
-                      }}
-                      className={cn(
-                        "w-full bg-gray-50/50 dark:bg-white/5 border rounded-2xl p-4 pl-8 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 text-sm font-semibold text-gray-800 dark:text-white transition-all",
-                        kingschatUsername && !/^[a-zA-Z0-9_]+$/.test(kingschatUsername)
-                          ? "border-rose-500 focus:ring-rose-500/20 focus:border-rose-500"
-                          : "border-gray-200 dark:border-white/5"
-                      )}
-                      placeholder="Enter your Kingschat username"
-                    />
-                  </div>
-                  {kingschatUsername && !/^[a-zA-Z0-9_]+$/.test(kingschatUsername) && (
-                    <span className="text-[10px] text-rose-500 font-bold block mt-1 animate-pulse">
-                      ⚠️ No spaces or special characters allowed. (Use alphanumeric & underscores only)
-                    </span>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Campus Zone</label>
-                  <input
-                    type="text"
-                    value={campusZone}
-                    onChange={(e) => setCampusZone(e.target.value)}
-                    className="w-full bg-gray-50/50 dark:bg-white/5 border border-gray-200 dark:border-white/5 rounded-2xl p-4 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 text-sm font-light text-gray-800 dark:text-white"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Date of Birth</label>
-                  <input
-                    type="date"
-                    value={dateOfBirth}
-                    onChange={(e) => setDateOfBirth(e.target.value)}
-                    className="w-full bg-gray-50/50 dark:bg-white/5 border border-gray-200 dark:border-white/5 rounded-2xl p-4 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 text-sm text-gray-800 dark:text-white"
-                  />
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Short Biography</label>
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold uppercase tracking-wider text-gray-500">Short Bio</label>
                 <textarea
                   value={bio}
                   onChange={(e) => setBio(e.target.value)}
-                  className="w-full bg-gray-50/50 dark:bg-white/5 border border-gray-200 dark:border-white/5 rounded-2xl p-4 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 text-sm font-light text-gray-800 dark:text-white min-h-[100px] leading-relaxed"
+                  rows={3}
+                  placeholder="Share your background, passions, or ministry focus..."
+                  className="w-full bg-gray-50 dark:bg-[#141920] border border-gray-200 dark:border-white/10 rounded-xl p-4 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 />
               </div>
 
-              <div className="flex justify-end pt-4">
+              <div className="flex justify-end pt-2">
                 <Button
                   type="submit"
                   disabled={isSaving}
-                  className="px-8 py-6 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold transition-all duration-300 shadow-xl shadow-emerald-500/10 inline-flex items-center"
+                  className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs px-6 py-2.5 rounded-xl shadow-lg shadow-emerald-600/20"
                 >
-                  {isSaving ? (
-                    <>
-                      <RefreshCw size={16} className="animate-spin mr-2" />
-                      Saving...
-                    </>
-                  ) : (
-                    <>
-                      <Save size={16} className="mr-2" />
-                      Save Changes
-                    </>
-                  )}
+                  {isSaving ? "Saving Changes..." : "Save Profile"}
                 </Button>
               </div>
             </form>
@@ -379,135 +528,469 @@ export function SettingsClient({
           {/* 2. FACULTY SETTINGS */}
           {activeTab === "faculty" && isAdmin && (
             <form onSubmit={handleFacultySave} className="space-y-6">
-              <h2 className="text-xl font-extrabold text-gray-900 dark:text-white flex items-center gap-2">
-                <Settings className="text-emerald-500" /> Faculty Administration
-              </h2>
-
-              <div className="p-4 bg-amber-500/10 border border-amber-500/20 text-amber-800 dark:text-amber-400 rounded-2xl text-xs leading-relaxed font-semibold">
-                Note: Renaming the faculty will update it across all users, courses, and event profiles instantly. Be careful when updating tenant metadata.
+              <div>
+                <h2 className="text-xl font-extrabold text-gray-900 dark:text-white flex items-center gap-2">
+                  <Settings className="text-emerald-500" /> Faculty Configuration
+                </h2>
+                <p className="text-xs text-gray-500 mt-1">
+                  Adjust global names and attributes for this faculty workspace.
+                </p>
               </div>
 
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Faculty Name</label>
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold uppercase tracking-wider text-gray-500">Faculty Workspace Name</label>
                 <input
                   type="text"
                   value={facName}
                   onChange={(e) => setFacName(e.target.value)}
-                  className="w-full bg-gray-50/50 dark:bg-white/5 border border-gray-200 dark:border-white/5 rounded-2xl p-4 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 text-sm font-semibold text-gray-800 dark:text-white"
                   required
+                  className="w-full bg-gray-50 dark:bg-[#141920] border border-gray-200 dark:border-white/10 rounded-xl px-4 py-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 />
               </div>
 
-              <div className="flex justify-end pt-4">
+              <div className="flex justify-end pt-2">
                 <Button
                   type="submit"
                   disabled={isSaving}
-                  className="px-8 py-6 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold transition-all duration-300 shadow-xl shadow-emerald-500/10 inline-flex items-center"
+                  className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs px-6 py-2.5 rounded-xl shadow-lg shadow-emerald-600/20"
                 >
-                  {isSaving ? (
-                    <>
-                      <RefreshCw size={16} className="animate-spin mr-2" />
-                      Saving...
-                    </>
-                  ) : (
-                    <>
-                      <Save size={16} className="mr-2" />
-                      Save Faculty Info
-                    </>
-                  )}
+                  {isSaving ? "Updating..." : "Update Faculty"}
                 </Button>
               </div>
             </form>
           )}
 
-          {/* 3. NOTIFICATION PREFERENCES */}
+          {/* 3. CAMPUSES & ZONES MANAGER */}
+          {activeTab === "campuses" && isAdmin && (
+            <div className="space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <h2 className="text-xl font-extrabold text-gray-900 dark:text-white flex items-center gap-2">
+                    <MapPin className="text-emerald-500" /> Campuses & Zones Manager
+                  </h2>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Add new ministry campuses, rename existing zones, or remove obsolete locations. Updates reflect instantly across all registration forms.
+                  </p>
+                </div>
+
+                {!isAddingCampus && !editingCampus && (
+                  <Button
+                    onClick={() => setIsAddingCampus(true)}
+                    className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs px-4 py-2 rounded-xl flex items-center gap-1.5 shadow-md shadow-emerald-600/20 shrink-0"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>Add New Campus</span>
+                  </Button>
+                )}
+              </div>
+
+              {/* Add New Campus Form */}
+              {isAddingCampus && (
+                <form onSubmit={handleAddCampus} className="p-4 sm:p-5 rounded-2xl bg-emerald-500/5 border border-emerald-500/20 space-y-3 animate-in fade-in duration-200">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
+                      <Plus className="w-3.5 h-3.5" /> Add New Campus / Zone
+                    </h4>
+                    <button
+                      type="button"
+                      onClick={() => setIsAddingCampus(false)}
+                      className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                  <div className="flex flex-col sm:flex-row gap-2.5">
+                    <input
+                      type="text"
+                      required
+                      value={newCampusName}
+                      onChange={(e) => setNewCampusName(e.target.value)}
+                      placeholder="e.g. Lagos Zone 7, Texas Campus, Mid-West Sub-zone"
+                      className="flex-1 bg-white dark:bg-[#141920] border border-gray-200 dark:border-white/10 rounded-xl px-4 py-2 text-xs text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    />
+                    <div className="flex items-center gap-2">
+                      <Button
+                        type="submit"
+                        disabled={isCampusLoading}
+                        className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs px-4 py-2 rounded-xl"
+                      >
+                        {isCampusLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Save Campus"}
+                      </Button>
+                      <button
+                        type="button"
+                        onClick={() => setIsAddingCampus(false)}
+                        className="px-3 py-2 text-xs font-medium text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                </form>
+              )}
+
+              {/* Edit Campus Form */}
+              {editingCampus && (
+                <form onSubmit={handleUpdateCampus} className="p-4 sm:p-5 rounded-2xl bg-blue-500/5 border border-blue-500/20 space-y-3 animate-in fade-in duration-200">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400 flex items-center gap-1.5">
+                      <Edit3 className="w-3.5 h-3.5" /> Edit Campus Name: &ldquo;{editingCampus.oldName}&rdquo;
+                    </h4>
+                    <button
+                      type="button"
+                      onClick={() => setEditingCampus(null)}
+                      className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                  <p className="text-[11px] text-gray-500 dark:text-gray-400">
+                    Renaming this campus will automatically update the records of all members currently registered under this name.
+                  </p>
+                  <div className="flex flex-col sm:flex-row gap-2.5">
+                    <input
+                      type="text"
+                      required
+                      value={editingCampus.name}
+                      onChange={(e) => setEditingCampus({ ...editingCampus, name: e.target.value })}
+                      className="flex-1 bg-white dark:bg-[#141920] border border-gray-200 dark:border-white/10 rounded-xl px-4 py-2 text-xs text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    <div className="flex items-center gap-2">
+                      <Button
+                        type="submit"
+                        disabled={isCampusLoading}
+                        className="bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs px-4 py-2 rounded-xl"
+                      >
+                        {isCampusLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Update Name"}
+                      </Button>
+                      <button
+                        type="button"
+                        onClick={() => setEditingCampus(null)}
+                        className="px-3 py-2 text-xs font-medium text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                </form>
+              )}
+
+              {/* Search filter for campuses */}
+              <div className="relative">
+                <Search className="w-3.5 h-3.5 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  value={campusSearch}
+                  onChange={(e) => setCampusSearch(e.target.value)}
+                  placeholder="Search campuses or zones..."
+                  className="w-full bg-gray-50 dark:bg-[#141920] border border-gray-200 dark:border-white/10 rounded-xl pl-9 pr-4 py-2 text-xs text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                />
+              </div>
+
+              {/* Campuses List Table */}
+              <div className="overflow-x-auto rounded-2xl border border-gray-200 dark:border-white/10">
+                <table className="w-full text-left border-collapse text-xs">
+                  <thead>
+                    <tr className="bg-gray-50 dark:bg-white/5 border-b border-gray-200 dark:border-white/10 text-gray-500 dark:text-gray-400 font-bold uppercase text-[10px] tracking-wider">
+                      <th className="py-3 px-4">Campus / Zone Name</th>
+                      <th className="py-3 px-4">Assigned Members</th>
+                      <th className="py-3 px-4 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100 dark:divide-white/5">
+                    {filteredCampuses.map((campus) => (
+                      <tr key={campus.id} className="hover:bg-gray-50/50 dark:hover:bg-white/[0.02] transition-colors">
+                        <td className="py-3 px-4 font-semibold text-gray-900 dark:text-white">
+                          <div className="flex items-center gap-2">
+                            <MapPin className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                            <span>{campus.name}</span>
+                          </div>
+                        </td>
+                        <td className="py-3 px-4">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                            {campus.memberCount} {campus.memberCount === 1 ? "Member" : "Members"}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-right">
+                          <div className="inline-flex items-center gap-1.5">
+                            <button
+                              onClick={() => setEditingCampus({ id: campus.id, name: campus.name, oldName: campus.name })}
+                              className="p-1.5 rounded-lg text-gray-500 hover:text-blue-500 hover:bg-blue-500/10 transition-colors"
+                              title="Edit Campus Name"
+                            >
+                              <Edit3 className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteCampus(campus)}
+                              className="p-1.5 rounded-lg text-gray-500 hover:text-red-500 hover:bg-red-500/10 transition-colors"
+                              title="Delete Campus"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                    {filteredCampuses.length === 0 && (
+                      <tr>
+                        <td colSpan={3} className="py-8 text-center text-gray-400 text-xs">
+                          No campuses match your search. Click &ldquo;Add New Campus&rdquo; to create one.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* 4. LEADERSHIP POSITIONS MANAGER */}
+          {activeTab === "leadership" && isAdmin && (
+            <div className="space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <h2 className="text-xl font-extrabold text-gray-900 dark:text-white flex items-center gap-2">
+                    <Award className="text-emerald-500" /> Leadership Positions Manager
+                  </h2>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Manage all standardized and custom leadership roles. Any role added here is permanently selectable when promoting leaders.
+                  </p>
+                </div>
+
+                {!isAddingRole && !editingRole && (
+                  <Button
+                    onClick={() => setIsAddingRole(true)}
+                    className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs px-4 py-2 rounded-xl flex items-center gap-1.5 shadow-md shadow-emerald-600/20 shrink-0"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>Add New Position</span>
+                  </Button>
+                )}
+              </div>
+
+              {/* Add New Role Form */}
+              {isAddingRole && (
+                <form onSubmit={handleAddRole} className="p-4 sm:p-5 rounded-2xl bg-emerald-500/5 border border-emerald-500/20 space-y-3 animate-in fade-in duration-200">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
+                      <Plus className="w-3.5 h-3.5" /> Add New Leadership Role
+                    </h4>
+                    <button
+                      type="button"
+                      onClick={() => setIsAddingRole(false)}
+                      className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                  <div className="flex flex-col sm:flex-row gap-2.5">
+                    <input
+                      type="text"
+                      required
+                      value={newRoleTitle}
+                      onChange={(e) => setNewRoleTitle(e.target.value)}
+                      placeholder="e.g. Costume Director, Senior Choreographer, Logistics Head"
+                      className="flex-1 bg-white dark:bg-[#141920] border border-gray-200 dark:border-white/10 rounded-xl px-4 py-2 text-xs text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    />
+                    <div className="flex items-center gap-2">
+                      <Button
+                        type="submit"
+                        disabled={isRoleLoading}
+                        className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs px-4 py-2 rounded-xl"
+                      >
+                        {isRoleLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Save Position"}
+                      </Button>
+                      <button
+                        type="button"
+                        onClick={() => setIsAddingRole(false)}
+                        className="px-3 py-2 text-xs font-medium text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                </form>
+              )}
+
+              {/* Edit Role Form */}
+              {editingRole && (
+                <form onSubmit={handleUpdateRole} className="p-4 sm:p-5 rounded-2xl bg-blue-500/5 border border-blue-500/20 space-y-3 animate-in fade-in duration-200">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400 flex items-center gap-1.5">
+                      <Edit3 className="w-3.5 h-3.5" /> Edit Position Title: &ldquo;{editingRole.oldTitle}&rdquo;
+                    </h4>
+                    <button
+                      type="button"
+                      onClick={() => setEditingRole(null)}
+                      className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                  <p className="text-[11px] text-gray-500 dark:text-gray-400">
+                    Renaming this role will automatically update the official title on the profiles of all leaders currently assigned to it.
+                  </p>
+                  <div className="flex flex-col sm:flex-row gap-2.5">
+                    <input
+                      type="text"
+                      required
+                      value={editingRole.title}
+                      onChange={(e) => setEditingRole({ ...editingRole, title: e.target.value })}
+                      className="flex-1 bg-white dark:bg-[#141920] border border-gray-200 dark:border-white/10 rounded-xl px-4 py-2 text-xs text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    <div className="flex items-center gap-2">
+                      <Button
+                        type="submit"
+                        disabled={isRoleLoading}
+                        className="bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs px-4 py-2 rounded-xl"
+                      >
+                        {isRoleLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Update Title"}
+                      </Button>
+                      <button
+                        type="button"
+                        onClick={() => setEditingRole(null)}
+                        className="px-3 py-2 text-xs font-medium text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                </form>
+              )}
+
+              {/* Search filter for roles */}
+              <div className="relative">
+                <Search className="w-3.5 h-3.5 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  value={roleSearch}
+                  onChange={(e) => setRoleSearch(e.target.value)}
+                  placeholder="Search leadership positions..."
+                  className="w-full bg-gray-50 dark:bg-[#141920] border border-gray-200 dark:border-white/10 rounded-xl pl-9 pr-4 py-2 text-xs text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                />
+              </div>
+
+              {/* Roles List Table */}
+              <div className="overflow-x-auto rounded-2xl border border-gray-200 dark:border-white/10">
+                <table className="w-full text-left border-collapse text-xs">
+                  <thead>
+                    <tr className="bg-gray-50 dark:bg-white/5 border-b border-gray-200 dark:border-white/10 text-gray-500 dark:text-gray-400 font-bold uppercase text-[10px] tracking-wider">
+                      <th className="py-3 px-4">Position Title</th>
+                      <th className="py-3 px-4">Active Leaders Assigned</th>
+                      <th className="py-3 px-4 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100 dark:divide-white/5">
+                    {filteredRoles.map((r) => (
+                      <tr key={r.id} className="hover:bg-gray-50/50 dark:hover:bg-white/[0.02] transition-colors">
+                        <td className="py-3 px-4 font-semibold text-gray-900 dark:text-white">
+                          <div className="flex items-center gap-2">
+                            <Award className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                            <span>{r.title}</span>
+                          </div>
+                        </td>
+                        <td className="py-3 px-4">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20">
+                            {r.leaderCount} {r.leaderCount === 1 ? "Leader" : "Leaders"}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-right">
+                          <div className="inline-flex items-center gap-1.5">
+                            <button
+                              onClick={() => setEditingRole({ id: r.id, title: r.title, oldTitle: r.title })}
+                              className="p-1.5 rounded-lg text-gray-500 hover:text-blue-500 hover:bg-blue-500/10 transition-colors"
+                              title="Edit Position Title"
+                            >
+                              <Edit3 className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteRole(r)}
+                              className="p-1.5 rounded-lg text-gray-500 hover:text-red-500 hover:bg-red-500/10 transition-colors"
+                              title="Delete Position"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                    {filteredRoles.length === 0 && (
+                      <tr>
+                        <td colSpan={3} className="py-8 text-center text-gray-400 text-xs">
+                          No positions match your search. Click &ldquo;Add New Position&rdquo; to create one.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* 5. NOTIFICATIONS */}
           {activeTab === "notifications" && (
             <div className="space-y-6">
               <h2 className="text-xl font-extrabold text-gray-900 dark:text-white flex items-center gap-2">
-                <Bell className="text-emerald-500" /> Notifications & Sound
+                <Bell className="text-emerald-500" /> Notifications & Communication
               </h2>
-
-              <p className="text-sm font-light text-gray-500 dark:text-gray-400 leading-relaxed">
-                Control the channels through which you receive updates and alerts inside the Eden platform.
-              </p>
-
-              <div className="divide-y divide-gray-100 dark:divide-white/5">
-                <div className="py-4 flex items-center justify-between">
+              
+              <div className="space-y-4">
+                <div className="p-4 bg-gray-50/50 dark:bg-white/5 rounded-2xl border border-gray-200/50 dark:border-white/5 flex justify-between items-center">
                   <div>
-                    <h3 className="text-sm font-bold text-gray-950 dark:text-gray-50">Announcement Notifications</h3>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 font-light">Get alerted when admins post new messages.</p>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={announcementNotif}
-                    onChange={(e) => setAnnouncementNotif(e.target.checked)}
-                    className="w-10 h-5 rounded-full text-emerald-600 border-gray-300 focus:ring-emerald-500"
-                  />
-                </div>
-
-                <div className="py-4 flex items-center justify-between">
-                  <div>
-                    <h3 className="text-sm font-bold text-gray-950 dark:text-gray-50">Email Notifications</h3>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 font-light">Receive weekly reports and updates in your mailbox.</p>
+                    <h4 className="text-sm font-bold text-gray-800 dark:text-gray-200">Email Notifications</h4>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 font-light">Receive real-time alerts for faculty events and assignments.</p>
                   </div>
                   <input
                     type="checkbox"
                     checked={emailNotif}
                     onChange={(e) => setEmailNotif(e.target.checked)}
-                    className="w-10 h-5 rounded-full text-emerald-600 border-gray-300 focus:ring-emerald-500"
+                    className="w-5 h-5 accent-emerald-500 rounded"
                   />
                 </div>
 
-                <div className="py-4 flex items-center justify-between">
+                <div className="p-4 bg-gray-50/50 dark:bg-white/5 rounded-2xl border border-gray-200/50 dark:border-white/5 flex justify-between items-center">
                   <div>
-                    <h3 className="text-sm font-bold text-gray-950 dark:text-gray-50">Notification Sound</h3>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 font-light">
-                      Play a subtle, non-intrusive synthesized ping when a new notification arrives.
-                    </p>
+                    <h4 className="text-sm font-bold text-gray-800 dark:text-gray-200">Announcement Broadcasts</h4>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 font-light">Show popups for high-priority news sent by HQ leaders.</p>
                   </div>
-                  <div className="flex items-center space-x-4">
-                    <button
-                      onClick={testNotificationSound}
-                      className="px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10 hover:bg-emerald-500/10 hover:text-emerald-500 transition-colors flex items-center space-x-1.5 text-xs font-bold"
-                    >
-                      <Volume2 size={14} />
-                      <span>Test Sound</span>
-                    </button>
-                    <input
-                      type="checkbox"
-                      checked={soundNotif}
-                      onChange={(e) => setSoundNotif(e.target.checked)}
-                      className="w-10 h-5 rounded-full text-emerald-600 border-gray-300 focus:ring-emerald-500"
-                    />
-                  </div>
+                  <input
+                    type="checkbox"
+                    checked={announcementNotif}
+                    onChange={(e) => setAnnouncementNotif(e.target.checked)}
+                    className="w-5 h-5 accent-emerald-500 rounded"
+                  />
                 </div>
-              </div>
 
-              <div className="p-4 bg-emerald-500/5 border border-emerald-500/10 rounded-2xl flex gap-3 text-xs leading-relaxed text-gray-500 dark:text-gray-400">
-                <Sparkles size={16} className="text-emerald-500 shrink-0 mt-0.5" />
-                <div>
-                  <span className="font-semibold text-gray-700 dark:text-gray-200 block mb-0.5">Sound Best Practices</span>
-                  Browsers protect you from sudden autoplay sound. By clicking the "Test Sound" button, you authorize the browser to play subtle acoustic alerts when announcements appear.
+                <div className="p-4 bg-gray-50/50 dark:bg-white/5 rounded-2xl border border-gray-200/50 dark:border-white/5 flex justify-between items-center">
+                  <div>
+                    <h4 className="text-sm font-bold text-gray-800 dark:text-gray-200">System Sound Effects</h4>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 font-light">Play gentle chimes when actions succeed.</p>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={soundNotif}
+                    onChange={(e) => setSoundNotif(e.target.checked)}
+                    className="w-5 h-5 accent-emerald-500 rounded"
+                  />
                 </div>
               </div>
             </div>
           )}
 
-          {/* 4. APPEARANCE */}
+          {/* 6. APPEARANCE */}
           {activeTab === "appearance" && (
             <div className="space-y-6">
               <h2 className="text-xl font-extrabold text-gray-900 dark:text-white flex items-center gap-2">
-                <Moon className="text-emerald-500" /> Interface Styling
+                <Moon className="text-emerald-500" /> Interface Appearance
               </h2>
 
               <p className="text-sm font-light text-gray-500 dark:text-gray-400 leading-relaxed">
-                Personalize how the dashboard looks. Toggle between light mode, dark mode, or follow system default settings.
+                Choose your visual theme preference. The Eden UI dynamically adapts with glassmorphism in light and dark modes.
               </p>
 
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <button 
                   onClick={() => setTheme("light")}
-                  className="p-6 bg-white dark:bg-white/5 border border-emerald-500/20 rounded-2xl hover:border-emerald-500 flex flex-col items-center justify-center space-y-3 transition-all"
+                  className="p-6 bg-white dark:bg-white/5 border border-gray-200 dark:border-white/5 rounded-2xl hover:border-emerald-500 flex flex-col items-center justify-center space-y-3 transition-all"
                 >
                   <Sun className="w-6 h-6 text-amber-500" />
                   <span className="text-xs font-bold">Light</span>
@@ -516,7 +999,7 @@ export function SettingsClient({
                   onClick={() => setTheme("dark")}
                   className="p-6 bg-white dark:bg-white/5 border border-gray-200 dark:border-white/5 rounded-2xl hover:border-emerald-500 flex flex-col items-center justify-center space-y-3 transition-all"
                 >
-                  <Moon className="w-6 h-6 text-indigo-400" />
+                  <Moon className="w-6 h-6 text-emerald-500" />
                   <span className="text-xs font-bold">Dark</span>
                 </button>
                 <button 
@@ -530,7 +1013,7 @@ export function SettingsClient({
             </div>
           )}
 
-          {/* 5. SECURITY */}
+          {/* 7. SECURITY */}
           {activeTab === "security" && (
             <div className="space-y-6">
               <h2 className="text-xl font-extrabold text-gray-900 dark:text-white flex items-center gap-2">
@@ -565,7 +1048,7 @@ export function SettingsClient({
             </div>
           )}
 
-          {/* 6. ROLE & PERMISSION MANAGEMENT */}
+          {/* 8. ROLES & PERMISSIONS */}
           {activeTab === "roles" && isAdmin && (
             <div className="space-y-6">
               <h2 className="text-xl font-extrabold text-gray-900 dark:text-white flex items-center gap-2">
@@ -573,51 +1056,42 @@ export function SettingsClient({
               </h2>
 
               <p className="text-sm font-light text-gray-500 dark:text-gray-400 leading-relaxed mb-4">
-                Administrate user permissions. Change user roles between **Admin**, **Coordinator**, or **Student** instantly.
+                Administrate user permissions. Change user roles between <strong>Admin</strong>, <strong>Coordinator</strong>, or <strong>Student</strong> instantly.
               </p>
 
               {/* Members Table */}
               <div className="bg-gray-50/50 dark:bg-white/5 border border-gray-150 dark:border-white/5 rounded-2xl overflow-hidden shadow-sm">
-                <div className="p-4 bg-gray-100/50 dark:bg-white/[0.02] border-b border-gray-150 dark:border-white/5 grid grid-cols-12 text-xs font-bold text-gray-400 uppercase tracking-widest">
-                  <div className="col-span-6">Member Profile</div>
-                  <div className="col-span-6 text-right">Assigned Role</div>
-                </div>
-                
-                <div className="divide-y divide-gray-100 dark:divide-white/5">
+                <div className="divide-y divide-gray-150 dark:divide-white/5 max-h-[500px] overflow-y-auto">
                   {members.map((member) => (
-                    <div key={member.user_id} className="p-4 grid grid-cols-12 items-center gap-4 hover:bg-white/40 dark:hover:bg-white/[0.01] transition-colors">
-                      {/* Left side profile info */}
-                      <div className="col-span-6 flex items-center space-x-3 min-w-0">
-                        {member.user?.avatar_url ? (
-                          <img src={member.user.avatar_url} alt="" className="w-8 h-8 rounded-full border border-gray-200 dark:border-white/10" />
-                        ) : (
-                          <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-xs font-bold shadow-inner shrink-0">
-                            {member.user?.full_name?.charAt(0) || "U"}
-                          </div>
-                        )}
-                        <div className="min-w-0">
-                          <p className="text-xs font-bold text-gray-800 dark:text-gray-200 truncate">{member.user?.full_name || "Unknown User"}</p>
-                          <p className="text-[10px] text-gray-400 truncate">{member.user?.email || "No email"}</p>
+                    <div key={member.user_id} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-gray-100/50 dark:hover:bg-white/5 transition-all">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-emerald-500/10 text-emerald-500 font-bold flex items-center justify-center shrink-0 border border-emerald-500/20">
+                          {member.user?.full_name ? member.user.full_name[0].toUpperCase() : "U"}
+                        </div>
+                        <div>
+                          <p className="text-sm font-bold text-gray-900 dark:text-white">
+                            {member.user?.full_name || "Anonymous Member"}
+                          </p>
+                          <p className="text-xs text-gray-400 font-light truncate max-w-xs">{member.user?.email}</p>
                         </div>
                       </div>
 
-                      {/* Right side role assignment dropdown */}
-                      <div className="col-span-6 text-right">
+                      <div className="flex items-center gap-2">
                         <select
                           value={member.role}
                           onChange={(e) => handleRoleChange(member.user_id, e.target.value as any)}
                           className={cn(
-                            "px-3 py-1.5 rounded-xl text-xs font-bold border focus:outline-none transition-all cursor-pointer bg-white dark:bg-black",
-                            member.role === "ADMIN" && "border-rose-500/20 text-rose-500 bg-rose-500/5",
-                            member.role === "COORDINATOR" && "border-blue-500/20 text-blue-500 bg-blue-500/5",
-                            member.role === "STUDENT" && "border-emerald-500/20 text-emerald-500 bg-emerald-500/5"
+                            "px-3 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer outline-none",
+                            member.role === "ADMIN" 
+                              ? "bg-rose-500/10 border-rose-500/20 text-rose-500" 
+                              : member.role === "COORDINATOR" 
+                              ? "bg-amber-500/10 border-amber-500/20 text-amber-500" 
+                              : "bg-emerald-500/10 border-emerald-500/20 text-emerald-500"
                           )}
-                          disabled={member.user_id === currentUser.id} // Don't let users lock themselves out
-                          title={member.user_id === currentUser.id ? "Cannot change your own role" : ""}
                         >
-                          <option value="STUDENT">Student</option>
-                          <option value="COORDINATOR">Coordinator</option>
-                          <option value="ADMIN">Admin</option>
+                          <option value="STUDENT" className="bg-white dark:bg-[#111] text-gray-900 dark:text-white">Student</option>
+                          <option value="COORDINATOR" className="bg-white dark:bg-[#111] text-gray-900 dark:text-white">Coordinator</option>
+                          <option value="ADMIN" className="bg-white dark:bg-[#111] text-gray-900 dark:text-white">Admin</option>
                         </select>
                       </div>
                     </div>
@@ -627,15 +1101,15 @@ export function SettingsClient({
             </div>
           )}
 
-          {/* 7. ACCOUNT OPTIONS */}
+          {/* 9. ACCOUNT OPTIONS */}
           {activeTab === "account" && (
             <div className="space-y-6">
-              <h2 className="text-xl font-extrabold text-red-500 flex items-center gap-2">
-                <Trash2 className="text-red-500" /> Account Management
+              <h2 className="text-xl font-extrabold text-gray-900 dark:text-white flex items-center gap-2">
+                <Trash2 className="text-rose-500" /> Account Management
               </h2>
 
               <p className="text-sm font-light text-gray-500 dark:text-gray-400 leading-relaxed">
-                Danger Zone options. Perform tasks regarding your account lifecycle.
+                Options to export your profile archives or permanently remove your access keys.
               </p>
 
               <div className="space-y-4">

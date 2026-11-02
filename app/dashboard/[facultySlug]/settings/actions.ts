@@ -118,3 +118,45 @@ export async function updateUserRoleInFaculty(
 
   revalidatePath("/", "layout");
 }
+
+export async function manageCampusAction(data: {
+  action: "add" | "update" | "delete";
+  id?: string;
+  name?: string;
+  oldName?: string;
+}) {
+  const supabase = createClient();
+  const { data: res, error } = await supabase.rpc("admin_manage_campus", {
+    p_action: data.action,
+    p_id: data.id || null,
+    p_name: data.name || null,
+    p_old_name: data.oldName || null,
+  });
+
+  if (error) return { error: error.message };
+  if (!res?.success) return { error: res?.error || "Failed to manage campus" };
+
+  revalidatePath("/", "layout");
+  return { success: true, data: res };
+}
+
+export async function manageLeadershipRoleAction(data: {
+  action: "add" | "update" | "delete";
+  id?: string;
+  title?: string;
+  oldTitle?: string;
+}) {
+  const supabase = createClient();
+  const { data: res, error } = await supabase.rpc("admin_manage_leadership_role", {
+    p_action: data.action,
+    p_id: data.id || null,
+    p_title: data.title || null,
+    p_old_title: data.oldTitle || null,
+  });
+
+  if (error) return { error: error.message };
+  if (!res?.success) return { error: res?.error || "Failed to manage leadership role" };
+
+  revalidatePath("/", "layout");
+  return { success: true, data: res };
+}

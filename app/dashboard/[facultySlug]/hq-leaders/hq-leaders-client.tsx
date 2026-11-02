@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { parseCampuses } from "@/lib/campuses";
-import { LEADERSHIP_ROLES } from "@/lib/leadership-roles";
+import { LEADERSHIP_ROLES, getActiveLeadershipRoles } from "@/lib/leadership-roles";
+import { TablePagination } from "@/components/ui/table-pagination";
 import { createClient } from "@/services/supabase/client";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -52,6 +53,19 @@ export function HQLeadersClient({ leaders, potentialLeaders, viewerRole, faculty
 
   // Search State for Leaders Directory
   const [search, setSearch] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(12);
+
+  // Dynamic Leadership Roles
+  const [roleOptions, setRoleOptions] = useState<string[]>([...LEADERSHIP_ROLES]);
+
+  useEffect(() => {
+    getActiveLeadershipRoles().then(roles => {
+      if (roles && roles.length > 0) {
+        setRoleOptions(roles);
+      }
+    });
+  }, []);
 
   // Assign Leader Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -102,11 +116,18 @@ export function HQLeadersClient({ leaders, potentialLeaders, viewerRole, faculty
     );
   }, [leaders, search]);
 
+  // Pagination Calculations
+  const totalPages = Math.max(1, Math.ceil(filteredLeaders.length / itemsPerPage));
+  const validPage = Math.min(currentPage, totalPages);
+  const startIndex = (validPage - 1) * itemsPerPage;
+  const endIndex = Math.min(startIndex + itemsPerPage, filteredLeaders.length);
+  const paginatedLeaders = filteredLeaders.slice(startIndex, endIndex);
+
   // Open modal pre-filled to edit an existing leader
   const handleEditLeader = (leader: FacultyLeader) => {
     setSelectedUserId(leader.id);
     const role = leader.profile?.leadershipRole || "";
-    if ((LEADERSHIP_ROLES as readonly string[]).includes(role)) {
+    if (roleOptions.includes(role)) {
       setSelectedRoleOption(role);
       setIsCustomRole(false);
       setCustomRoleText("");
@@ -170,6 +191,19 @@ export function HQLeadersClient({ leaders, potentialLeaders, viewerRole, faculty
 
       if (profileError) throw profileError;
 
+      // If it was a custom role, persist to leadership_roles table so it is selectable forever!
+      if (isCustomRole && finalRole) {
+        try {
+          await supabase.rpc("admin_manage_leadership_role", {
+            p_action: "add",
+            p_title: finalRole,
+          });
+          setRoleOptions(prev => prev.includes(finalRole) ? prev : [...prev, finalRole].sort());
+        } catch (e) {
+          // Non-blocking
+        }
+      }
+
       setMessage({ type: "success", text: "Leader assigned successfully!" });
       setTimeout(() => {
         setIsModalOpen(false);
@@ -203,7 +237,7 @@ export function HQLeadersClient({ leaders, potentialLeaders, viewerRole, faculty
   };
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-700 slide-in-from-bottom-4">
+    <div className="space-y-8 animate-in fade-in duration-700 slide-in-from-bottom-4 pb-40 lg:pb-16">
       
       {/* Inspirational Banner */}
       <div className="relative rounded-3xl p-8 md:p-12 overflow-hidden shadow-xl border border-black/5 dark:border-white/5 bg-gradient-to-br from-emerald-600/95 to-teal-900 backdrop-blur-xl">
@@ -243,7 +277,10 @@ export function HQLeadersClient({ leaders, potentialLeaders, viewerRole, faculty
           <input
             type="text"
             value={search}
-            onChange={e => setSearch(e.target.value)}
+            onChange={e => {
+              setSearch(e.target.value);
+              setCurrentPage(1);
+            }}
             placeholder="Search leaders by name, position, campus..."
             className="w-full bg-white dark:bg-[#030303] border border-gray-200 dark:border-white/10 rounded-2xl pl-11 pr-4 py-3 text-sm focus:ring-2 focus:ring-emerald-500/50 outline-none transition-all text-gray-900 dark:text-white"
           />
@@ -263,8 +300,9 @@ export function HQLeadersClient({ leaders, potentialLeaders, viewerRole, faculty
           </p>
         </div>
       ) : (
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredLeaders.map(leader => {
+        <div className="space-y-6">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {paginatedLeaders.map(leader => {
             return (
               <a
                 key={leader.id}
@@ -358,6 +396,23 @@ export function HQLeadersClient({ leaders, potentialLeaders, viewerRole, faculty
             );
           })}
         </div>
+
+        {/* Leaders Pagination */}
+        {filteredLeaders.length > 0 && (
+          <TablePagination
+            currentPage={validPage}
+            totalItems={filteredLeaders.length}
+            itemsPerPage={itemsPerPage}
+            onPageChange={(page) => setCurrentPage(page)}
+            onItemsPerPageChange={(size) => {
+              setItemsPerPage(size);
+              setCurrentPage(1);
+            }}
+            pageSizeOptions={[12, 24, 48, 96]}
+            itemLabel="leaders"
+          />
+        )}
+      </div>
       )}
 
       {/* Promotion/Assignment Modal */}
@@ -560,10 +615,10 @@ export function HQLeadersClient({ leaders, potentialLeaders, viewerRole, faculty
                     className="w-full bg-white dark:bg-black border border-gray-200 dark:border-white/10 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500/50 outline-none text-gray-900 dark:text-white"
                   >
                     <option value="">Select a position...</option>
-                    {LEADERSHIP_ROLES.map(r => (
+                    {roleOptions.map(r => (
                       <option key={r} value={r}>{r}</option>
                     ))}
-                    <option value="CUSTOM">Custom Position (Scalable)</option>
+                    <option value="CUSTOM">Custom Position (Add / Assign New)</option>
                   </select>
                 </div>
 

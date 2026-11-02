@@ -5,8 +5,8 @@ import { createClient } from "@/services/supabase/client";
 import confetti from "canvas-confetti";
 import { useRouter } from "next/navigation";
 import { VerifiedBadge } from "@/components/ui/verified-badge";
-import { CAMPUSES, parseCampuses, formatCampusesForDb } from "@/lib/campuses";
-import { LEADERSHIP_ROLES } from "@/lib/leadership-roles";
+import { CAMPUSES, getActiveCampuses, parseCampuses, formatCampusesForDb } from "@/lib/campuses";
+import { LEADERSHIP_ROLES, getActiveLeadershipRoles } from "@/lib/leadership-roles";
 import { cn } from "@/lib/utils";
 import { compressImage } from "@/lib/image-compress";
 import { saveProfileAction } from "@/app/dashboard/[facultySlug]/profile/actions";
@@ -64,6 +64,19 @@ export function ProfileContainer({ userId, userEmail, initialProfile, initialFul
   });
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [completedTour, setCompletedTour] = useState(false);
+
+  const [campusList, setCampusList] = useState<string[]>([...CAMPUSES]);
+  const [roleOptions, setRoleOptions] = useState<string[]>([...LEADERSHIP_ROLES]);
+
+  useEffect(() => {
+    getActiveCampuses().then(c => {
+      if (c && c.length > 0) setCampusList(c);
+    });
+    getActiveLeadershipRoles().then(r => {
+      if (r && r.length > 0) setRoleOptions(r);
+    });
+  }, []);
+
   const [isCustomRole, setIsCustomRole] = useState(() => {
     const roleVal = initialProfile?.leadership_role || "";
     if (roleVal === "") return false;
@@ -478,7 +491,7 @@ export function ProfileContainer({ userId, userEmail, initialProfile, initialFul
                       onClick={() => setDropdownOpen(false)}
                     />
                     <div className="absolute z-20 w-full mt-1.5 bg-white dark:bg-[#0a0a0a] border border-gray-200 dark:border-white/10 rounded-2xl shadow-xl max-h-60 overflow-y-auto p-2 flex flex-col gap-1 animate-in fade-in slide-in-from-top-2 duration-200">
-                      {CAMPUSES.map((c) => {
+                      {campusList.map((c) => {
                         const isSelected = selectedCampuses.includes(c);
                         return (
                           <div 
@@ -555,7 +568,7 @@ export function ProfileContainer({ userId, userEmail, initialProfile, initialFul
                       className="w-full bg-white dark:bg-[#0a0a0a] border border-gray-200 dark:border-white/10 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500/50 outline-none transition-all text-gray-900 dark:text-white"
                     >
                       <option value="">No HQ Leadership Position</option>
-                      {LEADERSHIP_ROLES.map((r) => (
+                      {roleOptions.map((r) => (
                         <option key={r} value={r}>
                           {r}
                         </option>

@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { parseCampuses } from "@/lib/campuses";
-import { LEADERSHIP_ROLES } from "@/lib/leadership-roles";
+import { LEADERSHIP_ROLES, getActiveLeadershipRoles } from "@/lib/leadership-roles";
 import { createClient } from "@/services/supabase/client";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -63,6 +63,16 @@ export function LeaderProfileClient({ leader, viewerRole, facultySlug, facultyId
   const [phone, setPhone] = useState(leader.profile.phone);
   const [kingschatUsername, setKingschatUsername] = useState(leader.profile.kingschatUsername);
   const [bio, setBio] = useState(leader.profile.bio);
+
+  const [roleOptions, setRoleOptions] = useState<string[]>([...LEADERSHIP_ROLES]);
+
+  useEffect(() => {
+    getActiveLeadershipRoles().then(roles => {
+      if (roles && roles.length > 0) {
+        setRoleOptions(roles);
+      }
+    });
+  }, []);
   
   const [selectedRoleOption, setSelectedRoleOption] = useState(() => {
     return LEADERSHIP_ROLES.includes(leader.profile.leadershipRole as any) ? leader.profile.leadershipRole : "CUSTOM";
@@ -163,6 +173,19 @@ export function LeaderProfileClient({ leader, viewerRole, facultySlug, facultyId
         .eq("id", leader.id);
 
       if (profileError) throw profileError;
+
+      // If it was a custom role, persist to leadership_roles table
+      if (isCustomRole && finalRole) {
+        try {
+          await supabase.rpc("admin_manage_leadership_role", {
+            p_action: "add",
+            p_title: finalRole,
+          });
+          setRoleOptions(prev => prev.includes(finalRole) ? prev : [...prev, finalRole].sort());
+        } catch (e) {
+          // Non-blocking
+        }
+      }
 
       setMessage({ type: "success", text: "Leadership profile updated successfully!" });
       setTimeout(() => {
@@ -446,10 +469,10 @@ export function LeaderProfileClient({ leader, viewerRole, facultySlug, facultyId
                 }}
                 className="w-full bg-white dark:bg-black border border-gray-200/50 dark:border-white/10 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500/50 outline-none text-gray-900 dark:text-white"
               >
-                {LEADERSHIP_ROLES.map(r => (
+                {roleOptions.map(r => (
                   <option key={r} value={r}>{r}</option>
                 ))}
-                <option value="CUSTOM">Custom Position (Scalable)</option>
+                <option value="CUSTOM">Custom Position (Add / Assign New)</option>
               </select>
             </div>
 

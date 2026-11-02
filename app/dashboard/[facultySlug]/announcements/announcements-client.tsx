@@ -6,7 +6,7 @@ import { Plus, X, Megaphone, Trash2, Calendar, Clock, AlertTriangle, MessageSqua
 import { createAnnouncement, deleteAnnouncement, updateAnnouncement } from "./actions";
 import { format, formatDistanceToNow, isAfter } from "date-fns";
 import { cn } from "@/lib/utils";
-import { CAMPUSES } from "@/lib/campuses";
+import { CAMPUSES, getActiveCampuses } from "@/lib/campuses";
 
 interface Announcement {
   id: string;
@@ -54,6 +54,13 @@ export function AnnouncementsClient({ initialAnnouncements, facultyId, facultySl
   const [campusTargetingType, setCampusTargetingType] = useState<"ALL" | "SPECIFIC">("ALL");
   const [selectedTargetCampuses, setSelectedTargetCampuses] = useState<string[]>([]);
   const [targetDropdownOpen, setTargetDropdownOpen] = useState(false);
+  const [campusList, setCampusList] = useState<string[]>([...CAMPUSES]);
+
+  useEffect(() => {
+    getActiveCampuses().then(c => {
+      if (c && c.length > 0) setCampusList(c);
+    });
+  }, []);
 
   const canManage = role === "ADMIN";
 
@@ -443,7 +450,7 @@ export function AnnouncementsClient({ initialAnnouncements, facultyId, facultySl
                               onClick={() => setTargetDropdownOpen(false)}
                             />
                             <div className="absolute z-20 w-full mt-1 bg-white dark:bg-[#0c0c0c] border border-gray-200 dark:border-white/5 rounded-2xl shadow-xl max-h-40 overflow-y-auto p-2 flex flex-col gap-1 animate-in fade-in slide-in-from-top-1 duration-200">
-                              {CAMPUSES.map((c) => {
+                              {campusList.map((c) => {
                                 const isSelected = selectedTargetCampuses.includes(c);
                                 return (
                                   <div 

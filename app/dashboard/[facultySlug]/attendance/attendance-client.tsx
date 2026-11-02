@@ -5,6 +5,7 @@ import { parseCampuses } from "@/lib/campuses";
 import { cn, formatBirthday, formatPhoneNumber } from "@/lib/utils";
 import { exportToCsv } from "@/lib/export-csv";
 import { exportToRealExcel } from "@/lib/export-excel";
+import { TablePagination } from "@/components/ui/table-pagination";
 
 interface MemberProfile {
   phone: string;
@@ -266,7 +267,7 @@ export function AttendanceClient({ initialMembers, viewerRole, facultySlug }: At
   };
 
   return (
-    <div className="space-y-6 pb-24">
+    <div className="space-y-6 pb-40 lg:pb-16">
       {/* 1. Control Panel: Search & Filters (Glassmorphic) */}
       <div className="bg-white/60 dark:bg-[#0a0a0a]/60 backdrop-blur-xl border border-gray-200/50 dark:border-white/5 rounded-3xl p-6 shadow-sm space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -566,46 +567,18 @@ export function AttendanceClient({ initialMembers, viewerRole, facultySlug }: At
 
       {/* 3. Flat View Pagination Controls (Only flat view) */}
       {viewMode === "flat" && totalItems > 0 && (
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-4 py-2 bg-white/40 dark:bg-black/20 backdrop-blur-md rounded-2xl border border-gray-200/30 dark:border-white/5 sm:pr-28">
-          <div className="text-xs text-gray-600 dark:text-gray-400 font-medium">
-            Showing <span className="font-bold text-gray-800 dark:text-gray-200">{Math.min((currentPage - 1) * itemsPerPage + 1, totalItems)}</span> to{" "}
-            <span className="font-bold text-gray-800 dark:text-gray-200">{Math.min(currentPage * itemsPerPage, totalItems)}</span> of{" "}
-            <span className="font-bold text-gray-800 dark:text-gray-200">{totalItems}</span> members
-          </div>
-          
-          <div className="flex items-center gap-1.5">
-            <button
-              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-              disabled={currentPage === 1}
-              className="p-2 border border-gray-200/40 dark:border-white/5 hover:bg-gray-50 dark:hover:bg-white/5 rounded-xl disabled:opacity-30 disabled:hover:bg-transparent text-gray-600 dark:text-gray-400 transition-colors"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-            </button>
-            
-            {Array.from({ length: totalPages }).map((_, idx) => (
-              <button
-                key={idx}
-                onClick={() => setCurrentPage(idx + 1)}
-                className={cn(
-                  "w-8 h-8 font-bold text-xs rounded-xl border transition-all",
-                  currentPage === idx + 1
-                    ? "bg-emerald-500 border-emerald-500 text-white shadow-sm shadow-emerald-500/10"
-                    : "border-gray-200/40 dark:border-white/5 text-gray-700 hover:bg-gray-50 dark:text-gray-450 dark:hover:bg-white/5"
-                )}
-              >
-                {idx + 1}
-              </button>
-            ))}
-            
-            <button
-              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-              disabled={currentPage === totalPages}
-              className="p-2 border border-gray-200/40 dark:border-white/5 hover:bg-gray-50 dark:hover:bg-white/5 rounded-xl disabled:opacity-30 disabled:hover:bg-transparent text-gray-600 dark:text-gray-400 transition-colors"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-            </button>
-          </div>
-        </div>
+        <TablePagination
+          currentPage={currentPage}
+          totalItems={totalItems}
+          itemsPerPage={itemsPerPage}
+          onPageChange={(p) => setCurrentPage(p)}
+          onItemsPerPageChange={(size) => {
+            setItemsPerPage(size);
+            setCurrentPage(1);
+          }}
+          pageSizeOptions={[15, 25, 50, 100]}
+          itemLabel="members"
+        />
       )}
     </div>
   );

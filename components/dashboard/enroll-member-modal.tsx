@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { X, Sparkles, User, MapPin, Phone, Shirt, CheckCircle2, Loader2, Award, Camera, UploadCloud } from "lucide-react";
+import { X, Sparkles, User, MapPin, Phone, Shirt, CheckCircle2, Loader2, Award, Camera, Image as ImageIcon, Trash2 } from "lucide-react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import { CAMPUSES } from "@/lib/campuses";
+import { CAMPUSES, getActiveCampuses } from "@/lib/campuses";
 import { enrollMemberByCoordinator } from "@/app/dashboard/[facultySlug]/costumes/actions";
 import { IdCardModal } from "./id-card-modal";
 import { compressImage } from "@/lib/image-compress";
@@ -19,6 +19,8 @@ interface EnrollMemberModalProps {
   onSuccess?: (createdMember: any) => void;
 }
 
+const DRAFT_STORAGE_KEY = "eden_assisted_enroll_draft";
+
 export function EnrollMemberModal({
   isOpen,
   onClose,
@@ -26,6 +28,7 @@ export function EnrollMemberModal({
   eventId,
   onSuccess,
 }: EnrollMemberModalProps) {
+  const [campusList, setCampusList] = useState<string[]>([...CAMPUSES]);
   const [fullName, setFullName] = useState("");
   const [campusZone, setCampusZone] = useState<string>(CAMPUSES[0]);
   const [phone, setPhone] = useState("");
@@ -35,7 +38,10 @@ export function EnrollMemberModal({
   const [topSize, setTopSize] = useState("Medium");
   const [avatarUrl, setAvatarUrl] = useState("");
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // File Inputs
+  const galleryInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -43,6 +49,66 @@ export function EnrollMemberModal({
   // Success ID Card view
   const [createdMember, setCreatedMember] = useState<any>(null);
   const [showIdCard, setShowIdCard] = useState(false);
+
+  // Load dynamic campuses
+  useEffect(() => {
+    getActiveCampuses().then((campuses) => {
+      if (campuses && campuses.length > 0) {
+        setCampusList(campuses);
+      }
+    });
+  }, []);
+
+  // Restore draft if available
+  useEffect(() => {
+    if (typeof window === "undefined" || !isOpen) return;
+    try {
+      const saved = sessionStorage.getItem(DRAFT_STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.fullName) setFullName(parsed.fullName);
+        if (parsed.campusZone) setCampusZone(parsed.campusZone);
+        if (parsed.phone) setPhone(parsed.phone);
+        if (parsed.gender) setGender(parsed.gender);
+        if (parsed.shoeSize) setShoeSize(parsed.shoeSize);
+        if (parsed.trouserSize) setTrouserSize(parsed.trouserSize);
+        if (parsed.topSize) setTopSize(parsed.topSize);
+        if (parsed.avatarUrl) setAvatarUrl(parsed.avatarUrl);
+      }
+    } catch (e) {
+      // Ignore sessionStorage parsing errors
+    }
+  }, [isOpen]);
+
+  // Persist draft on changes
+  useEffect(() => {
+    if (typeof window === "undefined" || !isOpen) return;
+    try {
+      if (fullName || phone || shoeSize || trouserSize || avatarUrl) {
+        sessionStorage.setItem(
+          DRAFT_STORAGE_KEY,
+          JSON.stringify({
+            fullName,
+            campusZone,
+            phone,
+            gender,
+            shoeSize,
+            trouserSize,
+            topSize,
+            avatarUrl,
+          })
+        );
+      }
+    } catch (e) {
+      // Ignore quota errors
+    }
+  }, [fullName, campusZone, phone, gender, shoeSize, trouserSize, topSize, avatarUrl, isOpen]);
+
+  const clearDraft = () => {
+    try {
+      sessionStorage.removeItem(DRAFT_STORAGE_KEY);
+    } catch (e) {}
+  };
 
   if (!isOpen) return null;
 
@@ -78,6 +144,8 @@ export function EnrollMemberModal({
       setError("Failed to upload photo. You can still enroll and add it later.");
     } finally {
       setUploadingPhoto(false);
+      // Reset input value so same file can be re-selected if desired
+      if (e.target) e.target.value = "";
     }
   };
 
@@ -112,6 +180,7 @@ export function EnrollMemberModal({
     }
 
     if (res.success && res.member) {
+      clearDraft();
       setCreatedMember(res.member);
       setShowIdCard(true);
       if (onSuccess) {
@@ -122,6 +191,12 @@ export function EnrollMemberModal({
 
   const handleIdCardClose = () => {
     setShowIdCard(false);
+    clearDraft();
+    onClose();
+  };
+
+  const handleModalClose = () => {
+    clearDraft();
     onClose();
   };
 
@@ -149,7 +224,7 @@ export function EnrollMemberModal({
       <div className="relative w-full max-w-lg bg-[#0e1216] border border-white/10 rounded-3xl p-5 sm:p-8 shadow-2xl text-white my-auto max-h-[90vh] overflow-y-auto pb-10">
         {/* Close Button */}
         <button
-          onClick={onClose}
+          onClick={handleModalClose}
           className="absolute top-4 right-4 p-2 rounded-full bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-all"
         >
           <X className="w-5 h-5" />
@@ -161,10 +236,10 @@ export function EnrollMemberModal({
             <Sparkles className="w-3.5 h-3.5" />
             <span>Assisted Enrollment</span>
           </div>
-          <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-white">
-            Enroll Member {eventId ? "& Register for Event" : ""}
+          <h2 className="text-xl sm:text-2xl font-black tracking-tight">
+            Enroll Member
           </h2>
-          <p className="text-xs text-gray-400 mt-1">
+          <p className="text-gray-400 text-xs mt-1 leading-relaxed">
             Official registration for dancers without smartphones. Generates an official Member ID and ID Card.
           </p>
         </div>
@@ -177,34 +252,44 @@ export function EnrollMemberModal({
 
         <form onSubmit={handleSubmit} className="space-y-4 text-xs">
           {/* Member Photo Picker */}
-          <div className="bg-[#141920] border border-white/10 rounded-2xl p-3.5 flex items-center gap-4">
-            <div className="relative w-16 h-16 sm:w-18 sm:h-18 rounded-2xl overflow-hidden border-2 border-emerald-500/40 bg-[#1b222c] flex items-center justify-center shrink-0">
+          <div className="bg-[#141920] border border-white/10 rounded-2xl p-3.5 flex flex-col sm:flex-row items-center gap-4">
+            <div className="relative w-20 h-20 rounded-2xl overflow-hidden border-2 border-emerald-500/40 bg-[#1b222c] flex items-center justify-center shrink-0 shadow-inner">
               {avatarUrl ? (
                 <Image
                   src={avatarUrl}
                   alt="Member Preview"
-                  width={72}
-                  height={72}
+                  width={80}
+                  height={80}
                   unoptimized
                   className="w-full h-full object-cover"
                 />
               ) : uploadingPhoto ? (
-                <Loader2 className="w-6 h-6 animate-spin text-emerald-400" />
+                <Loader2 className="w-7 h-7 animate-spin text-emerald-400" />
               ) : (
-                <Camera className="w-6 h-6 text-gray-500" />
+                <Camera className="w-7 h-7 text-gray-500" />
               )}
             </div>
 
-            <div className="flex-1">
+            <div className="flex-1 w-full text-center sm:text-left">
               <label className="text-xs font-bold text-white block mb-0.5">
                 Member ID Photo (Optional)
               </label>
-              <p className="text-[11px] text-gray-400 mb-2">
-                Upload or snap a clear headshot for their official ID badge.
+              <p className="text-[11px] text-gray-400 mb-2.5">
+                Choose from gallery or snap a photo for their official ID card.
               </p>
 
+              {/* Hidden file inputs */}
+              {/* 1. Gallery input: NO capture attribute ensures gallery picker opens */}
               <input
-                ref={fileInputRef}
+                ref={galleryInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handlePhotoUpload}
+                className="hidden"
+              />
+              {/* 2. Camera input: with capture attribute for snapping immediately */}
+              <input
+                ref={cameraInputRef}
                 type="file"
                 accept="image/*"
                 capture="environment"
@@ -212,29 +297,47 @@ export function EnrollMemberModal({
                 className="hidden"
               />
 
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={uploadingPhoto}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-300 font-bold text-[11px] transition-all"
-              >
+              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
                 {uploadingPhoto ? (
-                  <>
-                    <Loader2 className="w-3 h-3 animate-spin" />
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 text-emerald-300 font-bold text-[11px]">
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
                     <span>Uploading...</span>
-                  </>
-                ) : avatarUrl ? (
-                  <>
-                    <CheckCircle2 className="w-3 h-3 text-emerald-400" />
-                    <span>Change Photo</span>
-                  </>
+                  </span>
                 ) : (
                   <>
-                    <Camera className="w-3 h-3" />
-                    <span>Take or Upload Photo</span>
+                    <button
+                      type="button"
+                      onClick={() => galleryInputRef.current?.click()}
+                      disabled={uploadingPhoto}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-300 font-bold text-[11px] transition-all"
+                    >
+                      <ImageIcon className="w-3.5 h-3.5" />
+                      <span>{avatarUrl ? "Replace from Gallery" : "Choose from Gallery"}</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => cameraInputRef.current?.click()}
+                      disabled={uploadingPhoto}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/15 border border-white/10 text-gray-200 font-bold text-[11px] transition-all"
+                    >
+                      <Camera className="w-3.5 h-3.5" />
+                      <span>Take Photo</span>
+                    </button>
+
+                    {avatarUrl && (
+                      <button
+                        type="button"
+                        onClick={() => setAvatarUrl("")}
+                        className="inline-flex items-center p-1.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 transition-all"
+                        title="Remove photo"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
                   </>
                 )}
-              </button>
+              </div>
             </div>
           </div>
 
@@ -263,7 +366,7 @@ export function EnrollMemberModal({
               onChange={(e) => setCampusZone(e.target.value)}
               className="w-full bg-[#161c24] border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
             >
-              {CAMPUSES.map((c) => (
+              {campusList.map((c) => (
                 <option key={c} value={c} className="bg-[#161c24] text-white">
                   {c}
                 </option>
@@ -318,7 +421,7 @@ export function EnrollMemberModal({
                   value={shoeSize}
                   onChange={(e) => setShoeSize(e.target.value)}
                   placeholder="e.g. 39, 42"
-                  className="w-full bg-[#161c24] border border-white/10 rounded-xl px-3 py-2 text-xs text-white placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                  className="w-full bg-[#161c24] border border-white/10 rounded-xl px-3 py-2 text-xs text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 />
               </div>
 
@@ -331,7 +434,7 @@ export function EnrollMemberModal({
                   value={trouserSize}
                   onChange={(e) => setTrouserSize(e.target.value)}
                   placeholder="e.g. 30, M"
-                  className="w-full bg-[#161c24] border border-white/10 rounded-xl px-3 py-2 text-xs text-white placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                  className="w-full bg-[#161c24] border border-white/10 rounded-xl px-3 py-2 text-xs text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 />
               </div>
 
@@ -342,29 +445,39 @@ export function EnrollMemberModal({
                 <select
                   value={topSize}
                   onChange={(e) => setTopSize(e.target.value)}
-                  className="w-full bg-[#161c24] border border-white/10 rounded-xl px-2 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                  className="w-full bg-[#161c24] border border-white/10 rounded-xl px-2 py-2 text-xs text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 >
+                  <option value="Extra Small">Extra Small</option>
                   <option value="Small">Small</option>
                   <option value="Medium">Medium</option>
                   <option value="Large">Large</option>
                   <option value="XL">XL</option>
                   <option value="XXL">XXL</option>
+                  <option value="3XL">3XL</option>
                 </select>
               </div>
             </div>
           </div>
 
-          {/* Submit Buttons */}
-          <div className="pt-4 flex gap-3">
+          {/* Form Actions */}
+          <div className="pt-4 flex items-center justify-end gap-3">
+            <button
+              type="button"
+              onClick={handleModalClose}
+              disabled={loading}
+              className="px-5 py-2.5 rounded-xl border border-white/10 text-gray-300 hover:bg-white/5 font-semibold transition-all"
+            >
+              Cancel
+            </button>
             <Button
               type="submit"
-              disabled={loading}
-              className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded-xl shadow-lg shadow-emerald-600/20 text-xs flex items-center justify-center gap-2"
+              disabled={loading || uploadingPhoto}
+              className="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold transition-all flex items-center gap-2 shadow-lg shadow-emerald-600/30"
             >
               {loading ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Enrolling Member...</span>
+                  <span>Enrolling...</span>
                 </>
               ) : (
                 <>
@@ -372,14 +485,6 @@ export function EnrollMemberModal({
                   <span>Enroll & Generate ID Card</span>
                 </>
               )}
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onClose}
-              className="border-white/10 hover:bg-white/5 text-gray-300 rounded-xl text-xs px-4"
-            >
-              Cancel
             </Button>
           </div>
         </form>

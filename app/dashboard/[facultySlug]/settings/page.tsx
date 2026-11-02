@@ -8,7 +8,6 @@ export const metadata: Metadata = {
   title: "Settings",
 };
 
-
 export default async function SettingsPage({
   params,
 }: {
@@ -44,8 +43,8 @@ export default async function SettingsPage({
 
   if (!faculty) redirect("/dashboard");
 
-  // Step 2: Fetch viewer's role and all faculty members in parallel
-  const [accessRes, membersRes] = await Promise.all([
+  // Step 2: Fetch viewer's role and faculty members in parallel
+  const [accessRes, membersRes, campusesRes, rolesRes, profilesDataRes] = await Promise.all([
     supabase
       .from("user_faculties")
       .select("role")
@@ -63,7 +62,18 @@ export default async function SettingsPage({
           email
         )
       `)
-      .eq("faculty_id", faculty.id)
+      .eq("faculty_id", faculty.id),
+    supabase
+      .from("campuses")
+      .select("id, name, is_active, created_at")
+      .order("name", { ascending: true }),
+    supabase
+      .from("leadership_roles")
+      .select("id, title, is_active, created_at")
+      .order("title", { ascending: true }),
+    supabase
+      .from("profiles")
+      .select("campus_zone, leadership_role")
   ]);
 
   const facultyAccess = accessRes.data;
@@ -92,6 +102,37 @@ export default async function SettingsPage({
     };
   });
 
+  // Calculate member counts per campus and leadership role
+  const campusCounts: Record<string, number> = {};
+  const roleCounts: Record<string, number> = {};
+
+  (profilesDataRes.data || []).forEach((p: any) => {
+    if (p.campus_zone) {
+      parseCampuses(p.campus_zone).forEach((c: string) => {
+        campusCounts[c] = (campusCounts[c] || 0) + 1;
+      });
+    }
+    if (p.leadership_role) {
+      roleCounts[p.leadership_role] = (roleCounts[p.leadership_role] || 0) + 1;
+    }
+  });
+
+  const campuses = (campusesRes.data || []).map((c: any) => ({
+    id: c.id,
+    name: c.name,
+    isActive: c.is_active,
+    memberCount: campusCounts[c.name] || 0,
+    createdAt: c.created_at,
+  }));
+
+  const leadershipRoles = (rolesRes.data || []).map((r: any) => ({
+    id: r.id,
+    title: r.title,
+    isActive: r.is_active,
+    leaderCount: roleCounts[r.title] || 0,
+    createdAt: r.created_at,
+  }));
+
   return (
     <SettingsClient
       facultyId={faculty.id}
@@ -100,6 +141,8 @@ export default async function SettingsPage({
       role={facultyAccess.role}
       currentUser={currentUserData}
       members={members}
+      campuses={campuses}
+      leadershipRoles={leadershipRoles}
     />
   );
 }

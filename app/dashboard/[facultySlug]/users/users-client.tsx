@@ -194,7 +194,7 @@ export function UsersManagementClient({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-40 lg:pb-16">
       
       {/* Search and Filters Header */}
       <div className="bg-white/40 dark:bg-[#08080c]/40 backdrop-blur-3xl border border-gray-200/50 dark:border-white/5 rounded-3xl p-6 shadow-xl flex flex-col md:flex-row gap-4 items-center justify-between">

@@ -1,4 +1,4 @@
-export const CAMPUSES = [
+export const DEFAULT_CAMPUSES = [
   "Headquarters Dancers",
   "Lagos Zone 1",
   "Lagos Zone 2",
@@ -23,7 +23,33 @@ export const CAMPUSES = [
   "Abuja Zone"
 ] as const;
 
-export type Campus = typeof CAMPUSES[number];
+export const CAMPUSES = DEFAULT_CAMPUSES;
+export type Campus = typeof DEFAULT_CAMPUSES[number];
+
+/**
+ * Dynamically fetches active campuses from the database.
+ * Falls back to DEFAULT_CAMPUSES if unavailable.
+ */
+export async function getActiveCampuses(supabaseClient?: any): Promise<string[]> {
+  try {
+    if (!supabaseClient) {
+      const { createClient } = await import("@/services/supabase/client");
+      supabaseClient = createClient();
+    }
+    const { data, error } = await supabaseClient
+      .from("campuses")
+      .select("name")
+      .eq("is_active", true)
+      .order("name", { ascending: true });
+
+    if (!error && data && data.length > 0) {
+      return data.map((d: any) => d.name);
+    }
+  } catch (e) {
+    console.error("Error fetching dynamic campuses:", e);
+  }
+  return [...DEFAULT_CAMPUSES];
+}
 
 /**
  * Parsed campuses from the profile string (which can be a JSON array or a comma-separated string)

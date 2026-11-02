@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { completeOnboarding } from "@/app/onboarding/actions";
 import { Button } from "@/components/ui/button";
-import { CAMPUSES } from "@/lib/campuses";
+import { CAMPUSES, getActiveCampuses } from "@/lib/campuses";
 import { Sparkles, MapPin, User, Phone, CheckCircle2, ShieldCheck, ArrowRight } from "lucide-react";
 
 interface OnboardingProps {
@@ -18,10 +18,19 @@ export function FacultySelector({
   initialPhone = "",
 }: OnboardingProps) {
   const [fullName, setFullName] = useState(initialFullName);
+  const [campusList, setCampusList] = useState<string[]>([...CAMPUSES]);
   const [campusZone, setCampusZone] = useState(initialCampusZone || CAMPUSES[0]);
   const [phone, setPhone] = useState(initialPhone);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    getActiveCampuses().then(c => {
+      if (c && c.length > 0) {
+        setCampusList(c);
+      }
+    });
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -120,7 +129,7 @@ export function FacultySelector({
                 required
                 className="w-full px-4 py-3.5 rounded-2xl border border-gray-200 dark:border-white/10 bg-white/50 dark:bg-black/30 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500 transition-all appearance-none cursor-pointer"
               >
-                {CAMPUSES.map((campus) => (
+                {campusList.map((campus) => (
                   <option key={campus} value={campus} className="bg-white dark:bg-[#121212] text-gray-900 dark:text-gray-100">
                     {campus}
                   </option>

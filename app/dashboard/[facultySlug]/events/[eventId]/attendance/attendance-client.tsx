@@ -8,6 +8,7 @@ import { exportToCsv } from "@/lib/export-csv";
 import { exportToRealExcel } from "@/lib/export-excel";
 import { exportAttendanceToWord } from "@/lib/export-word";
 import { EnrollMemberModal } from "@/components/dashboard/enroll-member-modal";
+import { TablePagination } from "@/components/ui/table-pagination";
 import { FileText, UserPlus } from "lucide-react";
 import { createClient } from "@/services/supabase/client";
 
@@ -297,7 +298,7 @@ export function EventAttendanceClient({ event, initialAttendees, viewerRole, fac
   };
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500 pb-24">
+    <div className="space-y-8 animate-in fade-in duration-500 pb-40 lg:pb-16">
       {/* SECTION 1: Event Summary Banner & Analytics */}
       <div className="bg-gradient-to-br from-emerald-500/5 via-teal-500/5 to-transparent backdrop-blur-xl border border-emerald-500/10 dark:border-white/5 rounded-3xl p-6 md:p-8 shadow-sm flex flex-col md:flex-row items-start gap-6 relative overflow-hidden">
         {/* Glowing Decorative Backgrounds */}
@@ -646,39 +647,18 @@ export function EventAttendanceClient({ event, initialAttendees, viewerRole, fac
 
             {/* Pagination block */}
             {totalItems > 0 && (
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-6 py-4 bg-white/40 dark:bg-black/20 backdrop-blur-md border-t border-gray-200/50 dark:border-white/5 sm:pr-28">
-                <span className="text-xs text-gray-400 font-medium">
-                  Showing {Math.min((currentPage - 1) * itemsPerPage + 1, totalItems)} to {Math.min(currentPage * itemsPerPage, totalItems)} of {totalItems} attendees
-                </span>
-                <div className="flex items-center gap-1">
-                  <button
-                    onClick={() => setCurrentPage(p => Math.max(p - 1, 1))}
-                    disabled={currentPage === 1}
-                    className="p-1.5 border border-gray-200/50 dark:border-white/5 rounded-lg disabled:opacity-30"
-                  >
-                    ◀
-                  </button>
-                  {Array.from({ length: totalPages }).map((_, i) => (
-                    <button
-                      key={i}
-                      onClick={() => setCurrentPage(i + 1)}
-                      className={cn(
-                        "w-6 h-6 rounded-md text-xs font-bold",
-                        currentPage === i + 1 ? "bg-emerald-600 text-white" : "text-gray-500 hover:bg-gray-100 dark:hover:bg-white/5"
-                      )}
-                    >
-                      {i + 1}
-                    </button>
-                  ))}
-                  <button
-                    onClick={() => setCurrentPage(p => Math.min(p + 1, totalPages))}
-                    disabled={currentPage === totalPages}
-                    className="p-1.5 border border-gray-200/50 dark:border-white/5 rounded-lg disabled:opacity-30"
-                  >
-                    ▶
-                  </button>
-                </div>
-              </div>
+              <TablePagination
+                currentPage={currentPage}
+                totalItems={totalItems}
+                itemsPerPage={itemsPerPage}
+                onPageChange={(page) => setCurrentPage(page)}
+                onItemsPerPageChange={(size) => {
+                  setItemsPerPage(size);
+                  setCurrentPage(1);
+                }}
+                pageSizeOptions={[15, 25, 50, 100]}
+                itemLabel="attendees"
+              />
             )}
           </div>
         </div>

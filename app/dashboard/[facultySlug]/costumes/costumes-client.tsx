@@ -22,6 +22,7 @@ import { exportToRealExcel } from "@/lib/export-excel";
 import { exportToCsv } from "@/lib/export-csv";
 import { parseCampuses } from "@/lib/campuses";
 import { IdCardModal } from "@/components/dashboard/id-card-modal";
+import { TablePagination } from "@/components/ui/table-pagination";
 
 export interface CostumeMember {
   id: string;
@@ -64,6 +65,8 @@ export function CostumesClient({
   // Roster Filters
   const [searchTerm, setSearchTerm] = useState("");
   const [campusFilter, setCampusFilter] = useState("ALL");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(15);
 
   // ID Card Modal
   const [selectedMemberForId, setSelectedMemberForId] = useState<CostumeMember | null>(null);
@@ -116,6 +119,13 @@ export function CostumesClient({
     });
   }, [membersRoster, searchTerm, campusFilter]);
 
+  // Pagination Calculations
+  const totalPages = Math.max(1, Math.ceil(filteredMembers.length / itemsPerPage));
+  const validCurrentPage = Math.min(currentPage, totalPages);
+  const startIndex = (validCurrentPage - 1) * itemsPerPage;
+  const endIndex = Math.min(startIndex + itemsPerPage, filteredMembers.length);
+  const paginatedMembers = filteredMembers.slice(startIndex, endIndex);
+
   // Sizing Stats
   const stats = useMemo(() => {
     const total = membersRoster.length;
@@ -161,7 +171,7 @@ export function CostumesClient({
   };
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500 pb-16">
+    <div className="space-y-8 animate-in fade-in duration-500 pb-40 lg:pb-16">
       {/* Header Banner */}
       <div className="bg-gradient-to-br from-emerald-500/10 via-teal-500/5 to-transparent border border-emerald-500/20 dark:border-white/10 rounded-3xl p-6 sm:p-8 relative overflow-hidden backdrop-blur-xl">
         <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 blur-3xl pointer-events-none" />
@@ -323,7 +333,10 @@ export function CostumesClient({
                 <input
                   type="text"
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onChange={(e) => {
+                    setSearchTerm(e.target.value);
+                    setCurrentPage(1);
+                  }}
                   placeholder="Search by member name or ID..."
                   className="w-full bg-gray-50 dark:bg-[#141920] border border-gray-200 dark:border-white/10 rounded-xl pl-10 pr-4 py-2 text-xs text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 />
@@ -331,7 +344,10 @@ export function CostumesClient({
 
               <select
                 value={campusFilter}
-                onChange={(e) => setCampusFilter(e.target.value)}
+                onChange={(e) => {
+                  setCampusFilter(e.target.value);
+                  setCurrentPage(1);
+                }}
                 className="w-full bg-gray-50 dark:bg-[#141920] border border-gray-200 dark:border-white/10 rounded-xl px-3 py-2 text-xs text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
               >
                 <option value="ALL">All Campuses</option>
@@ -356,7 +372,7 @@ export function CostumesClient({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100 dark:divide-white/5">
-                  {filteredMembers.map((m) => (
+                  {paginatedMembers.map((m) => (
                     <tr key={m.id} className="hover:bg-gray-50/50 dark:hover:bg-white/[0.02] transition-colors">
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-2.5">
@@ -432,6 +448,23 @@ export function CostumesClient({
                 </tbody>
               </table>
             </div>
+
+            {/* Pagination */}
+            {filteredMembers.length > 0 && (
+              <TablePagination
+                currentPage={validCurrentPage}
+                totalItems={filteredMembers.length}
+                itemsPerPage={itemsPerPage}
+                onPageChange={(page) => setCurrentPage(page)}
+                onItemsPerPageChange={(size) => {
+                  setItemsPerPage(size);
+                  setCurrentPage(1);
+                }}
+                pageSizeOptions={[15, 25, 50, 100]}
+                itemLabel="members"
+                className="mt-4"
+              />
+            )}
           </div>
         </div>
       )}

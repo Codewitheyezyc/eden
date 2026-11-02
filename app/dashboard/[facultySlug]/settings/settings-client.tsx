@@ -388,7 +388,7 @@ export function SettingsClient({
   );
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500 pb-40 lg:pb-16 max-w-6xl mx-auto">
+    <div className="space-y-8 animate-in fade-in duration-500 pb-52 lg:pb-16 max-w-6xl mx-auto">
       {/* Settings Header */}
       <div>
         <h1 className="text-2xl md:text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight flex items-center gap-3">
@@ -425,7 +425,7 @@ export function SettingsClient({
         </div>
 
         {/* Tab Content Panes */}
-        <div className="md:col-span-3 bg-white/60 dark:bg-[#0a0a0a]/60 backdrop-blur-xl border border-gray-200/50 dark:border-white/5 p-6 md:p-8 rounded-3xl shadow-sm">
+        <div className="md:col-span-3 bg-white/60 dark:bg-[#0a0a0a]/60 backdrop-blur-xl border border-gray-200/50 dark:border-white/5 p-4 sm:p-6 md:p-8 rounded-3xl shadow-sm">
           
           {/* Notifications banner */}
           {saveSuccess && (
@@ -563,12 +563,13 @@ export function SettingsClient({
           {/* 3. CAMPUSES & ZONES MANAGER */}
           {activeTab === "campuses" && isAdmin && (
             <div className="space-y-6">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
-                  <h2 className="text-xl font-extrabold text-gray-900 dark:text-white flex items-center gap-2">
-                    <MapPin className="text-emerald-500" /> Campuses & Zones Manager
+                  <h2 className="text-lg sm:text-xl font-extrabold text-gray-900 dark:text-white flex items-center gap-2">
+                    <MapPin className="text-emerald-500 w-5 h-5 shrink-0" />
+                    <span>Campuses & Zones Manager</span>
                   </h2>
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs text-gray-500 mt-1 leading-relaxed">
                     Add new ministry campuses, rename existing zones, or remove obsolete locations. Updates reflect instantly across all registration forms.
                   </p>
                 </div>
@@ -576,7 +577,7 @@ export function SettingsClient({
                 {!isAddingCampus && !editingCampus && (
                   <Button
                     onClick={() => setIsAddingCampus(true)}
-                    className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs px-4 py-2 rounded-xl flex items-center gap-1.5 shadow-md shadow-emerald-600/20 shrink-0"
+                    className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs px-4 py-2.5 rounded-xl flex items-center gap-1.5 shadow-md shadow-emerald-600/20 shrink-0 self-start sm:self-auto"
                   >
                     <Plus className="w-4 h-4" />
                     <span>Add New Campus</span>
@@ -686,59 +687,54 @@ export function SettingsClient({
                 />
               </div>
 
-              {/* Campuses List Table */}
-              <div className="overflow-x-auto rounded-2xl border border-gray-200 dark:border-white/10">
-                <table className="w-full text-left border-collapse text-xs">
-                  <thead>
-                    <tr className="bg-gray-50 dark:bg-white/5 border-b border-gray-200 dark:border-white/10 text-gray-500 dark:text-gray-400 font-bold uppercase text-[10px] tracking-wider">
-                      <th className="py-3 px-4">Campus / Zone Name</th>
-                      <th className="py-3 px-4">Assigned Members</th>
-                      <th className="py-3 px-4 text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100 dark:divide-white/5">
-                    {filteredCampuses.map((campus) => (
-                      <tr key={campus.id} className="hover:bg-gray-50/50 dark:hover:bg-white/[0.02] transition-colors">
-                        <td className="py-3 px-4 font-semibold text-gray-900 dark:text-white">
-                          <div className="flex items-center gap-2">
-                            <MapPin className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                            <span>{campus.name}</span>
-                          </div>
-                        </td>
-                        <td className="py-3 px-4">
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                            {campus.memberCount} {campus.memberCount === 1 ? "Member" : "Members"}
-                          </span>
-                        </td>
-                        <td className="py-3 px-4 text-right">
-                          <div className="inline-flex items-center gap-1.5">
-                            <button
-                              onClick={() => setEditingCampus({ id: campus.id, name: campus.name, oldName: campus.name })}
-                              className="p-1.5 rounded-lg text-gray-500 hover:text-blue-500 hover:bg-blue-500/10 transition-colors"
-                              title="Edit Campus Name"
-                            >
-                              <Edit3 className="w-3.5 h-3.5" />
-                            </button>
-                            <button
-                              onClick={() => handleDeleteCampus(campus)}
-                              className="p-1.5 rounded-lg text-gray-500 hover:text-red-500 hover:bg-red-500/10 transition-colors"
-                              title="Delete Campus"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                    {filteredCampuses.length === 0 && (
-                      <tr>
-                        <td colSpan={3} className="py-8 text-center text-gray-400 text-xs">
-                          No campuses match your search. Click &ldquo;Add New Campus&rdquo; to create one.
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
+              {/* Campuses List (Responsive Card Rows) */}
+              <div className="space-y-2">
+                {filteredCampuses.map((campus) => (
+                  <div
+                    key={campus.id}
+                    className="flex items-center justify-between p-3 sm:p-4 rounded-2xl bg-gray-50/70 dark:bg-white/[0.02] hover:bg-gray-100/70 dark:hover:bg-white/[0.05] border border-gray-200/60 dark:border-white/5 transition-all gap-2.5 sm:gap-4"
+                  >
+                    {/* Left: MapPin Icon + Campus Name */}
+                    <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                      <div className="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                        <MapPin className="w-4 h-4" />
+                      </div>
+                      <span className="font-bold text-xs sm:text-sm text-gray-900 dark:text-white truncate">
+                        {campus.name}
+                      </span>
+                    </div>
+
+                    {/* Right: Badge + Actions */}
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 whitespace-nowrap">
+                        {campus.memberCount} {campus.memberCount === 1 ? "Member" : "Members"}
+                      </span>
+
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => setEditingCampus({ id: campus.id, name: campus.name, oldName: campus.name })}
+                          className="p-1.5 sm:p-2 rounded-xl text-gray-400 hover:text-blue-500 hover:bg-blue-500/10 transition-colors"
+                          title="Edit Campus Name"
+                        >
+                          <Edit3 className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteCampus(campus)}
+                          className="p-1.5 sm:p-2 rounded-xl text-gray-400 hover:text-red-500 hover:bg-red-500/10 transition-colors"
+                          title="Delete Campus"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+
+                {filteredCampuses.length === 0 && (
+                  <div className="py-12 text-center text-gray-400 text-xs bg-gray-50/50 dark:bg-white/[0.01] rounded-2xl border border-dashed border-gray-200 dark:border-white/5">
+                    No campuses match your search. Click &ldquo;Add New Campus&rdquo; to create one.
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -746,12 +742,13 @@ export function SettingsClient({
           {/* 4. LEADERSHIP POSITIONS MANAGER */}
           {activeTab === "leadership" && isAdmin && (
             <div className="space-y-6">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
-                  <h2 className="text-xl font-extrabold text-gray-900 dark:text-white flex items-center gap-2">
-                    <Award className="text-emerald-500" /> Leadership Positions Manager
+                  <h2 className="text-lg sm:text-xl font-extrabold text-gray-900 dark:text-white flex items-center gap-2">
+                    <Award className="text-emerald-500 w-5 h-5 shrink-0" />
+                    <span>Leadership Positions Manager</span>
                   </h2>
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs text-gray-500 mt-1 leading-relaxed">
                     Manage all standardized and custom leadership roles. Any role added here is permanently selectable when promoting leaders.
                   </p>
                 </div>
@@ -759,7 +756,7 @@ export function SettingsClient({
                 {!isAddingRole && !editingRole && (
                   <Button
                     onClick={() => setIsAddingRole(true)}
-                    className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs px-4 py-2 rounded-xl flex items-center gap-1.5 shadow-md shadow-emerald-600/20 shrink-0"
+                    className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs px-4 py-2.5 rounded-xl flex items-center gap-1.5 shadow-md shadow-emerald-600/20 shrink-0 self-start sm:self-auto"
                   >
                     <Plus className="w-4 h-4" />
                     <span>Add New Position</span>
@@ -869,59 +866,54 @@ export function SettingsClient({
                 />
               </div>
 
-              {/* Roles List Table */}
-              <div className="overflow-x-auto rounded-2xl border border-gray-200 dark:border-white/10">
-                <table className="w-full text-left border-collapse text-xs">
-                  <thead>
-                    <tr className="bg-gray-50 dark:bg-white/5 border-b border-gray-200 dark:border-white/10 text-gray-500 dark:text-gray-400 font-bold uppercase text-[10px] tracking-wider">
-                      <th className="py-3 px-4">Position Title</th>
-                      <th className="py-3 px-4">Active Leaders Assigned</th>
-                      <th className="py-3 px-4 text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100 dark:divide-white/5">
-                    {filteredRoles.map((r) => (
-                      <tr key={r.id} className="hover:bg-gray-50/50 dark:hover:bg-white/[0.02] transition-colors">
-                        <td className="py-3 px-4 font-semibold text-gray-900 dark:text-white">
-                          <div className="flex items-center gap-2">
-                            <Award className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                            <span>{r.title}</span>
-                          </div>
-                        </td>
-                        <td className="py-3 px-4">
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20">
-                            {r.leaderCount} {r.leaderCount === 1 ? "Leader" : "Leaders"}
-                          </span>
-                        </td>
-                        <td className="py-3 px-4 text-right">
-                          <div className="inline-flex items-center gap-1.5">
-                            <button
-                              onClick={() => setEditingRole({ id: r.id, title: r.title, oldTitle: r.title })}
-                              className="p-1.5 rounded-lg text-gray-500 hover:text-blue-500 hover:bg-blue-500/10 transition-colors"
-                              title="Edit Position Title"
-                            >
-                              <Edit3 className="w-3.5 h-3.5" />
-                            </button>
-                            <button
-                              onClick={() => handleDeleteRole(r)}
-                              className="p-1.5 rounded-lg text-gray-500 hover:text-red-500 hover:bg-red-500/10 transition-colors"
-                              title="Delete Position"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                    {filteredRoles.length === 0 && (
-                      <tr>
-                        <td colSpan={3} className="py-8 text-center text-gray-400 text-xs">
-                          No positions match your search. Click &ldquo;Add New Position&rdquo; to create one.
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
+              {/* Roles List (Responsive Card Rows) */}
+              <div className="space-y-2">
+                {filteredRoles.map((r) => (
+                  <div
+                    key={r.id}
+                    className="flex items-center justify-between p-3 sm:p-4 rounded-2xl bg-gray-50/70 dark:bg-white/[0.02] hover:bg-gray-100/70 dark:hover:bg-white/[0.05] border border-gray-200/60 dark:border-white/5 transition-all gap-2.5 sm:gap-4"
+                  >
+                    {/* Left: Award Icon + Position Title */}
+                    <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                      <div className="w-8 h-8 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0">
+                        <Award className="w-4 h-4" />
+                      </div>
+                      <span className="font-bold text-xs sm:text-sm text-gray-900 dark:text-white truncate">
+                        {r.title}
+                      </span>
+                    </div>
+
+                    {/* Right: Badge + Actions */}
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20 whitespace-nowrap">
+                        {r.leaderCount} {r.leaderCount === 1 ? "Leader" : "Leaders"}
+                      </span>
+
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => setEditingRole({ id: r.id, title: r.title, oldTitle: r.title })}
+                          className="p-1.5 sm:p-2 rounded-xl text-gray-400 hover:text-blue-500 hover:bg-blue-500/10 transition-colors"
+                          title="Edit Position Title"
+                        >
+                          <Edit3 className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteRole(r)}
+                          className="p-1.5 sm:p-2 rounded-xl text-gray-400 hover:text-red-500 hover:bg-red-500/10 transition-colors"
+                          title="Delete Position"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+
+                {filteredRoles.length === 0 && (
+                  <div className="py-12 text-center text-gray-400 text-xs bg-gray-50/50 dark:bg-white/[0.01] rounded-2xl border border-dashed border-gray-200 dark:border-white/5">
+                    No positions match your search. Click &ldquo;Add New Position&rdquo; to create one.
+                  </div>
+                )}
               </div>
             </div>
           )}

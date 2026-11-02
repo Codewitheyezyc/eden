@@ -44,7 +44,7 @@ export default async function MemberVerificationPage({ params }: VerifyPageProps
   const isValid = !!profile;
 
   // Format campus zone nicely if stored as JSON array string or plain text
-  let campusDisplay = "Dance Faculty Member";
+  let campusDisplay = "Faculty of Performing Arts, Dance Unit";
   if (profile?.campus_zone) {
     try {
       const parsed = JSON.parse(profile.campus_zone);
@@ -150,8 +150,8 @@ export default async function MemberVerificationPage({ params }: VerifyPageProps
                 <span className="text-gray-400 flex items-center gap-1.5">
                   <Building2 className="w-3.5 h-3.5 text-gray-500" /> Faculty
                 </span>
-                <span className="font-semibold text-emerald-300">
-                  Dance Faculty
+                <span className="font-semibold text-emerald-300 text-right">
+                  Faculty of Performing Arts, Dance Unit
                 </span>
               </div>
 

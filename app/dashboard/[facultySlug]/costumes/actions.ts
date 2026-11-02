@@ -77,76 +77,29 @@ export async function enrollMemberByCoordinator(data: EnrollMemberInput) {
       return { error: "Campus or zone is required." };
     }
 
-    // 1. Generate new UUID for the member
-    const newMemberId = crypto.randomUUID();
-
-    // 2. Insert into public.users
-    const { error: userError } = await supabase.from("users").insert({
-      id: newMemberId,
-      full_name: data.fullName.trim(),
-      email: `member-${newMemberId.substring(0, 8)}@loveworldarts.internal`,
-      avatar_url: data.avatarUrl || null,
+    // Call the security definer RPC function to safely bypass RLS while enforcing admin/coordinator roles
+    const { data: memberResult, error: rpcError } = await supabase.rpc("enroll_assisted_member", {
+      p_faculty_id: data.facultyId,
+      p_full_name: data.fullName.trim(),
+      p_campus_zone: data.campusZone.trim(),
+      p_phone: data.phone?.trim() || null,
+      p_gender: data.gender || null,
+      p_shoe_size: data.shoeSize?.trim() || null,
+      p_trouser_size: data.trouserSize?.trim() || null,
+      p_top_size: data.topSize?.trim() || null,
+      p_avatar_url: data.avatarUrl || null,
+      p_event_id: data.eventId || null,
     });
 
-    if (userError) {
-      console.error("Error inserting enrolled user:", userError);
-      return { error: userError.message || "Failed to create user record." };
-    }
-
-    // 3. Link to faculty as STUDENT
-    const { error: facultyError } = await supabase.from("user_faculties").insert({
-      user_id: newMemberId,
-      faculty_id: data.facultyId,
-      role: "STUDENT",
-    });
-
-    if (facultyError) {
-      console.error("Error linking to faculty:", facultyError);
-    }
-
-    // 4. Insert into profiles (trg_set_member_id will assign member_id automatically)
-    const { data: createdProfile, error: profileError } = await supabase
-      .from("profiles")
-      .insert({
-        id: newMemberId,
-        campus_zone: data.campusZone.trim(),
-        phone: data.phone?.trim() || null,
-        gender: data.gender || null,
-        shoe_size: data.shoeSize?.trim() || null,
-        trouser_size: data.trouserSize?.trim() || null,
-        top_size: data.topSize?.trim() || null,
-        avatar_url: data.avatarUrl || null,
-        is_assisted_enrollment: true,
-        is_verified: true,
-        enrolled_by: user.id,
-      })
-      .select("member_id")
-      .single();
-
-    if (profileError) {
-      console.error("Error creating profile:", profileError);
-    }
-
-    // 5. If eventId is provided, also register them for the event
-    if (data.eventId) {
-      await supabase.from("event_attendance").insert({
-        event_id: data.eventId,
-        user_id: newMemberId,
-        status: "ATTENDED",
-        created_at: new Date().toISOString(),
-      });
+    if (rpcError) {
+      console.error("Error executing enroll_assisted_member:", rpcError);
+      return { error: rpcError.message || "Failed to enroll member." };
     }
 
     revalidatePath("/", "layout");
     return {
       success: true,
-      member: {
-        id: newMemberId,
-        fullName: data.fullName.trim(),
-        memberId: createdProfile?.member_id || "LAA-DNC-AUTO",
-        campusZone: data.campusZone.trim(),
-        avatarUrl: data.avatarUrl || null,
-      },
+      member: memberResult,
     };
   } catch (err: any) {
     console.error("Unexpected error in enrollMemberByCoordinator:", err);

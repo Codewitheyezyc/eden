@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import { toast } from "react-hot-toast";
 import { VerifiedBadge } from "@/components/ui/verified-badge";
 import { createPortal } from "react-dom";
@@ -18,19 +18,25 @@ import {
   LayoutGrid,
   List,
   MapPin,
-  Sparkles
+  Sparkles,
+  CreditCard,
+  UserPlus,
+  Lock,
+  Camera
 } from "lucide-react";
 import { 
   updateUserRole,
   deleteUserAccount,
   deleteUserAccounts,
-  deleteAllUsersByRole
+  deleteAllUsersByRole,
+  updateMemberAvatar
 } from "@/app/dashboard/[facultySlug]/directory-actions";
 import { parseCampuses } from "@/lib/campuses";
 import { cn } from "@/lib/utils";
 import { IdCardModal } from "./id-card-modal";
 import { EnrollMemberModal } from "./enroll-member-modal";
-import { CreditCard, UserPlus, Lock } from "lucide-react";
+import { compressImage } from "@/lib/image-compress";
+import { createClient } from "@/services/supabase/client";
 
 export interface DirectoryUser {
   id: string;
@@ -84,6 +90,40 @@ export function DirectoryGrid({ title, users, currentUserRole, facultyId, facult
   const [isRemoving, setIsRemoving] = useState(false);
   const [showEnrollModal, setShowEnrollModal] = useState(false);
   const [selectedUserForId, setSelectedUserForId] = useState<DirectoryUser | null>(null);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+
+  const handleMemberAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !selectedUser || !facultyId || !facultySlug) return;
+
+    try {
+      setIsUploadingPhoto(true);
+      const compressedBlob = await compressImage(file, 800, 0.85);
+      const supabase = createClient();
+      const filePath = `avatar-${selectedUser.id}-${Date.now()}.jpg`;
+
+      const { error: uploadErr } = await supabase.storage
+        .from("avatars")
+        .upload(filePath, compressedBlob, { contentType: "image/jpeg", upsert: true });
+
+      if (uploadErr) throw uploadErr;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from("avatars")
+        .getPublicUrl(filePath);
+
+      const res = await updateMemberAvatar(selectedUser.id, publicUrl, facultyId, facultySlug);
+      if (res.error) throw new Error(res.error);
+
+      setSelectedUser({ ...selectedUser, avatar_url: publicUrl });
+      toast.success("Member photo updated successfully!");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to update member photo.");
+    } finally {
+      setIsUploadingPhoto(false);
+    }
+  };
 
   // Available unique campuses
   const availableCampuses = useMemo(() => {
@@ -886,11 +926,36 @@ export function DirectoryGrid({ title, users, currentUserRole, facultyId, facult
               {/* Profile Info */}
               <div className="px-6 pb-6 sm:px-10 sm:pb-10 relative">
                 <div className="flex flex-col sm:flex-row gap-6 -mt-12 sm:-mt-16 mb-6 relative z-10">
-                  <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full overflow-hidden border-4 border-white dark:border-[#080808] bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold text-3xl shrink-0 shadow-xl relative z-20">
-                    {selectedUser.avatar_url ? (
-                      <img src={selectedUser.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
-                    ) : (
-                      getInitials(selectedUser.full_name, selectedUser.email)
+                  <div className="relative group/avatar shrink-0">
+                    <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full overflow-hidden border-4 border-white dark:border-[#080808] bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold text-3xl shadow-xl relative z-20">
+                      {isUploadingPhoto ? (
+                        <Loader2 className="w-8 h-8 animate-spin text-emerald-600 dark:text-emerald-400" />
+                      ) : selectedUser.avatar_url ? (
+                        <img src={selectedUser.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
+                      ) : (
+                        getInitials(selectedUser.full_name, selectedUser.email)
+                      )}
+                    </div>
+
+                    {(currentUserRole === "ADMIN" || currentUserRole === "COORDINATOR") && (
+                      <>
+                        <input
+                          ref={avatarInputRef}
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={handleMemberAvatarUpload}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => avatarInputRef.current?.click()}
+                          disabled={isUploadingPhoto}
+                          title="Upload or change member photo"
+                          className="absolute bottom-1 right-1 z-30 p-2 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg border-2 border-white dark:border-[#080808] transition-all hover:scale-110 flex items-center justify-center"
+                        >
+                          <Camera className="w-3.5 h-3.5" />
+                        </button>
+                      </>
                     )}
                   </div>
                   <div className="pt-2 sm:pt-16">

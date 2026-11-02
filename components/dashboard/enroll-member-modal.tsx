@@ -1,12 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { createPortal } from "react-dom";
-import { X, Sparkles, User, MapPin, Phone, Shirt, CheckCircle2, Loader2, Award } from "lucide-react";
+import { X, Sparkles, User, MapPin, Phone, Shirt, CheckCircle2, Loader2, Award, Camera, UploadCloud } from "lucide-react";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { CAMPUSES } from "@/lib/campuses";
 import { enrollMemberByCoordinator } from "@/app/dashboard/[facultySlug]/costumes/actions";
 import { IdCardModal } from "./id-card-modal";
+import { compressImage } from "@/lib/image-compress";
+import { createClient } from "@/services/supabase/client";
 
 interface EnrollMemberModalProps {
   isOpen: boolean;
@@ -31,6 +34,8 @@ export function EnrollMemberModal({
   const [trouserSize, setTrouserSize] = useState("");
   const [topSize, setTopSize] = useState("Medium");
   const [avatarUrl, setAvatarUrl] = useState("");
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -40,6 +45,41 @@ export function EnrollMemberModal({
   const [showIdCard, setShowIdCard] = useState(false);
 
   if (!isOpen) return null;
+
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setUploadingPhoto(true);
+      setError(null);
+
+      // Compress client-side
+      const compressedBlob = await compressImage(file, 800, 0.85);
+      const supabase = createClient();
+      const filePath = `assisted-${Date.now()}-${Math.random().toString(36).substring(2, 8)}.jpg`;
+
+      const { error: uploadErr } = await supabase.storage
+        .from("avatars")
+        .upload(filePath, compressedBlob, {
+          contentType: "image/jpeg",
+          upsert: true,
+        });
+
+      if (uploadErr) throw uploadErr;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from("avatars")
+        .getPublicUrl(filePath);
+
+      setAvatarUrl(publicUrl);
+    } catch (err: any) {
+      console.error("Photo upload error:", err);
+      setError("Failed to upload photo. You can still enroll and add it later.");
+    } finally {
+      setUploadingPhoto(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -96,6 +136,7 @@ export function EnrollMemberModal({
           campusZone: createdMember.campusZone,
           avatarUrl: createdMember.avatarUrl,
           role: "STUDENT",
+          isVerified: true,
         }}
       />
     );
@@ -115,7 +156,7 @@ export function EnrollMemberModal({
         </button>
 
         {/* Modal Header */}
-        <div className="mb-6">
+        <div className="mb-5">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold mb-2">
             <Sparkles className="w-3.5 h-3.5" />
             <span>Assisted Enrollment</span>
@@ -135,6 +176,68 @@ export function EnrollMemberModal({
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4 text-xs">
+          {/* Member Photo Picker */}
+          <div className="bg-[#141920] border border-white/10 rounded-2xl p-3.5 flex items-center gap-4">
+            <div className="relative w-16 h-16 sm:w-18 sm:h-18 rounded-2xl overflow-hidden border-2 border-emerald-500/40 bg-[#1b222c] flex items-center justify-center shrink-0">
+              {avatarUrl ? (
+                <Image
+                  src={avatarUrl}
+                  alt="Member Preview"
+                  width={72}
+                  height={72}
+                  unoptimized
+                  className="w-full h-full object-cover"
+                />
+              ) : uploadingPhoto ? (
+                <Loader2 className="w-6 h-6 animate-spin text-emerald-400" />
+              ) : (
+                <Camera className="w-6 h-6 text-gray-500" />
+              )}
+            </div>
+
+            <div className="flex-1">
+              <label className="text-xs font-bold text-white block mb-0.5">
+                Member ID Photo (Optional)
+              </label>
+              <p className="text-[11px] text-gray-400 mb-2">
+                Upload or snap a clear headshot for their official ID badge.
+              </p>
+
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                capture="environment"
+                onChange={handlePhotoUpload}
+                className="hidden"
+              />
+
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploadingPhoto}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-300 font-bold text-[11px] transition-all"
+              >
+                {uploadingPhoto ? (
+                  <>
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                    <span>Uploading...</span>
+                  </>
+                ) : avatarUrl ? (
+                  <>
+                    <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                    <span>Change Photo</span>
+                  </>
+                ) : (
+                  <>
+                    <Camera className="w-3 h-3" />
+                    <span>Take or Upload Photo</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+
           {/* Full Name */}
           <div className="space-y-1.5">
             <label className="font-bold text-gray-300 uppercase tracking-wider text-[11px] flex items-center gap-1.5">

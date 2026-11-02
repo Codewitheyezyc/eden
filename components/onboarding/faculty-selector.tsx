@@ -59,10 +59,10 @@ export function FacultySelector({
           <span>Loveworld Arts Academy</span>
         </div>
         <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-gray-900 dark:text-white mb-3">
-          Dance Faculty Enrollment
+          Faculty of Performing Arts Enrollment
         </h1>
         <p className="text-base text-gray-600 dark:text-gray-400 max-w-lg mx-auto font-normal leading-relaxed">
-          Welcome to the creative digital hub of the Loveworld Arts Academy. Finalize your member profile to enter the Dance Faculty portal.
+          Welcome to the creative digital hub of the Loveworld Arts Academy. Finalize your member profile to enter the Faculty of Performing Arts, Dance Unit portal.
         </p>
       </div>
 
@@ -82,7 +82,7 @@ export function FacultySelector({
                   Enrolling Faculty
                 </div>
                 <div className="text-base font-extrabold text-gray-900 dark:text-white">
-                  Dance Faculty
+                  Faculty of Performing Arts, Dance Unit
                 </div>
               </div>
             </div>
@@ -169,7 +169,7 @@ export function FacultySelector({
               <span>Completing Enrollment...</span>
             ) : (
               <>
-                <span>Enter Dance Faculty</span>
+                <span>Enter Dance Unit</span>
                 <ArrowRight className="w-4 h-4" />
               </>
             )}
@@ -178,7 +178,7 @@ export function FacultySelector({
       </div>
 
       <div className="mt-6 text-center text-xs text-gray-500 dark:text-gray-400">
-        Loveworld Arts Academy &bull; Dance Faculty &bull; Empowering Creative Excellence
+        Loveworld Arts Academy &bull; Faculty of Performing Arts, Dance Unit &bull; Empowering Creative Excellence
       </div>
     </div>
   );

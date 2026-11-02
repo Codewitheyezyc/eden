@@ -1,10 +1,10 @@
 export const LEADERSHIP_ROLES = [
-  "Dean of the Dance Faculty",
-  "Asst Dean Of the Dance Faculty / Operations",
-  "Asst Dean Of the Dance Faculty / General Studies",
-  "Admin of the Dance Faculty",
-  "Chief Instructor of the Dance Faculty",
-  "Asst Chief Instructor of the Dance Faculty"
+  "Dean of the Faculty of Performing Arts, Dance Unit",
+  "Asst Dean Of the Faculty of Performing Arts, Dance Unit / Operations",
+  "Asst Dean Of the Faculty of Performing Arts, Dance Unit / General Studies",
+  "Admin of the Faculty of Performing Arts, Dance Unit",
+  "Chief Instructor of the Faculty of Performing Arts, Dance Unit",
+  "Asst Chief Instructor of the Faculty of Performing Arts, Dance Unit"
 ] as const;
 
 export type LeadershipRole = typeof LEADERSHIP_ROLES[number];

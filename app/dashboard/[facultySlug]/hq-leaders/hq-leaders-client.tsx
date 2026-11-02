@@ -211,7 +211,7 @@ export function HQLeadersClient({ leaders, potentialLeaders, viewerRole, faculty
         <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
           <div className="space-y-3 max-w-2xl">
             <span className="inline-flex items-center px-3 py-1 rounded-full text-[9px] font-extrabold bg-white/20 text-white uppercase tracking-widest border border-white/20 shadow-xs">
-              Dance Faculty
+              Faculty of Performing Arts, Dance Unit
             </span>
             <h2 className="text-3xl md:text-5xl font-extrabold tracking-tight text-white drop-shadow-sm">
               HQ Leaders Directory

@@ -31,7 +31,7 @@ export default function LandingPage() {
   const faqs = [
     {
       q: "What is Eden and how does it support Loveworld Arts Academy?",
-      a: "Eden is the dedicated digital operations portal engineered for the Loveworld Arts Academy Dance Faculty. It provides complete administrative operations, rehearsal and event registers, targeted zonal notice distributions, and structured creative learning."
+      a: "Eden is the dedicated digital operations portal engineered for the Loveworld Arts Academy Faculty of Performing Arts, Dance Unit. It provides complete administrative operations, rehearsal and event registers, targeted zonal notice distributions, and structured creative learning."
     },
     {
       q: "How does the multi-campus registry scale?",
@@ -82,7 +82,7 @@ export default function LandingPage() {
             
             <ScrollReveal delay={300}>
               <p className="text-base sm:text-lg md:text-xl text-gray-500 dark:text-gray-400 mb-10 max-w-3xl mx-auto leading-relaxed font-light transition-colors">
-                The dedicated digital workspace for the Loveworld Arts Academy Dance Faculty, featuring zonal campus registries, targeted announcements, attendance verification, and interactive learning.
+                The dedicated digital workspace for the Loveworld Arts Academy Faculty of Performing Arts, Dance Unit, featuring zonal campus registries, targeted announcements, attendance verification, and interactive learning.
               </p>
             </ScrollReveal>
             
@@ -126,9 +126,9 @@ export default function LandingPage() {
                   <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mb-6 text-emerald-600 dark:text-emerald-400">
                     <Layers size={22} />
                   </div>
-                  <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">Dance Faculty Workspace</h3>
+                  <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">Faculty of Performing Arts, Dance Unit</h3>
                   <p className="text-gray-500 dark:text-gray-400 leading-relaxed font-light text-sm">
-                    Dedicated digital workspace for the Dance Faculty. Complete administrative governance, rehearsal coordination, and zonal registers.
+                    Dedicated digital workspace for the Faculty of Performing Arts, Dance Unit. Complete administrative governance, rehearsal coordination, and zonal registers.
                   </p>
                 </div>
               </ScrollReveal>
@@ -283,7 +283,7 @@ export default function LandingPage() {
                 <div className="w-10 h-10 rounded-xl bg-emerald-500 text-white flex items-center justify-center font-bold text-sm">1</div>
                 <h3 className="font-bold text-base text-gray-900 dark:text-white">Role Registration</h3>
                 <p className="text-xs text-gray-500 dark:text-gray-400 font-light leading-relaxed">
-                  Join Loveworld Arts Academy, enroll in the Dance Faculty, and select your campus zone.
+                  Join Loveworld Arts Academy, enroll in the Faculty of Performing Arts, Dance Unit, and select your campus zone.
                 </p>
               </ScrollReveal>
 

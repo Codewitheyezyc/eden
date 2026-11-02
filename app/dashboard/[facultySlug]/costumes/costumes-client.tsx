@@ -169,7 +169,7 @@ export function CostumesClient({
           <div>
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-semibold mb-2">
               <Shirt className="w-3.5 h-3.5" />
-              <span>Dance Faculty Wardrobe</span>
+              <span>Faculty of Performing Arts, Dance Unit Wardrobe</span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">
               Costume Sizing & Distribution

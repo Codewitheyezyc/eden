@@ -41,7 +41,7 @@ export function IdCardModal({ isOpen, onClose, member }: IdCardModalProps) {
   const displayName = member.fullName?.trim() || "Official Member";
 
   // Format campus nicely
-  let campusDisplay = "Dance Faculty Member";
+  let campusDisplay = "Faculty of Performing Arts, Dance Unit";
   if (member.campusZone) {
     try {
       const parsed = JSON.parse(member.campusZone);
@@ -116,9 +116,9 @@ export function IdCardModal({ isOpen, onClose, member }: IdCardModalProps) {
       ctx.fillStyle = "#34d399";
       ctx.fillText("LOVEWORLD ARTS ACADEMY", w / 2, 38);
 
-      ctx.font = "bold 11px sans-serif";
+      ctx.font = "bold 9.5px sans-serif";
       ctx.fillStyle = "#9ca3af";
-      ctx.fillText("DANCE FACULTY", w / 2, 54);
+      ctx.fillText("FACULTY OF PERFORMING ARTS, DANCE UNIT", w / 2, 54);
 
       // Divider
       ctx.strokeStyle = "rgba(255, 255, 255, 0.12)";
@@ -427,8 +427,8 @@ export function IdCardModal({ isOpen, onClose, member }: IdCardModalProps) {
               <div className="text-[14px] font-black uppercase tracking-wider text-emerald-400">
                 Loveworld Arts Academy
               </div>
-              <div className="text-[11px] uppercase font-bold tracking-widest text-gray-400 mt-0.5">
-                Dance Faculty
+              <div className="text-[10px] uppercase font-bold tracking-widest text-gray-400 mt-0.5">
+                Faculty of Performing Arts, Dance Unit
               </div>
             </div>
 

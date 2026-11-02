@@ -297,7 +297,7 @@ export function LeaderProfileClient({ leader, viewerRole, facultySlug, facultyId
                   </div>
                   <div className="flex justify-between py-1.5 border-b border-gray-200/60 dark:border-white/5">
                     <span className="text-gray-700 dark:text-gray-400 font-bold">Area of Oversight</span>
-                    <span className="font-extrabold text-gray-950 dark:text-white">{oversight || "National Dance Faculty"}</span>
+                    <span className="font-extrabold text-gray-950 dark:text-white">{oversight || "Faculty of Performing Arts, Dance Unit"}</span>
                   </div>
                   <div className="flex justify-between py-1.5 border-b border-gray-200/60 dark:border-white/5">
                     <span className="text-gray-700 dark:text-gray-400 font-bold">Years of Service</span>

@@ -146,3 +146,35 @@ export async function deleteAllUsersByRole(roleFilter: "STUDENT" | "COORDINATOR"
   revalidatePath(`/dashboard/${facultySlug}`, "layout");
   return { success: true };
 }
+
+export async function updateMemberAvatar(targetUserId: string, avatarUrl: string, facultyId: string, facultySlug: string) {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "Not authenticated" };
+  }
+
+  const { data: currentUserAccess } = await supabase
+    .from("user_faculties")
+    .select("role")
+    .eq("user_id", user.id)
+    .eq("faculty_id", facultyId)
+    .single();
+
+  if (currentUserAccess?.role !== "ADMIN" && currentUserAccess?.role !== "COORDINATOR") {
+    return { error: "Only admins and coordinators can update member photos." };
+  }
+
+  const { error: rpcError } = await supabase.rpc("update_user_avatar_admin", {
+    p_user_id: targetUserId,
+    p_avatar_url: avatarUrl,
+  });
+
+  if (rpcError) {
+    return { error: rpcError.message };
+  }
+
+  revalidatePath(`/dashboard/${facultySlug}`, "layout");
+  return { success: true };
+}

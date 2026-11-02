@@ -132,7 +132,7 @@ export async function exportAttendanceToWord({
             alignment: AlignmentType.CENTER,
             children: [
               new TextRun({
-                text: "DANCE FACULTY — OFFICIAL EVENT ATTENDANCE ROSTER",
+                text: "FACULTY OF PERFORMING ARTS, DANCE UNIT — OFFICIAL EVENT ATTENDANCE ROSTER",
                 bold: true,
                 size: 20, // 10pt
                 color: "64748B",

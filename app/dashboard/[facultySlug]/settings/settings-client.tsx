@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useTheme } from "next-themes";
 import { toast } from "react-hot-toast";
 import { 
@@ -17,6 +17,7 @@ import {
 } from "./actions";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { TablePagination } from "@/components/ui/table-pagination";
 
 interface FacultyMember {
   user_id: string;
@@ -127,6 +128,12 @@ export function SettingsClient({
   const [isAddingRole, setIsAddingRole] = useState(false);
   const [editingRole, setEditingRole] = useState<{ id: string; title: string; oldTitle: string } | null>(null);
   const [isRoleLoading, setIsRoleLoading] = useState(false);
+
+  // Campuses & Roles Pagination State
+  const [campusPage, setCampusPage] = useState(1);
+  const [campusPerPage, setCampusPerPage] = useState(8);
+  const [rolePage, setRolePage] = useState(1);
+  const [rolePerPage, setRolePerPage] = useState(8);
 
   const tabs: { id: TabType; label: string; icon: any; roles?: string[] }[] = [
     { id: "profile", label: "My Profile", icon: User },
@@ -378,14 +385,28 @@ export function SettingsClient({
     }
   };
 
-  // Filtered lists
-  const filteredCampuses = campuses.filter(c =>
-    c.name.toLowerCase().includes(campusSearch.toLowerCase().trim())
-  );
+  // Filtered & Paginated lists
+  const filteredCampuses = useMemo(() => {
+    return campuses.filter(c =>
+      c.name.toLowerCase().includes(campusSearch.toLowerCase().trim())
+    );
+  }, [campuses, campusSearch]);
 
-  const filteredRoles = leadershipRoles.filter(r =>
-    r.title.toLowerCase().includes(roleSearch.toLowerCase().trim())
-  );
+  const paginatedCampuses = useMemo(() => {
+    const start = (campusPage - 1) * campusPerPage;
+    return filteredCampuses.slice(start, start + campusPerPage);
+  }, [filteredCampuses, campusPage, campusPerPage]);
+
+  const filteredRoles = useMemo(() => {
+    return leadershipRoles.filter(r =>
+      r.title.toLowerCase().includes(roleSearch.toLowerCase().trim())
+    );
+  }, [leadershipRoles, roleSearch]);
+
+  const paginatedRoles = useMemo(() => {
+    const start = (rolePage - 1) * rolePerPage;
+    return filteredRoles.slice(start, start + rolePerPage);
+  }, [filteredRoles, rolePage, rolePerPage]);
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500 pb-52 lg:pb-16 max-w-6xl mx-auto">
@@ -681,7 +702,10 @@ export function SettingsClient({
                 <input
                   type="text"
                   value={campusSearch}
-                  onChange={(e) => setCampusSearch(e.target.value)}
+                  onChange={(e) => {
+                    setCampusSearch(e.target.value);
+                    setCampusPage(1);
+                  }}
                   placeholder="Search campuses or zones..."
                   className="w-full bg-gray-50 dark:bg-[#141920] border border-gray-200 dark:border-white/10 rounded-xl pl-9 pr-4 py-2 text-xs text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 />
@@ -689,7 +713,7 @@ export function SettingsClient({
 
               {/* Campuses List (Responsive Card Rows) */}
               <div className="space-y-2">
-                {filteredCampuses.map((campus) => (
+                {paginatedCampuses.map((campus) => (
                   <div
                     key={campus.id}
                     className="flex items-center justify-between p-3 sm:p-4 rounded-2xl bg-gray-50/70 dark:bg-white/[0.02] hover:bg-gray-100/70 dark:hover:bg-white/[0.05] border border-gray-200/60 dark:border-white/5 transition-all gap-2.5 sm:gap-4"
@@ -736,6 +760,23 @@ export function SettingsClient({
                   </div>
                 )}
               </div>
+
+              {/* Campus Pagination */}
+              {filteredCampuses.length > 0 && (
+                <TablePagination
+                  currentPage={campusPage}
+                  totalItems={filteredCampuses.length}
+                  itemsPerPage={campusPerPage}
+                  onPageChange={setCampusPage}
+                  onItemsPerPageChange={(size) => {
+                    setCampusPerPage(size);
+                    setCampusPage(1);
+                  }}
+                  pageSizeOptions={[6, 8, 12, 20]}
+                  itemLabel="campuses"
+                  className="rounded-2xl"
+                />
+              )}
             </div>
           )}
 
@@ -860,7 +901,10 @@ export function SettingsClient({
                 <input
                   type="text"
                   value={roleSearch}
-                  onChange={(e) => setRoleSearch(e.target.value)}
+                  onChange={(e) => {
+                    setRoleSearch(e.target.value);
+                    setRolePage(1);
+                  }}
                   placeholder="Search leadership positions..."
                   className="w-full bg-gray-50 dark:bg-[#141920] border border-gray-200 dark:border-white/10 rounded-xl pl-9 pr-4 py-2 text-xs text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 />
@@ -868,7 +912,7 @@ export function SettingsClient({
 
               {/* Roles List (Responsive Card Rows) */}
               <div className="space-y-2">
-                {filteredRoles.map((r) => (
+                {paginatedRoles.map((r) => (
                   <div
                     key={r.id}
                     className="flex items-center justify-between p-3 sm:p-4 rounded-2xl bg-gray-50/70 dark:bg-white/[0.02] hover:bg-gray-100/70 dark:hover:bg-white/[0.05] border border-gray-200/60 dark:border-white/5 transition-all gap-2.5 sm:gap-4"
@@ -915,6 +959,23 @@ export function SettingsClient({
                   </div>
                 )}
               </div>
+
+              {/* Roles Pagination */}
+              {filteredRoles.length > 0 && (
+                <TablePagination
+                  currentPage={rolePage}
+                  totalItems={filteredRoles.length}
+                  itemsPerPage={rolePerPage}
+                  onPageChange={setRolePage}
+                  onItemsPerPageChange={(size) => {
+                    setRolePerPage(size);
+                    setRolePage(1);
+                  }}
+                  pageSizeOptions={[6, 8, 12, 20]}
+                  itemLabel="positions"
+                  className="rounded-2xl"
+                />
+              )}
             </div>
           )}
 

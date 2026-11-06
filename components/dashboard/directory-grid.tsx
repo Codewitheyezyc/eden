@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { toast } from "react-hot-toast";
 import { VerifiedBadge } from "@/components/ui/verified-badge";
 import { createPortal } from "react-dom";
@@ -93,6 +93,15 @@ export function DirectoryGrid({ title, users, currentUserRole, facultyId, facult
   const [selectedUserForId, setSelectedUserForId] = useState<DirectoryUser | null>(null);
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const avatarInputRef = useRef<HTMLInputElement>(null);
+
+  // Automatically reopen assisted enrollment modal if a draft was in progress (e.g. after camera snap)
+  useEffect(() => {
+    try {
+      if (typeof window !== "undefined" && sessionStorage.getItem("eden_assisted_enroll_draft")) {
+        setShowEnrollModal(true);
+      }
+    } catch (e) {}
+  }, []);
 
   const handleMemberAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -321,13 +330,13 @@ export function DirectoryGrid({ title, users, currentUserRole, facultyId, facult
   return (
     <div className="space-y-6 pb-40 lg:pb-16">
       {/* 1. Header Bar */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white/60 dark:bg-[#0a0a0a]/60 backdrop-blur-xl border border-gray-200/50 dark:border-white/5 p-4 sm:p-6 md:p-8 rounded-3xl shadow-sm">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white/60 dark:bg-[#0a0a0a]/60 backdrop-blur-xl border border-gray-200/50 dark:border-white/5 p-4 sm:p-6 md:p-8 rounded-3xl shadow-sm">
         <div className="flex-1 min-w-0">
-          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-2.5 flex-wrap">
             <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">
               {title}
             </h1>
-            <span className="inline-flex items-center px-2.5 py-1 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 rounded-full text-xs font-bold border border-emerald-500/20 whitespace-nowrap">
+            <span className="inline-flex items-center px-2.5 py-1 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 rounded-full text-xs font-bold border border-emerald-500/20 whitespace-nowrap shrink-0">
               {filteredUsers.length} {filteredUsers.length === 1 ? "Member" : "Members"}
               {filteredUsers.length !== users.length && ` (of ${users.length})`}
             </span>
@@ -338,11 +347,11 @@ export function DirectoryGrid({ title, users, currentUserRole, facultyId, facult
         </div>
 
         {/* Actions & View Mode Toggle */}
-        <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 shrink-0">
+        <div className="flex items-center gap-2.5 sm:gap-3 shrink-0 flex-wrap sm:flex-nowrap">
           {(currentUserRole === "ADMIN" || currentUserRole === "COORDINATOR") && facultyId && (
             <button
               onClick={() => setShowEnrollModal(true)}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md shadow-emerald-600/20 transition-all"
+              className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md shadow-emerald-600/20 transition-all"
             >
               <UserPlus className="w-3.5 h-3.5" />
               <span>Enroll Member</span>
@@ -350,7 +359,7 @@ export function DirectoryGrid({ title, users, currentUserRole, facultyId, facult
           )}
 
           {/* View Mode Toggle */}
-          <div className="flex items-center gap-1 p-1 bg-gray-100 dark:bg-white/5 rounded-2xl border border-gray-200/60 dark:border-white/5">
+          <div className="flex items-center gap-1 p-1 bg-gray-100 dark:bg-white/5 rounded-2xl border border-gray-200/60 dark:border-white/5 shrink-0">
             <button
               onClick={() => setViewMode("grid")}
               className={cn(

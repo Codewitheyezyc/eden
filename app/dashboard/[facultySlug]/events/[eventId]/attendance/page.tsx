@@ -165,6 +165,41 @@ export default async function EventAttendancePage({
     });
   }
 
+  // Step 8: Fetch all faculty members so admins and coordinators can add any non-registered dancers
+  const { data: facultyMembersData } = await supabase
+    .from("user_faculties")
+    .select(`
+      user_id,
+      role,
+      users:user_id (
+        id,
+        full_name,
+        email,
+        avatar_url,
+        profiles (
+          campus_zone,
+          phone,
+          leadership_role
+        )
+      )
+    `)
+    .eq("faculty_id", faculty.id);
+
+  const availableFacultyMembers = (facultyMembersData || []).map((fm: any) => {
+    const userObj = Array.isArray(fm.users) ? fm.users[0] : fm.users;
+    const profile = userObj?.profiles ? (Array.isArray(userObj.profiles) ? userObj.profiles[0] : userObj.profiles) : null;
+    return {
+      userId: fm.user_id,
+      fullName: userObj?.full_name || "Unknown Member",
+      email: userObj?.email || "",
+      avatarUrl: userObj?.avatar_url || null,
+      role: (fm.role || "STUDENT") as "ADMIN" | "COORDINATOR" | "STUDENT",
+      campusZone: profile?.campus_zone || "",
+      phone: profile?.phone || "",
+      leadershipRole: profile?.leadership_role || "",
+    };
+  });
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
@@ -183,6 +218,7 @@ export default async function EventAttendancePage({
       <EventAttendanceClient 
         event={event}
         initialAttendees={attendees}
+        availableFacultyMembers={availableFacultyMembers}
         viewerRole={userRole}
         facultySlug={params.facultySlug}
         facultyId={faculty.id}

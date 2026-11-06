@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { parseCampuses } from "@/lib/campuses";
 import { cn, formatBirthday, formatPhoneNumber } from "@/lib/utils";
@@ -9,8 +9,27 @@ import { exportToRealExcel } from "@/lib/export-excel";
 import { exportAttendanceToWord } from "@/lib/export-word";
 import { EnrollMemberModal } from "@/components/dashboard/enroll-member-modal";
 import { TablePagination } from "@/components/ui/table-pagination";
-import { FileText, UserPlus } from "lucide-react";
+import { 
+  FileText, 
+  UserPlus, 
+  Sparkles, 
+  UserCheck, 
+  Trash2, 
+  Search, 
+  X, 
+  Loader2, 
+  Users, 
+  CheckCircle2, 
+  AlertTriangle,
+  Plus 
+} from "lucide-react";
 import { createClient } from "@/services/supabase/client";
+import { toast } from "react-hot-toast";
+import { 
+  syncAllFacultyMembersToEventAction, 
+  addMemberToEventAction, 
+  removeMemberFromEventAction 
+} from "@/app/dashboard/[facultySlug]/events/actions";
 
 interface AttendeeProfile {
   phone: string;
@@ -34,6 +53,17 @@ interface EventAttendee {
   profile: AttendeeProfile | null;
 }
 
+export interface AvailableMember {
+  userId: string;
+  fullName: string;
+  email: string;
+  avatarUrl: string | null;
+  role: "ADMIN" | "COORDINATOR" | "STUDENT";
+  campusZone: string;
+  phone: string;
+  leadershipRole: string;
+}
+
 interface EventData {
   id: string;
   title: string;
@@ -46,6 +76,7 @@ interface EventData {
 interface EventAttendanceClientProps {
   event: EventData;
   initialAttendees: EventAttendee[];
+  availableFacultyMembers?: AvailableMember[];
   viewerRole: string;
   facultySlug: string;
   facultyId?: string;
@@ -53,10 +84,30 @@ interface EventAttendanceClientProps {
 
 type TabType = "attendees" | "qr_scanner" | "history" | "analytics";
 
-export function EventAttendanceClient({ event, initialAttendees, viewerRole, facultySlug, facultyId }: EventAttendanceClientProps) {
+export function EventAttendanceClient({ 
+  event, 
+  initialAttendees, 
+  availableFacultyMembers = [],
+  viewerRole, 
+  facultySlug, 
+  facultyId 
+}: EventAttendanceClientProps) {
   const router = useRouter();
+  const [attendees, setAttendees] = useState<EventAttendee[]>(initialAttendees);
   const [isDeletingEvent, setIsDeletingEvent] = useState(false);
   const [showEnrollModal, setShowEnrollModal] = useState(false);
+
+  // Sync All & Add Member State
+  const [isSyncingAll, setIsSyncingAll] = useState(false);
+  const [showSyncConfirm, setShowSyncConfirm] = useState(false);
+  const [showAddMemberModal, setShowAddMemberModal] = useState(false);
+  const [addMemberSearch, setAddMemberSearch] = useState("");
+  const [isAddingUserId, setIsAddingUserId] = useState<string | null>(null);
+  const [isRemovingUserId, setIsRemovingUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    setAttendees(initialAttendees);
+  }, [initialAttendees]);
 
   // Tab Navigation State
   const [activeTab, setActiveTab] = useState<TabType>("attendees");
@@ -88,24 +139,24 @@ export function EventAttendanceClient({ event, initialAttendees, viewerRole, fac
   // Aggregate dynamically all unique campuses from attendees list
   const uniqueCampuses = useMemo(() => {
     const campuses = new Set<string>();
-    initialAttendees.forEach(a => {
+    attendees.forEach(a => {
       if (a.profile?.campusZone) {
         parseCampuses(a.profile.campusZone).forEach(c => campuses.add(c));
       }
     });
     return Array.from(campuses).sort();
-  }, [initialAttendees]);
+  }, [attendees]);
 
   // Calculate Key Event metrics
   const metrics = useMemo(() => {
-    const total = initialAttendees.length;
-    const studentsCount = initialAttendees.filter(a => a.role === "STUDENT").length;
-    const coordCount = initialAttendees.filter(a => a.role === "COORDINATOR").length;
-    const adminCount = initialAttendees.filter(a => a.role === "ADMIN").length;
+    const total = attendees.length;
+    const studentsCount = attendees.filter(a => a.role === "STUDENT").length;
+    const coordCount = attendees.filter(a => a.role === "COORDINATOR").length;
+    const adminCount = attendees.filter(a => a.role === "ADMIN").length;
     
     // Group present count by campus
     const campusDistribution: { [key: string]: number } = {};
-    initialAttendees.forEach(a => {
+    attendees.forEach(a => {
       if (a.profile?.campusZone) {
         parseCampuses(a.profile.campusZone).forEach(c => {
           campusDistribution[c] = (campusDistribution[c] || 0) + 1;
@@ -120,11 +171,110 @@ export function EventAttendanceClient({ event, initialAttendees, viewerRole, fac
       adminCount,
       campusDistribution,
     };
-  }, [initialAttendees]);
+  }, [attendees]);
+
+  // Filter available faculty members who are not yet registered
+  const unassignedFacultyMembers = useMemo(() => {
+    if (!availableFacultyMembers || availableFacultyMembers.length === 0) return [];
+    const attendeeUserIds = new Set(attendees.map(a => a.userId));
+    return availableFacultyMembers.filter(m => !attendeeUserIds.has(m.userId));
+  }, [availableFacultyMembers, attendees]);
+
+  const filteredUnassignedMembers = useMemo(() => {
+    if (!addMemberSearch.trim()) return unassignedFacultyMembers;
+    const q = addMemberSearch.toLowerCase().trim();
+    return unassignedFacultyMembers.filter(m =>
+      m.fullName.toLowerCase().includes(q) ||
+      m.campusZone.toLowerCase().includes(q) ||
+      m.phone.toLowerCase().includes(q)
+    );
+  }, [unassignedFacultyMembers, addMemberSearch]);
+
+  // Bulk Sync All Members
+  const handleSyncAll = async () => {
+    if (!facultyId) return;
+    setIsSyncingAll(true);
+    setShowSyncConfirm(false);
+    try {
+      const res = await syncAllFacultyMembersToEventAction(event.id, facultyId, facultySlug);
+      if (res.error) {
+        toast.error(res.error);
+      } else {
+        toast.success(`Successfully synced ${res.insertedCount} faculty members! Total: ${res.totalFacultyMembers}`);
+        router.refresh();
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Failed to sync members.");
+    } finally {
+      setIsSyncingAll(false);
+    }
+  };
+
+  // Add individual dancer to event
+  const handleAddMember = async (targetUser: AvailableMember) => {
+    if (!facultyId) return;
+    setIsAddingUserId(targetUser.userId);
+    try {
+      const res = await addMemberToEventAction(event.id, targetUser.userId, facultyId, facultySlug);
+      if (res.error) {
+        toast.error(res.error);
+      } else {
+        toast.success(`${targetUser.fullName} added to event!`);
+        // Optimistically update attendees
+        setAttendees(prev => [
+          ...prev,
+          {
+            userId: targetUser.userId,
+            fullName: targetUser.fullName,
+            email: targetUser.email,
+            avatarUrl: targetUser.avatarUrl,
+            checkInTime: new Date().toISOString(),
+            status: "PRESENT",
+            proofImageUrl: null,
+            role: targetUser.role,
+            profile: {
+              phone: targetUser.phone,
+              gender: "",
+              kingschat: "",
+              campusZone: targetUser.campusZone,
+              isVerified: true,
+              leadershipRole: targetUser.leadershipRole,
+            },
+          },
+        ]);
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Failed to add member.");
+    } finally {
+      setIsAddingUserId(null);
+    }
+  };
+
+  // Remove individual dancer from event
+  const handleRemoveMember = async (userId: string, memberName: string) => {
+    if (!facultyId) return;
+    if (!window.confirm(`Are you sure you want to remove ${memberName} from this event?`)) return;
+
+    setIsRemovingUserId(userId);
+    try {
+      const res = await removeMemberFromEventAction(event.id, userId, facultyId, facultySlug);
+      if (res.error) {
+        toast.error(res.error);
+      } else {
+        toast.success(`${memberName} removed from event.`);
+        // Optimistically remove from attendees
+        setAttendees(prev => prev.filter(a => a.userId !== userId));
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Failed to remove member.");
+    } finally {
+      setIsRemovingUserId(null);
+    }
+  };
 
   // Dynamic search, filter, and sort attendees
   const processedAttendees = useMemo(() => {
-    let result = [...initialAttendees];
+    let result = [...attendees];
 
     // Search query
     if (search.trim() !== "") {
@@ -172,7 +322,7 @@ export function EventAttendanceClient({ event, initialAttendees, viewerRole, fac
     });
 
     return result;
-  }, [initialAttendees, search, roleFilter, genderFilter, campusFilter, sortField, sortDirection]);
+  }, [attendees, search, roleFilter, genderFilter, campusFilter, sortField, sortDirection]);
 
   // Paginate list
   const totalItems = processedAttendees.length;
@@ -425,17 +575,47 @@ export function EventAttendanceClient({ event, initialAttendees, viewerRole, fac
                 />
               </div>
 
-              {/* Action Buttons: Register Member & Exports */}
+              {/* Action Buttons: Sync All, Add Dancer, Assisted Enroll & Exports */}
               <div className="md:col-span-2 flex flex-wrap gap-2 justify-end items-center">
                 {(viewerRole === "ADMIN" || viewerRole === "COORDINATOR") && facultyId && (
-                  <button
-                    onClick={() => setShowEnrollModal(true)}
-                    className="flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs px-3.5 py-3 rounded-2xl transition-all shadow-md shadow-emerald-600/20"
-                    title="Enroll and register a member who does not have a phone"
-                  >
-                    <UserPlus className="w-4 h-4" />
-                    <span>Register Member</span>
-                  </button>
+                  <>
+                    {/* 1. Sync All Faculty Members */}
+                    <button
+                      onClick={() => setShowSyncConfirm(true)}
+                      disabled={isSyncingAll}
+                      className="flex items-center justify-center gap-1.5 bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs px-3.5 py-3 rounded-2xl transition-all shadow-md shadow-emerald-600/25 shrink-0 disabled:opacity-50"
+                      title="Automatically register all enrolled faculty members to this event"
+                    >
+                      {isSyncingAll ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Sparkles className="w-4 h-4 text-amber-300" />
+                      )}
+                      <span>Sync All Members</span>
+                    </button>
+
+                    {/* 2. Add Dancer (Search from existing faculty members) */}
+                    {availableFacultyMembers && availableFacultyMembers.length > 0 && (
+                      <button
+                        onClick={() => setShowAddMemberModal(true)}
+                        className="flex items-center justify-center gap-1.5 bg-white/10 hover:bg-white/15 border border-white/10 text-gray-200 font-bold text-xs px-3.5 py-3 rounded-2xl transition-all shadow-xs shrink-0"
+                        title="Search and add an existing dancer to this event"
+                      >
+                        <UserCheck className="w-4 h-4 text-emerald-400" />
+                        <span>Add Dancer</span>
+                      </button>
+                    )}
+
+                    {/* 3. Assisted Register (For dancers without smartphones) */}
+                    <button
+                      onClick={() => setShowEnrollModal(true)}
+                      className="flex items-center justify-center gap-1.5 bg-gray-800 hover:bg-gray-700 text-white font-bold text-xs px-3.5 py-3 rounded-2xl transition-all border border-white/10 shadow-xs shrink-0"
+                      title="Enroll and register a member who does not have a phone"
+                    >
+                      <UserPlus className="w-4 h-4 text-emerald-400" />
+                      <span>Assisted Enroll</span>
+                    </button>
+                  </>
                 )}
 
                 <button
@@ -557,12 +737,15 @@ export function EventAttendanceClient({ event, initialAttendees, viewerRole, fac
                     </th>
                     <th className="py-4 px-5 min-w-[150px] whitespace-nowrap">KingsChat</th>
                     {viewerRole === "ADMIN" && <th className="py-4 px-6 min-w-[230px] text-emerald-600 dark:text-emerald-400 whitespace-nowrap">HQ Leadership Role</th>}
+                    {(viewerRole === "ADMIN" || viewerRole === "COORDINATOR") && (
+                      <th className="py-4 px-4 text-center w-20 whitespace-nowrap">Actions</th>
+                    )}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200/30 dark:divide-white/5 text-sm text-gray-700 dark:text-gray-300">
                   {paginatedAttendees.length === 0 ? (
                     <tr>
-                      <td colSpan={viewerRole === "ADMIN" ? 8 : 7} className="py-16 text-center">
+                      <td colSpan={(viewerRole === "ADMIN" ? 8 : 7) + (viewerRole === "ADMIN" || viewerRole === "COORDINATOR" ? 1 : 0)} className="py-16 text-center">
                         <div className="flex flex-col items-center justify-center">
                           <span className="text-3xl mb-3">👻</span>
                           <h4 className="font-bold text-gray-900 dark:text-white">No Attendees Present</h4>
@@ -636,6 +819,22 @@ export function EventAttendanceClient({ event, initialAttendees, viewerRole, fac
                             ) : (
                               <span className="text-gray-400 font-normal italic">—</span>
                             )}
+                          </td>
+                        )}
+                        {(viewerRole === "ADMIN" || viewerRole === "COORDINATOR") && (
+                          <td className="py-4 px-4 text-center whitespace-nowrap">
+                            <button
+                              onClick={() => handleRemoveMember(a.userId, a.fullName)}
+                              disabled={isRemovingUserId === a.userId}
+                              className="p-1.5 rounded-xl text-gray-400 hover:text-red-500 hover:bg-red-500/10 transition-colors"
+                              title="Remove dancer from event"
+                            >
+                              {isRemovingUserId === a.userId ? (
+                                <Loader2 className="w-4 h-4 animate-spin text-red-500" />
+                              ) : (
+                                <Trash2 className="w-4 h-4" />
+                              )}
+                            </button>
                           </td>
                         )}
                       </tr>
@@ -836,6 +1035,160 @@ export function EventAttendanceClient({ event, initialAttendees, viewerRole, fac
             router.refresh();
           }}
         />
+      )}
+
+      {/* Sync All Members Confirmation Modal */}
+      {showSyncConfirm && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
+          <div className="relative w-full max-w-md bg-[#0e1216] border border-white/10 rounded-3xl p-6 shadow-2xl text-white">
+            <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center mb-4">
+              <Sparkles className="w-6 h-6 text-amber-300" />
+            </div>
+
+            <h3 className="text-xl font-black tracking-tight mb-2">
+              Sync All Faculty Members?
+            </h3>
+            <p className="text-xs text-gray-400 leading-relaxed mb-6">
+              This will automatically enroll and register all active faculty members ({availableFacultyMembers.length} members) into <span className="text-white font-bold">&ldquo;{event.title}&rdquo;</span>. Anyone already registered will remain unaffected.
+            </p>
+
+            <div className="flex items-center justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setShowSyncConfirm(false)}
+                disabled={isSyncingAll}
+                className="px-4 py-2.5 rounded-xl border border-white/10 text-gray-300 hover:bg-white/5 font-semibold text-xs transition-all"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleSyncAll}
+                disabled={isSyncingAll}
+                className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-2 shadow-lg shadow-emerald-600/30 transition-all disabled:opacity-50"
+              >
+                {isSyncingAll ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Syncing...</span>
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span>Confirm & Sync All</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Existing Dancer Modal */}
+      {showAddMemberModal && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
+          <div className="relative w-full max-w-lg bg-[#0e1216] border border-white/10 rounded-3xl p-6 shadow-2xl text-white max-h-[85vh] flex flex-col">
+            {/* Header */}
+            <div className="flex items-center justify-between pb-4 border-b border-white/10">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
+                  <UserCheck className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold">Add Dancer to Event</h3>
+                  <p className="text-xs text-gray-400">
+                    {unassignedFacultyMembers.length} member{unassignedFacultyMembers.length === 1 ? "" : "s"} not yet registered
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowAddMemberModal(false)}
+                className="p-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-all"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Search Input */}
+            <div className="py-3">
+              <div className="relative">
+                <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  value={addMemberSearch}
+                  onChange={(e) => setAddMemberSearch(e.target.value)}
+                  placeholder="Search by name, campus, or phone..."
+                  className="w-full bg-[#161c24] border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-xs text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                />
+              </div>
+            </div>
+
+            {/* List */}
+            <div className="flex-1 overflow-y-auto space-y-2 pr-1 max-h-[380px]">
+              {filteredUnassignedMembers.map((member) => (
+                <div
+                  key={member.userId}
+                  className="flex items-center justify-between p-3 rounded-2xl bg-white/[0.03] hover:bg-white/[0.06] border border-white/5 transition-all gap-3"
+                >
+                  <div className="flex items-center gap-3 min-w-0 flex-1">
+                    <div className="w-9 h-9 rounded-full bg-emerald-500/10 text-emerald-400 font-bold text-xs flex items-center justify-center shrink-0 border border-emerald-500/20 overflow-hidden">
+                      {member.avatarUrl ? (
+                        <img src={member.avatarUrl} alt="" className="w-full h-full object-cover" />
+                      ) : (
+                        member.fullName.charAt(0).toUpperCase()
+                      )}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="font-bold text-xs text-white truncate">{member.fullName}</p>
+                      <div className="flex items-center gap-1.5 text-[10px] text-gray-400 mt-0.5">
+                        {member.campusZone && (
+                          <span className="truncate max-w-[140px] text-emerald-400">{member.campusZone}</span>
+                        )}
+                        {member.phone && <span>• {member.phone}</span>}
+                      </div>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => handleAddMember(member)}
+                    disabled={isAddingUserId === member.userId}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition-all shrink-0 disabled:opacity-50"
+                  >
+                    {isAddingUserId === member.userId ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <Plus className="w-3.5 h-3.5" />
+                    )}
+                    <span>Add</span>
+                  </button>
+                </div>
+              ))}
+
+              {filteredUnassignedMembers.length === 0 && (
+                <div className="py-12 text-center text-gray-400 text-xs">
+                  {unassignedFacultyMembers.length === 0 ? (
+                    <div className="space-y-1">
+                      <p className="text-emerald-400 font-bold text-sm">🎉 All Faculty Members Registered!</p>
+                      <p className="text-gray-500">Every member in this faculty is already attending this event.</p>
+                    </div>
+                  ) : (
+                    "No members match your search."
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="pt-4 border-t border-white/10 flex justify-end">
+              <button
+                onClick={() => setShowAddMemberModal(false)}
+                className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-gray-300 font-semibold text-xs transition-all"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

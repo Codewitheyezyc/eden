@@ -25,6 +25,7 @@ interface DashboardShellProps {
 
 export function DashboardShell({ children, facultyName, facultySlug, role, userEmail, userName, avatarUrl, isVerified, completedTour }: DashboardShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [bottomNavCollapsed, setBottomNavCollapsed] = useState(false);
   const pathname = usePathname();
   const { openSupport } = useSupport();
 
@@ -47,7 +48,7 @@ export function DashboardShell({ children, facultyName, facultySlug, role, userE
   ];
 
   return (
-    <div className="flex h-screen bg-[#fcfdfd] dark:bg-[#030303] transition-colors relative overflow-hidden">
+    <div className="flex h-[100dvh] bg-[#fcfdfd] dark:bg-[#030303] transition-colors relative overflow-hidden">
       {/* Onboarding Tour Interactive Layer */}
       <OnboardingTour role={role} facultySlug={facultySlug} initialCompletedTour={completedTour} isVerified={isVerified} />
 
@@ -201,21 +202,26 @@ export function DashboardShell({ children, facultyName, facultySlug, role, userE
           </div>
         </div>
 
-        {/* Floating Bottom Tab Bar on Mobile */}
-        <div className="lg:hidden fixed bottom-5 left-4 right-4 z-40 bg-white/80 dark:bg-[#08080c]/85 backdrop-blur-2xl border border-gray-200/50 dark:border-white/5 rounded-3xl px-4 py-2 shadow-2xl shadow-emerald-950/10 flex items-center justify-around">
+        {/* Docked Native Bottom Tab Bar on Mobile (iOS / PWA Safe) */}
+        <div 
+          className={cn(
+            "lg:hidden fixed bottom-0 inset-x-0 z-40 bg-white/95 dark:bg-[#07070a]/95 backdrop-blur-2xl border-t border-gray-200/80 dark:border-white/10 px-3 pt-1.5 pb-[max(0.65rem,env(safe-area-inset-bottom))] shadow-2xl transition-transform duration-300 ease-in-out flex items-center justify-around",
+            bottomNavCollapsed ? "translate-y-full pointer-events-none" : "translate-y-0"
+          )}
+        >
           {/* Item 1: Courses */}
           <Link 
             href={`/dashboard/${facultySlug}/courses`}
             id="tour-courses"
             className={cn(
-              "flex flex-col items-center justify-center p-2 rounded-xl transition-all duration-300",
+              "flex flex-col items-center justify-center py-1 px-2.5 rounded-xl transition-all duration-200 min-w-[54px]",
               pathname === `/dashboard/${facultySlug}/courses` 
-                ? "text-emerald-600 dark:text-emerald-400 scale-110" 
+                ? "text-emerald-600 dark:text-emerald-400 font-bold" 
                 : "text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
             )}
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg>
-            <span className="text-[9px] font-bold mt-1 tracking-tight">Courses</span>
+            <svg xmlns="http://www.w3.org/2000/svg" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg>
+            <span className="text-[10px] mt-0.5 tracking-tight">Courses</span>
           </Link>
 
           {/* Item 2: Events */}
@@ -223,28 +229,36 @@ export function DashboardShell({ children, facultyName, facultySlug, role, userE
             href={`/dashboard/${facultySlug}/events`}
             id="tour-events"
             className={cn(
-              "flex flex-col items-center justify-center p-2 rounded-xl transition-all duration-300",
-              pathname === `/dashboard/${facultySlug}/events` 
-                ? "text-emerald-600 dark:text-emerald-400 scale-110" 
+              "flex flex-col items-center justify-center py-1 px-2.5 rounded-xl transition-all duration-200 min-w-[54px]",
+              pathname.startsWith(`/dashboard/${facultySlug}/events`)
+                ? "text-emerald-600 dark:text-emerald-400 font-bold" 
                 : "text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
             )}
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-            <span className="text-[9px] font-bold mt-1 tracking-tight">Events</span>
+            <svg xmlns="http://www.w3.org/2000/svg" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            <span className="text-[10px] mt-0.5 tracking-tight">Events</span>
           </Link>
 
-          {/* Item 3: Overview (Center prominent Home base!) */}
+          {/* Item 3: Overview (Center prominent Home base) */}
           <Link 
             href={`/dashboard/${facultySlug}`}
             id="tour-overview"
             className={cn(
-              "flex items-center justify-center w-12 h-12 bg-gradient-to-tr from-emerald-500 to-teal-650 text-white rounded-full transition-all duration-300 shadow-lg shadow-emerald-500/20 -translate-y-4 border-4 border-[#fcfdfd] dark:border-[#030303] scale-110",
+              "flex flex-col items-center justify-center py-0.5 px-2.5 rounded-xl transition-all duration-200 min-w-[54px]",
               pathname === `/dashboard/${facultySlug}` 
-                ? "shadow-emerald-500/40 ring-4 ring-emerald-500/20 scale-125" 
-                : "opacity-95"
+                ? "text-emerald-600 dark:text-emerald-400 font-bold" 
+                : "text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
             )}
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            <div className={cn(
+              "w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 shadow-sm",
+              pathname === `/dashboard/${facultySlug}`
+                ? "bg-gradient-to-tr from-emerald-500 to-teal-600 text-white shadow-emerald-500/30 scale-105"
+                : "bg-gray-100 dark:bg-white/10 text-gray-500 dark:text-gray-400"
+            )}>
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            </div>
+            <span className="text-[9px] mt-0.5 tracking-tight">Home</span>
           </Link>
 
           {/* Item 4: Announcements */}
@@ -252,14 +266,14 @@ export function DashboardShell({ children, facultyName, facultySlug, role, userE
             href={`/dashboard/${facultySlug}/announcements`}
             id="tour-messages"
             className={cn(
-              "flex flex-col items-center justify-center p-2 rounded-xl transition-all duration-300",
-              pathname === `/dashboard/${facultySlug}/announcements` 
-                ? "text-emerald-600 dark:text-emerald-400 scale-110" 
+              "flex flex-col items-center justify-center py-1 px-2.5 rounded-xl transition-all duration-200 min-w-[54px]",
+              pathname.startsWith(`/dashboard/${facultySlug}/announcements`)
+                ? "text-emerald-600 dark:text-emerald-400 font-bold" 
                 : "text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
             )}
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M23 12a11.05 11.05 0 0 0-22 0V20a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2v-4a2 2 0 0 0-2-2H3a9 9 0 0 1 18 0h-4a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2Z"/></svg>
-            <span className="text-[9px] font-bold mt-1 tracking-tight">Notices</span>
+            <svg xmlns="http://www.w3.org/2000/svg" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M23 12a11.05 11.05 0 0 0-22 0V20a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2v-4a2 2 0 0 0-2-2H3a9 9 0 0 1 18 0h-4a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2Z"/></svg>
+            <span className="text-[10px] mt-0.5 tracking-tight">Notices</span>
           </Link>
 
           {/* Item 5: Profile */}
@@ -267,16 +281,39 @@ export function DashboardShell({ children, facultyName, facultySlug, role, userE
             href={`/dashboard/${facultySlug}/profile`}
             id="tour-profile"
             className={cn(
-              "flex flex-col items-center justify-center p-2 rounded-xl transition-all duration-300",
-              pathname === `/dashboard/${facultySlug}/profile` 
-                ? "text-emerald-600 dark:text-emerald-400 scale-110" 
+              "flex flex-col items-center justify-center py-1 px-2.5 rounded-xl transition-all duration-200 min-w-[54px]",
+              pathname.startsWith(`/dashboard/${facultySlug}/profile`)
+                ? "text-emerald-600 dark:text-emerald-400 font-bold" 
                 : "text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
             )}
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-            <span className="text-[9px] font-bold mt-1 tracking-tight">Profile</span>
+            <svg xmlns="http://www.w3.org/2000/svg" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            <span className="text-[10px] mt-0.5 tracking-tight">Profile</span>
           </Link>
+
+          {/* Quick Collapse Button for Full-Screen View */}
+          <button
+            onClick={() => setBottomNavCollapsed(true)}
+            title="Hide bottom bar for full screen"
+            aria-label="Hide navigation bar"
+            className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded-lg transition-colors absolute right-1.5 top-1 opacity-70 hover:opacity-100"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+          </button>
         </div>
+
+        {/* Floating Mini Restore Pill when Collapsed */}
+        {bottomNavCollapsed && (
+          <button
+            onClick={() => setBottomNavCollapsed(false)}
+            title="Show navigation bar"
+            aria-label="Show navigation bar"
+            className="lg:hidden fixed bottom-4 right-4 z-40 px-3 py-1.5 rounded-full bg-black/85 dark:bg-white/15 backdrop-blur-xl text-white text-[11px] font-bold shadow-xl border border-white/10 flex items-center gap-1.5 animate-in fade-in zoom-in-95 duration-200 hover:scale-105 active:scale-95"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m18 15-6-6-6 6"/></svg>
+            <span>Menu</span>
+          </button>
+        )}
       </main>
     </div>
   );

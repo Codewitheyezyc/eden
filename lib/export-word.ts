@@ -1,6 +1,8 @@
 import { Document, Paragraph, Table, TableRow, TableCell, TextRun, HeadingLevel, AlignmentType, WidthType, BorderStyle, Packer } from "docx";
 import { saveAs } from "file-saver";
 
+export type WordColumnKey = "fullName" | "role" | "campus" | "phone" | "gender" | "checkInTime";
+
 export interface WordAttendeeRow {
   fullName: string;
   role: string;
@@ -17,7 +19,20 @@ export interface WordExportOptions {
   eventDate: string;
   location: string;
   attendees: WordAttendeeRow[];
+  selectedColumns?: WordColumnKey[];
 }
+
+const COLUMN_DEFINITIONS: Record<
+  WordColumnKey,
+  { label: string; baseWeight: number; getValue: (att: WordAttendeeRow) => string }
+> = {
+  fullName: { label: "Full Name", baseWeight: 4, getValue: (a) => a.fullName },
+  role: { label: "Role", baseWeight: 2, getValue: (a) => a.role },
+  campus: { label: "Campus / Zone", baseWeight: 3.5, getValue: (a) => a.campus },
+  phone: { label: "Phone Number", baseWeight: 2.5, getValue: (a) => a.phone },
+  gender: { label: "Gender", baseWeight: 1.5, getValue: (a) => a.gender },
+  checkInTime: { label: "Check-in Time", baseWeight: 2, getValue: (a) => a.checkInTime },
+};
 
 export async function exportAttendanceToWord({
   filename,
@@ -25,22 +40,48 @@ export async function exportAttendanceToWord({
   eventDate,
   location,
   attendees,
+  selectedColumns = ["fullName", "role", "campus", "phone", "gender", "checkInTime"],
 }: WordExportOptions) {
-  // Define header styling
-  const cellHeader = (text: string, widthPercent: number) =>
+  // Always ensure fullName is present
+  const validCols: WordColumnKey[] = selectedColumns.length > 0
+    ? (selectedColumns.includes("fullName") ? selectedColumns : ["fullName", ...selectedColumns])
+    : ["fullName"];
+
+  const isNamesOnly = validCols.length === 1 && validCols[0] === "fullName";
+
+  // Calculate dynamic width percentages
+  // S/N column gets 8% to 12%
+  const snWidth = isNamesOnly ? 12 : 7;
+  const remainingPercent = 100 - snWidth;
+  const totalWeight = validCols.reduce((acc, col) => acc + (COLUMN_DEFINITIONS[col]?.baseWeight || 2), 0);
+
+  const colWidths: Record<WordColumnKey, number> = {} as any;
+  validCols.forEach((col) => {
+    const weight = COLUMN_DEFINITIONS[col]?.baseWeight || 2;
+    colWidths[col] = Math.round((weight / totalWeight) * remainingPercent);
+  });
+
+  // Adjust any rounding discrepancies to make total exactly 100%
+  const sumWidths = snWidth + validCols.reduce((acc, col) => acc + colWidths[col], 0);
+  if (sumWidths !== 100 && validCols.length > 0) {
+    colWidths[validCols[0]] += 100 - sumWidths;
+  }
+
+  // Header Cell Styling
+  const cellHeader = (text: string, widthPercent: number, align: any = AlignmentType.LEFT) =>
     new TableCell({
       width: { size: widthPercent, type: WidthType.PERCENTAGE },
       shading: { fill: "0F766E" }, // Emerald 700
-      margins: { top: 120, bottom: 120, left: 120, right: 120 },
+      margins: { top: 140, bottom: 140, left: 140, right: 140 },
       children: [
         new Paragraph({
-          alignment: AlignmentType.LEFT,
+          alignment: align,
           children: [
             new TextRun({
               text,
               bold: true,
               color: "FFFFFF",
-              size: 20, // 10pt
+              size: isNamesOnly ? 22 : 20, // 11pt or 10pt
               font: "Arial",
             }),
           ],
@@ -48,60 +89,68 @@ export async function exportAttendanceToWord({
       ],
     });
 
-  const cellRow = (text: string, widthPercent: number, isAlt: boolean) =>
+  // Data Cell Styling
+  const cellRow = (
+    text: string,
+    widthPercent: number,
+    isAlt: boolean,
+    isNameCol: boolean = false,
+    align: any = AlignmentType.LEFT
+  ) =>
     new TableCell({
       width: { size: widthPercent, type: WidthType.PERCENTAGE },
       shading: isAlt ? { fill: "F8FAFC" } : undefined,
-      margins: { top: 100, bottom: 100, left: 120, right: 120 },
+      margins: { top: isNamesOnly ? 140 : 100, bottom: isNamesOnly ? 140 : 100, left: 140, right: 140 },
       children: [
         new Paragraph({
-          alignment: AlignmentType.LEFT,
+          alignment: align,
           children: [
             new TextRun({
               text: text || "—",
-              size: 18, // 9pt
+              size: isNamesOnly ? 22 : 18, // 11pt when names only, 9pt otherwise
               font: "Arial",
-              color: "1E293B",
+              bold: isNameCol,
+              color: isNameCol ? "0F172A" : "334155",
             }),
           ],
         }),
       ],
     });
 
-  // Table rows
+  // Header Row
+  const headerCells = [
+    cellHeader("#", snWidth, AlignmentType.CENTER),
+    ...validCols.map((col) =>
+      cellHeader(COLUMN_DEFINITIONS[col].label, colWidths[col], AlignmentType.LEFT)
+    ),
+  ];
+
   const headerRow = new TableRow({
     tableHeader: true,
-    children: [
-      cellHeader("#", 6),
-      cellHeader("Full Name", 24),
-      cellHeader("Role", 12),
-      cellHeader("Campus / Zone", 22),
-      cellHeader("Phone", 16),
-      cellHeader("Gender", 8),
-      cellHeader("Check-in Time", 12),
-    ],
+    children: headerCells,
   });
 
+  // Data Rows
   const dataRows = attendees.map((att, idx) => {
     const isAlt = idx % 2 === 1;
+    const rowCells = [
+      cellRow(String(idx + 1), snWidth, isAlt, false, AlignmentType.CENTER),
+      ...validCols.map((col) => {
+        const val = COLUMN_DEFINITIONS[col].getValue(att);
+        return cellRow(val, colWidths[col], isAlt, col === "fullName");
+      }),
+    ];
+
     return new TableRow({
-      children: [
-        cellRow(String(idx + 1), 6, isAlt),
-        cellRow(att.fullName, 24, isAlt),
-        cellRow(att.role, 12, isAlt),
-        cellRow(att.campus, 22, isAlt),
-        cellRow(att.phone, 16, isAlt),
-        cellRow(att.gender, 8, isAlt),
-        cellRow(att.checkInTime, 12, isAlt),
-      ],
+      children: rowCells,
     });
   });
 
   const table = new Table({
     width: { size: 100, type: WidthType.PERCENTAGE },
     borders: {
-      top: { style: BorderStyle.SINGLE, size: 4, color: "CBD5E1" },
-      bottom: { style: BorderStyle.SINGLE, size: 4, color: "CBD5E1" },
+      top: { style: BorderStyle.SINGLE, size: 6, color: "0F766E" },
+      bottom: { style: BorderStyle.SINGLE, size: 6, color: "0F766E" },
       left: { style: BorderStyle.NONE },
       right: { style: BorderStyle.NONE },
       insideHorizontal: { style: BorderStyle.SINGLE, size: 2, color: "E2E8F0" },
@@ -132,7 +181,9 @@ export async function exportAttendanceToWord({
             alignment: AlignmentType.CENTER,
             children: [
               new TextRun({
-                text: "FACULTY OF PERFORMING ARTS, DANCE UNIT — OFFICIAL EVENT ATTENDANCE ROSTER",
+                text: isNamesOnly
+                  ? "FACULTY OF PERFORMING ARTS, DANCE UNIT — ATTENDANCE ROSTER (NAMES ONLY)"
+                  : "FACULTY OF PERFORMING ARTS, DANCE UNIT — OFFICIAL EVENT ATTENDANCE ROSTER",
                 bold: true,
                 size: 20, // 10pt
                 color: "64748B",
@@ -192,7 +243,11 @@ export async function exportAttendanceToWord({
   });
 
   const blob = await Packer.toBlob(doc);
-  const cleanFilename = filename.endsWith(".docx") ? filename : `${filename}.docx`;
+  const suffix = isNamesOnly ? "_NamesOnly" : "";
+  const cleanFilename = filename.endsWith(".docx")
+    ? filename.replace(".docx", `${suffix}.docx`)
+    : `${filename}${suffix}.docx`;
+
   saveAs(blob, cleanFilename);
 }
 

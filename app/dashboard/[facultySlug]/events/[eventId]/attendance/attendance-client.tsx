@@ -6,29 +6,31 @@ import { parseCampuses } from "@/lib/campuses";
 import { cn, formatBirthday, formatPhoneNumber } from "@/lib/utils";
 import { exportToCsv } from "@/lib/export-csv";
 import { exportToRealExcel } from "@/lib/export-excel";
-import { exportAttendanceToWord } from "@/lib/export-word";
+import { exportAttendanceToWord, WordColumnKey } from "@/lib/export-word";
 import { EnrollMemberModal } from "@/components/dashboard/enroll-member-modal";
 import { TablePagination } from "@/components/ui/table-pagination";
-import { 
-  FileText, 
-  UserPlus, 
-  Sparkles, 
-  UserCheck, 
-  Trash2, 
-  Search, 
-  X, 
-  Loader2, 
-  Users, 
-  CheckCircle2, 
+import {
+  FileText,
+  UserPlus,
+  Sparkles,
+  UserCheck,
+  Trash2,
+  Search,
+  X,
+  Loader2,
+  Users,
+  CheckCircle2,
   AlertTriangle,
-  Plus 
+  Plus,
+  SlidersHorizontal,
+  Check
 } from "lucide-react";
 import { createClient } from "@/services/supabase/client";
 import { toast } from "react-hot-toast";
-import { 
-  syncAllFacultyMembersToEventAction, 
-  addMemberToEventAction, 
-  removeMemberFromEventAction 
+import {
+  syncAllFacultyMembersToEventAction,
+  addMemberToEventAction,
+  removeMemberFromEventAction
 } from "@/app/dashboard/[facultySlug]/events/actions";
 
 interface AttendeeProfile {
@@ -84,13 +86,13 @@ interface EventAttendanceClientProps {
 
 type TabType = "attendees" | "qr_scanner" | "history" | "analytics";
 
-export function EventAttendanceClient({ 
-  event, 
-  initialAttendees, 
+export function EventAttendanceClient({
+  event,
+  initialAttendees,
   availableFacultyMembers = [],
-  viewerRole, 
-  facultySlug, 
-  facultyId 
+  viewerRole,
+  facultySlug,
+  facultyId
 }: EventAttendanceClientProps) {
   const router = useRouter();
   const [attendees, setAttendees] = useState<EventAttendee[]>(initialAttendees);
@@ -104,6 +106,13 @@ export function EventAttendanceClient({
   const [addMemberSearch, setAddMemberSearch] = useState("");
   const [isAddingUserId, setIsAddingUserId] = useState<string | null>(null);
   const [isRemovingUserId, setIsRemovingUserId] = useState<string | null>(null);
+
+  // Word Export Customizer State
+  const [showWordExportModal, setShowWordExportModal] = useState(false);
+  const [isExportingWord, setIsExportingWord] = useState(false);
+  const [selectedWordColumns, setSelectedWordColumns] = useState<WordColumnKey[]>([
+    "fullName",
+  ]);
 
   useEffect(() => {
     setAttendees(initialAttendees);
@@ -153,7 +162,7 @@ export function EventAttendanceClient({
     const studentsCount = attendees.filter(a => a.role === "STUDENT").length;
     const coordCount = attendees.filter(a => a.role === "COORDINATOR").length;
     const adminCount = attendees.filter(a => a.role === "ADMIN").length;
-    
+
     // Group present count by campus
     const campusDistribution: { [key: string]: number } = {};
     attendees.forEach(a => {
@@ -388,25 +397,42 @@ export function EventAttendanceClient({
   };
 
   // Functional client-side Export to Word Document (.docx)
-  const handleExportWord = async () => {
+  const handleExportWord = async (columnsToExport?: WordColumnKey[]) => {
     if (processedAttendees.length === 0) return;
-    const attendees = processedAttendees.map((a) => ({
-      fullName: a.fullName,
-      role: a.role === "ADMIN" ? "Admin" : (a.profile?.leadershipRole ? "HQ Leader" : (a.role === "COORDINATOR" ? "Zonal Leader" : "Student")),
-      campus: a.profile?.campusZone ? parseCampuses(a.profile.campusZone).join(", ") : "—",
-      phone: formatPhoneNumber(a.profile?.phone) || "—",
-      gender: a.profile?.gender || "—",
-      status: a.status,
-      checkInTime: a.checkInTime ? new Date(a.checkInTime).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }) : "—",
-    }));
+    setIsExportingWord(true);
+    try {
+      const attendeesData = processedAttendees.map((a) => ({
+        fullName: a.fullName,
+        role: a.role === "ADMIN" ? "Admin" : (a.profile?.leadershipRole ? "HQ Leader" : (a.role === "COORDINATOR" ? "Zonal Leader" : "Student")),
+        campus: a.profile?.campusZone ? parseCampuses(a.profile.campusZone).join(", ") : "—",
+        phone: formatPhoneNumber(a.profile?.phone) || "—",
+        gender: a.profile?.gender || "—",
+        status: a.status,
+        checkInTime: a.checkInTime ? new Date(a.checkInTime).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }) : "—",
+      }));
 
-    await exportAttendanceToWord({
-      filename: `Eden_Event_${event.title.replace(/\s+/g, "_")}_Attendance_${new Date().toISOString().split("T")[0]}`,
-      eventTitle: event.title,
-      eventDate: eventDateStr.full,
-      location: event.location,
-      attendees,
-    });
+      const activeCols = columnsToExport || selectedWordColumns;
+
+      await exportAttendanceToWord({
+        filename: `Eden_Event_${event.title.replace(/\s+/g, "_")}_Attendance_${new Date().toISOString().split("T")[0]}`,
+        eventTitle: event.title,
+        eventDate: eventDateStr.full,
+        location: event.location,
+        attendees: attendeesData,
+        selectedColumns: activeCols,
+      });
+
+      toast.success(
+        activeCols.length === 1 && activeCols[0] === "fullName"
+          ? "Downloaded Word document (Names Only)!"
+          : "Downloaded custom Word document (.docx)!"
+      );
+      setShowWordExportModal(false);
+    } catch (err: any) {
+      toast.error(err.message || "Failed to export Word document.");
+    } finally {
+      setIsExportingWord(false);
+    }
   };
 
   const handleFilterChange = (filterSetter: (val: string) => void, val: string) => {
@@ -471,7 +497,7 @@ export function EventAttendanceClient({
             <h2 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white truncate">{event.title}</h2>
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 leading-relaxed line-clamp-2">{event.description || "No description provided."}</p>
           </div>
-          
+
           <div className="flex flex-wrap gap-4 text-xs font-semibold text-gray-500 dark:text-gray-400 pt-1">
             <span className="flex items-center gap-1.5">
               📅 {eventDateStr.full}
@@ -510,7 +536,7 @@ export function EventAttendanceClient({
                 }}
                 className="inline-flex items-center gap-1.5 px-3 py-1 bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 text-xs font-bold rounded-lg border border-rose-500/20 transition-all disabled:opacity-50"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /></svg>
                 {isDeletingEvent ? "Deleting Event..." : "Delete Event"}
               </button>
             </div>
@@ -554,7 +580,7 @@ export function EventAttendanceClient({
       </div>
 
       {/* SECTION 3: Content rendering depending on the selected Tab */}
-      
+
       {/* TAB 1: ATTENDEES TABLE */}
       {activeTab === "attendees" && (
         <div className="space-y-6">
@@ -564,7 +590,7 @@ export function EventAttendanceClient({
               {/* Search */}
               <div className="relative md:col-span-1">
                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></svg>
                 </span>
                 <input
                   type="text"
@@ -618,14 +644,26 @@ export function EventAttendanceClient({
                   </>
                 )}
 
+                {/* 1-Click Direct Download: Names Only (.docx) */}
                 <button
-                  onClick={handleExportWord}
-                  disabled={processedAttendees.length === 0}
-                  className="flex items-center justify-center gap-1.5 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs px-3.5 py-3 rounded-2xl transition-all shadow-xs disabled:opacity-40"
-                  title="Download formatted Word document (.docx)"
+                  onClick={() => handleExportWord(["fullName"])}
+                  disabled={processedAttendees.length === 0 || isExportingWord}
+                  className="flex items-center justify-center gap-1.5 bg-blue-700 hover:bg-blue-600 text-white font-bold text-xs px-3.5 py-3 rounded-2xl transition-all shadow-md shadow-blue-700/20 disabled:opacity-40 shrink-0"
+                  title="Download clean Word document with member names only"
                 >
-                  <FileText className="w-4 h-4" />
-                  <span>Word (.docx)</span>
+                  <FileText className="w-4 h-4 text-blue-200" />
+                  <span>Names Only (.docx)</span>
+                </button>
+
+                {/* Customizable Word Export Modal */}
+                <button
+                  onClick={() => setShowWordExportModal(true)}
+                  disabled={processedAttendees.length === 0 || isExportingWord}
+                  className="flex items-center justify-center gap-1.5 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs px-3.5 py-3 rounded-2xl transition-all shadow-xs disabled:opacity-40 shrink-0"
+                  title="Customize which columns to include in your Word document"
+                >
+                  <SlidersHorizontal className="w-4 h-4" />
+                  <span>Word Options</span>
                 </button>
 
                 <button
@@ -634,7 +672,7 @@ export function EventAttendanceClient({
                   className="flex items-center justify-center gap-1.5 bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs px-3.5 py-3 rounded-2xl transition-all shadow-sm disabled:opacity-40"
                   title="Download formatted Excel workbook"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
                   <span>Excel (.xlsx)</span>
                 </button>
 
@@ -760,7 +798,7 @@ export function EventAttendanceClient({
                           {(currentPage - 1) * itemsPerPage + idx + 1}
                         </td>
                         <td className="py-4 px-3 text-center">
-                          <div 
+                          <div
                             onClick={() => a.proofImageUrl && setSelectedSelfie(a.proofImageUrl)}
                             className={cn(
                               "w-10 h-10 rounded-xl overflow-hidden border bg-gray-105 border-gray-200/50 dark:border-white/5 shrink-0 shadow-inner flex items-center justify-center text-lg cursor-pointer transition-transform hover:scale-105 active:scale-95 relative group mx-auto",
@@ -886,7 +924,7 @@ export function EventAttendanceClient({
             <div className="absolute top-4 right-4 w-6 h-6 border-t-4 border-r-4 border-emerald-500 rounded-tr-lg" />
             <div className="absolute bottom-4 left-4 w-6 h-6 border-b-4 border-l-4 border-emerald-500 rounded-bl-lg" />
             <div className="absolute bottom-4 right-4 w-6 h-6 border-b-4 border-r-4 border-emerald-500 rounded-br-lg" />
-            
+
             {/* Scan animation line */}
             <div className="absolute left-0 w-full h-1 bg-emerald-500/80 blur-xs top-1/2 -translate-y-1/2 animate-bounce" />
 
@@ -999,7 +1037,7 @@ export function EventAttendanceClient({
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
           {/* Overlay glass */}
           <div className="absolute inset-0 bg-black/75 backdrop-blur-md transition-opacity" onClick={() => setSelectedSelfie(null)} />
-          
+
           <div className="relative bg-white dark:bg-[#060608] border border-gray-200/40 dark:border-white/10 rounded-3xl max-w-lg w-full overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200">
             {/* Header close button */}
             <div className="absolute top-4 right-4 z-10">
@@ -1186,6 +1224,180 @@ export function EventAttendanceClient({
               >
                 Close
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Word (.docx) Export Customizer Modal */}
+      {showWordExportModal && (
+        <div className="fixed inset-0 z-[130] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
+          <div className="relative w-full max-w-lg bg-[#0e1216] border border-white/10 rounded-3xl p-6 shadow-2xl text-white max-h-[90vh] flex flex-col">
+            {/* Header */}
+            <div className="flex items-center justify-between pb-4 border-b border-white/10">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-blue-500/10 border border-blue-500/20 text-blue-400 flex items-center justify-center">
+                  <FileText className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold">Customize Word (.docx) Export</h3>
+                  <p className="text-xs text-gray-400">Choose which columns to include in your attendance roster</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowWordExportModal(false)}
+                className="p-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-all"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Presets */}
+            <div className="py-4 border-b border-white/10 space-y-2">
+              <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block">
+                Quick Presets
+              </label>
+              <div className="grid grid-cols-3 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setSelectedWordColumns(["fullName"])}
+                  className={cn(
+                    "p-2.5 rounded-xl border text-xs font-bold transition-all flex flex-col items-center justify-center text-center",
+                    selectedWordColumns.length === 1 && selectedWordColumns[0] === "fullName"
+                      ? "bg-blue-600/20 border-blue-500 text-blue-300 ring-2 ring-blue-500/20"
+                      : "bg-white/5 border-white/10 text-gray-300 hover:bg-white/10"
+                  )}
+                >
+                  <span className="text-base mb-0.5">🏷️</span>
+                  <span>Names Only</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setSelectedWordColumns(["fullName", "campus"])}
+                  className={cn(
+                    "p-2.5 rounded-xl border text-xs font-bold transition-all flex flex-col items-center justify-center text-center",
+                    selectedWordColumns.length === 2 && selectedWordColumns.includes("fullName") && selectedWordColumns.includes("campus")
+                      ? "bg-blue-600/20 border-blue-500 text-blue-300 ring-2 ring-blue-500/20"
+                      : "bg-white/5 border-white/10 text-gray-300 hover:bg-white/10"
+                  )}
+                >
+                  <span className="text-base mb-0.5">📍</span>
+                  <span>Name + Campus</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setSelectedWordColumns(["fullName", "role", "campus", "phone", "gender", "checkInTime"])}
+                  className={cn(
+                    "p-2.5 rounded-xl border text-xs font-bold transition-all flex flex-col items-center justify-center text-center",
+                    selectedWordColumns.length === 6
+                      ? "bg-blue-600/20 border-blue-500 text-blue-300 ring-2 ring-blue-500/20"
+                      : "bg-white/5 border-white/10 text-gray-300 hover:bg-white/10"
+                  )}
+                >
+                  <span className="text-base mb-0.5">📑</span>
+                  <span>Full Details</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Checkbox columns list */}
+            <div className="py-4 space-y-2 flex-1 overflow-y-auto pr-1">
+              <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-2">
+                Included Information Columns
+              </label>
+
+              {[
+                { key: "fullName" as WordColumnKey, label: "Full Name", desc: "Official name of the attendee (Always included)", required: true },
+                { key: "campus" as WordColumnKey, label: "Campus / Zone", desc: "Assigned campus or geographical zone" },
+                { key: "role" as WordColumnKey, label: "Official Role", desc: "HQ Leader, Zonal Leader, or Student designation" },
+                { key: "phone" as WordColumnKey, label: "Phone Number", desc: "Contact telephone number" },
+                { key: "gender" as WordColumnKey, label: "Gender", desc: "Male or Female" },
+                { key: "checkInTime" as WordColumnKey, label: "Check-in Timestamp", desc: "Exact date and time attendee checked in" },
+              ].map((col) => {
+                const isChecked = selectedWordColumns.includes(col.key);
+                return (
+                  <div
+                    key={col.key}
+                    onClick={() => {
+                      if (col.required) return;
+                      if (isChecked) {
+                        setSelectedWordColumns((prev) => prev.filter((k) => k !== col.key));
+                      } else {
+                        setSelectedWordColumns((prev) => [...prev, col.key]);
+                      }
+                    }}
+                    className={cn(
+                      "flex items-center justify-between p-3 rounded-2xl border transition-all cursor-pointer select-none",
+                      isChecked
+                        ? "bg-blue-500/10 border-blue-500/30"
+                        : "bg-white/[0.02] border-white/5 hover:bg-white/[0.04]",
+                      col.required && "cursor-default opacity-85"
+                    )}
+                  >
+                    <div className="min-w-0 pr-3">
+                      <p className="font-bold text-xs text-white flex items-center gap-1.5">
+                        <span>{col.label}</span>
+                        {col.required && (
+                          <span className="text-[10px] text-blue-400 font-semibold px-2 py-0.5 rounded-md bg-blue-500/10 border border-blue-500/20">
+                            Required
+                          </span>
+                        )}
+                      </p>
+                      <p className="text-[11px] text-gray-400 mt-0.5">{col.desc}</p>
+                    </div>
+
+                    <div
+                      className={cn(
+                        "w-5 h-5 rounded-lg border flex items-center justify-center shrink-0 transition-all",
+                        isChecked
+                          ? "bg-blue-600 border-blue-500 text-white"
+                          : "border-white/20 bg-white/5"
+                      )}
+                    >
+                      {isChecked && <Check className="w-3.5 h-3.5 stroke-[3]" />}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Footer */}
+            <div className="pt-4 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-3">
+              <span className="text-[11px] text-gray-400 text-center sm:text-left">
+                Exporting <strong className="text-white font-bold">{processedAttendees.length}</strong> attendees with{" "}
+                <strong className="text-blue-400 font-bold">{selectedWordColumns.length}</strong> column{selectedWordColumns.length === 1 ? "" : "s"}
+              </span>
+
+              <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+                <button
+                  type="button"
+                  onClick={() => setShowWordExportModal(false)}
+                  disabled={isExportingWord}
+                  className="flex-1 sm:flex-initial px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-gray-300 font-semibold text-xs transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleExportWord()}
+                  disabled={isExportingWord || processedAttendees.length === 0}
+                  className="flex-1 sm:flex-initial px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-blue-600/30 transition-all disabled:opacity-50"
+                >
+                  {isExportingWord ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Generating Word Document...</span>
+                    </>
+                  ) : (
+                    <>
+                      <FileText className="w-4 h-4" />
+                      <span>Download Word (.docx)</span>
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
           </div>
         </div>

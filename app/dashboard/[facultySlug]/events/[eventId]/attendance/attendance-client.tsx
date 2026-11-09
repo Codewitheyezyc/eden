@@ -401,15 +401,29 @@ export function EventAttendanceClient({
     if (processedAttendees.length === 0) return;
     setIsExportingWord(true);
     try {
-      const attendeesData = processedAttendees.map((a) => ({
-        fullName: a.fullName,
-        role: a.role === "ADMIN" ? "Admin" : (a.profile?.leadershipRole ? "HQ Leader" : (a.role === "COORDINATOR" ? "Zonal Leader" : "Student")),
-        campus: a.profile?.campusZone ? parseCampuses(a.profile.campusZone).join(", ") : "—",
-        phone: formatPhoneNumber(a.profile?.phone) || "—",
-        gender: a.profile?.gender || "—",
-        status: a.status,
-        checkInTime: a.checkInTime ? new Date(a.checkInTime).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }) : "—",
-      }));
+      const attendeesData = processedAttendees.map((a) => {
+        const rawKingschat = a.profile?.kingschat?.trim();
+        const formattedKingschat = rawKingschat && rawKingschat.toLowerCase() !== "nil" && rawKingschat.toLowerCase() !== "n/a"
+          ? (rawKingschat.startsWith("@") ? rawKingschat : `@${rawKingschat}`)
+          : "NIL";
+
+        const rawEmail = a.email?.trim();
+        const formattedEmail = rawEmail && !rawEmail.includes("@loveworldarts.internal") && rawEmail.toLowerCase() !== "no email provided"
+          ? rawEmail
+          : "NIL";
+
+        return {
+          fullName: a.fullName || "NIL",
+          role: a.role === "ADMIN" ? "Admin" : (a.profile?.leadershipRole ? "HQ Leader" : (a.role === "COORDINATOR" ? "Zonal Leader" : "Student")),
+          campus: a.profile?.campusZone ? parseCampuses(a.profile.campusZone).join(", ") : "NIL",
+          phone: formatPhoneNumber(a.profile?.phone) || "NIL",
+          gender: a.profile?.gender || "NIL",
+          kingschat: formattedKingschat,
+          email: formattedEmail,
+          status: a.status,
+          checkInTime: a.checkInTime ? new Date(a.checkInTime).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }) : "NIL",
+        };
+      });
 
       const activeCols = columnsToExport || selectedWordColumns;
 
@@ -1288,10 +1302,10 @@ export function EventAttendanceClient({
 
                 <button
                   type="button"
-                  onClick={() => setSelectedWordColumns(["fullName", "role", "campus", "phone", "gender", "checkInTime"])}
+                  onClick={() => setSelectedWordColumns(["fullName", "campus", "role", "phone", "kingschat", "email", "gender", "checkInTime"])}
                   className={cn(
                     "p-2.5 rounded-xl border text-xs font-bold transition-all flex flex-col items-center justify-center text-center",
-                    selectedWordColumns.length === 6
+                    selectedWordColumns.length >= 6
                       ? "bg-blue-600/20 border-blue-500 text-blue-300 ring-2 ring-blue-500/20"
                       : "bg-white/5 border-white/10 text-gray-300 hover:bg-white/10"
                   )}
@@ -1312,7 +1326,9 @@ export function EventAttendanceClient({
                 { key: "fullName" as WordColumnKey, label: "Full Name", desc: "Official name of the attendee (Always included)", required: true },
                 { key: "campus" as WordColumnKey, label: "Campus / Zone", desc: "Assigned campus or geographical zone" },
                 { key: "role" as WordColumnKey, label: "Official Role", desc: "HQ Leader, Zonal Leader, or Student designation" },
-                { key: "phone" as WordColumnKey, label: "Phone Number", desc: "Contact telephone number" },
+                { key: "phone" as WordColumnKey, label: "Phone Number", desc: "Contact telephone number (Shows NIL if missing)" },
+                { key: "kingschat" as WordColumnKey, label: "KingsChat Username", desc: "KingsChat @handle (Shows NIL if missing)" },
+                { key: "email" as WordColumnKey, label: "Email Address", desc: "Member email address (Shows NIL if missing)" },
                 { key: "gender" as WordColumnKey, label: "Gender", desc: "Male or Female" },
                 { key: "checkInTime" as WordColumnKey, label: "Check-in Timestamp", desc: "Exact date and time attendee checked in" },
               ].map((col) => {

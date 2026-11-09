@@ -1,7 +1,7 @@
 import { Document, Paragraph, Table, TableRow, TableCell, TextRun, HeadingLevel, AlignmentType, WidthType, BorderStyle, Packer } from "docx";
 import { saveAs } from "file-saver";
 
-export type WordColumnKey = "fullName" | "role" | "campus" | "phone" | "gender" | "checkInTime";
+export type WordColumnKey = "fullName" | "role" | "campus" | "phone" | "gender" | "checkInTime" | "kingschat" | "email";
 
 export interface WordAttendeeRow {
   fullName: string;
@@ -11,6 +11,8 @@ export interface WordAttendeeRow {
   gender: string;
   status: string;
   checkInTime: string;
+  kingschat?: string;
+  email?: string;
 }
 
 export interface WordExportOptions {
@@ -22,16 +24,25 @@ export interface WordExportOptions {
   selectedColumns?: WordColumnKey[];
 }
 
+const formatNil = (val?: string | null): string => {
+  if (!val || !val.trim() || val.trim() === "—" || val.trim().toLowerCase() === "n/a" || val.trim().toLowerCase() === "none") {
+    return "NIL";
+  }
+  return val.trim();
+};
+
 const COLUMN_DEFINITIONS: Record<
   WordColumnKey,
   { label: string; baseWeight: number; getValue: (att: WordAttendeeRow) => string }
 > = {
-  fullName: { label: "Full Name", baseWeight: 4, getValue: (a) => a.fullName },
-  role: { label: "Role", baseWeight: 2, getValue: (a) => a.role },
-  campus: { label: "Campus / Zone", baseWeight: 3.5, getValue: (a) => a.campus },
-  phone: { label: "Phone Number", baseWeight: 2.5, getValue: (a) => a.phone },
-  gender: { label: "Gender", baseWeight: 1.5, getValue: (a) => a.gender },
-  checkInTime: { label: "Check-in Time", baseWeight: 2, getValue: (a) => a.checkInTime },
+  fullName: { label: "Full Name", baseWeight: 4, getValue: (a) => formatNil(a.fullName) },
+  campus: { label: "Campus / Zone", baseWeight: 3.5, getValue: (a) => formatNil(a.campus) },
+  role: { label: "Role", baseWeight: 2, getValue: (a) => formatNil(a.role) },
+  phone: { label: "Phone Number", baseWeight: 2.5, getValue: (a) => formatNil(a.phone) },
+  kingschat: { label: "KingsChat", baseWeight: 2.5, getValue: (a) => formatNil(a.kingschat) },
+  email: { label: "Email Address", baseWeight: 3.5, getValue: (a) => formatNil(a.email) },
+  gender: { label: "Gender", baseWeight: 1.5, getValue: (a) => formatNil(a.gender) },
+  checkInTime: { label: "Check-in Time", baseWeight: 2, getValue: (a) => formatNil(a.checkInTime) },
 };
 
 export async function exportAttendanceToWord({
@@ -106,11 +117,11 @@ export async function exportAttendanceToWord({
           alignment: align,
           children: [
             new TextRun({
-              text: text || "—",
+              text: text || "NIL",
               size: isNamesOnly ? 22 : 18, // 11pt when names only, 9pt otherwise
               font: "Arial",
               bold: isNameCol,
-              color: isNameCol ? "0F172A" : "334155",
+              color: isNameCol ? "0F172A" : (text === "NIL" ? "94A3B8" : "334155"),
             }),
           ],
         }),

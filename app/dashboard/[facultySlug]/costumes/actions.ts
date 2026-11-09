@@ -77,6 +77,47 @@ export async function enrollMemberByCoordinator(data: EnrollMemberInput) {
       return { error: "Campus or zone is required." };
     }
 
+    const cleanName = data.fullName.trim();
+    const cleanPhoneDigits = (data.phone || "").replace(/\D/g, "");
+
+    // 1. Anti-Duplicate Check: Prevent enrolling a member who already exists with this exact name in this faculty
+    const { data: facultyMembers } = await supabase
+      .from("user_faculties")
+      .select("user_id, users:user_id(id, full_name, email)")
+      .eq("faculty_id", data.facultyId);
+
+    const existingNameMatch = (facultyMembers || []).find((row: any) => {
+      const u = Array.isArray(row.users) ? row.users[0] : row.users;
+      return u?.full_name?.trim().toLowerCase() === cleanName.toLowerCase();
+    });
+
+    if (existingNameMatch) {
+      const u = Array.isArray(existingNameMatch.users) ? existingNameMatch.users[0] : existingNameMatch.users;
+      return {
+        error: `A member named "${u?.full_name || cleanName}" is already registered in this faculty. To prevent duplicate records, please find them in the directory.`
+      };
+    }
+
+    // 2. Anti-Duplicate Check: Prevent duplicate phone numbers across registered members
+    if (cleanPhoneDigits.length >= 8) {
+      const { data: allProfiles } = await supabase
+        .from("profiles")
+        .select("id, phone, users:id(full_name)")
+        .not("phone", "is", null);
+
+      const existingPhoneMatch = (allProfiles || []).find((p: any) => {
+        const pDigits = (p.phone || "").replace(/\D/g, "");
+        return pDigits.length >= 8 && (pDigits.endsWith(cleanPhoneDigits) || cleanPhoneDigits.endsWith(pDigits));
+      });
+
+      if (existingPhoneMatch) {
+        const u = Array.isArray(existingPhoneMatch.users) ? existingPhoneMatch.users[0] : existingPhoneMatch.users;
+        return {
+          error: `Phone number "${data.phone?.trim()}" is already registered to member "${u?.full_name || 'an existing member'}". Please verify the phone number.`
+        };
+      }
+    }
+
     // Call the security definer RPC function to safely bypass RLS while enforcing admin/coordinator roles
     const { data: memberResult, error: rpcError } = await supabase.rpc("enroll_assisted_member", {
       p_faculty_id: data.facultyId,
